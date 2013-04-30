@@ -65,7 +65,7 @@ class Data:
 		return self.M(date, 'Lowest', 1)
 	
 	# Return the 'lowest' in $days before $date.
-	def lowestByDate (self, date, days, field):
+	def lowestByDate (self, date, days, field='Close'):
 		sqls = """select min(%s) from (select %s from %s where Time < \'%s\' 
 		order by Time desc limit %d) as t1""" % (field, field, self.table, date, days-1)
 		
@@ -76,7 +76,7 @@ class Data:
 		return
 	
 	# Return the 'highest' in $days before $date.
-	def highestByDate (self, date, days, field):
+	def highestByDate (self, date, days, field='Close'):
 		sqls = """select max(%s) from (select %s from %s where Time < \'%s\' 
 		order by Time desc limit %d) as t1""" % (field, field, self.table, date, days-1)
 		

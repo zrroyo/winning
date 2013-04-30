@@ -38,23 +38,19 @@ class TurtData:
 
 class Turtle(FUT.Futures):
 	def __init__ (self, futName, dataTable, tradeTable, database='futures'):
-		self.futName = futName
+		FUT.Futures.__init__(self, futName)
 		self.database = database
 		self.dataTable = dataTable
 		self.data = data.Data(database, dataTable)
 		self.dateSet = DATE.Date(database, dataTable)
 		self.tradeTable = tradeTable
 		self.tradeRec = trade.Trade(database, tradeTable)
-		self.maxPos = None
-		self.minPos = None
-		self.minPosIntv = None
-		self.pList = []
-		self.totalProfit = 0
-		self.profit = 0
+
 		#print "Turtle initialized!"
 		return
 	
 	def __exit__ (self):
+		FUT.Futures.__exit__(self)
 		return
 	
 	# Below are helper functions used to update Tr and Atr, and only used locally.
@@ -163,6 +159,16 @@ class Turtle(FUT.Futures):
 		
 	def hitLongSignal (self, date):
 		return
+	
+	# End of a test run. Close all opened positions before stop test.
+	def endRun (self, mode):
+		if self.curPostion():
+			time = self.dateSet.lastDate()
+			price = self.data.getClose(time)
+			self.closeAllPostion(price, mode)
+			print "	[%s] [%s] Clear all! close %s" % (mode, time, price)
+			
+		return
 		
 	def run (self):
 		if self.checkAttrs() is False:
@@ -176,13 +182,28 @@ class Turtle(FUT.Futures):
 		#lcDateSet = self.dateSet
 		time = lcDateSet.firstDate()
 		
+		days = 0
+		mode = None
+		
 		while time is not None:
+			days += 1
+			if days <= 10:
+				time= lcDateSet.getSetNextDate()
+				continue
+			
 			if self.hitShortSignal(time):
+				mode = 'short'
 				self.doShort(lcDateSet, time);
 			elif self.hitLongSignal(time):
+				mode = 'long'
 				self.doLong(lcDateSet, time);
+			else:
+				mode = None
 
 			time= lcDateSet.getSetNextDate()
+			
+		if mode is not None:
+			self.endRun(mode)
 	
 	# Get the lowest value for a field within recent $days counted from $date.
 	def lowestByDate (self, date, days, field='Close'):
@@ -192,73 +213,3 @@ class Turtle(FUT.Futures):
 	def highestByDate (self, date, days, field='Close'):
 		return self.data.highestByDate(date, days, field)
 	
-	def showProfit (self):
-		print "		++++++ Business profit %s ++++++" % (self.profit)
-		print "		****** Total profit %s ******" % (self.totalProfit)
-	
-	# Position Management Methods.
-	def curPostion (self):
-		return len(self.pList)
-	
-	def emptyPostion (self):
-		self.pList = []
-		self.profit = 0
-	
-	def openShortPostion (self, price):
-		if self.curPostion() >= self.maxPos:
-			return
-		self.pList.append(price)
-		print "		-->> Open: %s, poses %s <<--" % (price, self.curPostion())
-		return self.curPostion()
-		
-	def openLongPostion (self, price):
-		if self.curPostion() >= self.maxPos:
-			return
-		self.pList.append(price)
-		print "		-->> Open: %s, poses %s <<--" % (price, self.curPostion())
-		return self.curPostion()
-		
-	def closeShortPostion (self, price):
-		if self.curPostion() == 0:
-			return
-		profit = self.pList.pop() - price
-		self.profit += profit
-		self.totalProfit += profit
-		print "		<<-- Close: profit %s, poses %s -->>" % (profit, self.curPostion())
-		if self.curPostion() == 0:
-			self.showProfit()
-			
-		return self.curPostion()
-	
-	def closeLongPostion (self, price):
-		if self.curPostion() == 0:
-			return
-		profit = price - self.pList.pop()
-		self.profit += profit
-		self.totalProfit += profit
-		print "		<<-- Close: profit %s, poses %s -->>" % (profit, self.curPostion())
-		if self.curPostion() == 0:
-			self.showProfit()
-			
-		return self.curPostion()
-		
-	def closeAllPostion (self, price, short):
-		while self.curPostion():
-			if short is 'short':
-				poses = self.closeShortPostion(price)
-			else:
-				poses = self.closeLongPostion(price)
-					
-		return self.curPostion()
-			
-	def closeMultPostion (self, poses, price, short):
-		i = 0
-		while self.curPostion() and i < poses:
-			if short is 'short':
-				poses = self.closeShortPostion(price)
-			else:
-				poses = self.closeLongPostion(price)
-			i = i + 1
-		
-		return self.curPostion()
-		
