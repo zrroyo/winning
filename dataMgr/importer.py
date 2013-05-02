@@ -1,12 +1,16 @@
 #! /usr/bin/python
 
 import os
+import sys
+sys.path.append("..")
 import db.mysqldb as sql
+import date
 
 class Import:
 	def __init__ (self, database='futures'):
 		self.db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
 		self.db.connect()
+		self.database = database
 		return
 	
 	def __exit__ (self):
@@ -30,7 +34,7 @@ class Import:
 	
 	# Reimport a part of records between date $Tfrom to date $tTo from 
 	# tableFrom to new tableTo
-	def partReimport(self, tableFrom, tableTo, tFrom, tTo=None):
+	def partReimport (self, tableFrom, tableTo, tFrom, tTo=None):
 		if self.db.ifTableExist(tableFrom) == False:
 			return
 		
@@ -47,7 +51,7 @@ class Import:
 		
 	# Get the value from the field specifed by $field from a $record in which 
 	# each field is separated by space.
-	def getRecordFieldSepBySpace(self, record, field=1):
+	def getRecordFieldSepBySpace (self, record, field=1):
 		cmdStr = 'echo "%s" | awk \'{print $%d}\' ' % (record, field)
 		res = os.popen(cmdStr.strip())
 		#print res.read().strip()
@@ -56,10 +60,98 @@ class Import:
 	
 	# Get the value from the field specifed by $field from a $record in which 
 	# each field is separated by comma.
-	def getRecordFieldSepByComma(self, record, field=1):
+	def getRecordFieldSepByComma (self, record, field=1):
 		cmdStr = 'echo "%s" | awk \'BEGIN{FS=","}END{print $%d}\' ' % (record, field)
 		res = os.popen(cmdStr.strip())
 		#print res.read().strip()
 		#print res
 		return res.read().strip()
+	
+	#
+	def _maxDateInMonth (self, month, Year):
+		if month == 1:
+			maxDate = '01-31'
+		elif month == 2:
+			maxDate = '02-29'
+		elif month == 3:
+			maxDate = '03-31'
+		elif month == 4:
+			maxDate = '04-30'
+		elif month == 5:
+			maxDate = '05-31'
+		elif month == 6:
+			maxDate = '06-30'
+		elif month == 7:
+			maxDate = '07-31'
+		elif month == 8:
+			maxDate = '08-31'
+		elif month == 9:
+			maxDate = '09-30'
+		elif month == 10:
+			maxDate = '10-31'
+		elif month == 11:
+			maxDate = '11-30'
+		elif month == 12:
+			maxDate = '12-31'
+		else:
+			return None
+		
+		date = '%s-' % Year
+		date += maxDate
+		return date
+			
+	def startDateForFuture (self, dateSet, year, month, endDays):
+		if month > 12 or month < 1:
+			return None
+		
+		maxDatePrevMonth = self._maxDateInMonth(month-1, year-1)
+		
+		if maxDatePrevMonth <= lcDateSet.firstDate():
+			return lcDateSet.firstDate()
+		
+		return lcDateSet.getDateNextDays(maxDatePrevMonth, endDays+1)
+		
+	def endDateForFuture (self, dateSet, year, month, endDays):
+		if month > 12 or month < 1:
+			return None
+		
+		maxDatePrevMonth = self._maxDateInMonth(month-1, year)
+		
+		if maxDatePrevMonth >= lcDateSet.lastDate():
+			return lcDateSet.lastDate()
+		
+		return lcDateSet.getDateNextDays(maxDatePrevMonth, endDays)
+	
+		 
+	def _tableNameTemplate (self, futCode, year, month):
+		if month > 12 or month < 1:
+			return None
+		
+		year = year%2000
+		if year < 10:
+			year = '0%s' % year
+			
+		if month < 10:
+			month = '0%s' % month
+			
+		name = '%s%s%s' % (futCode, year, month)
+		#print name
+		return name
+	
+	def splitTable (self, futCode, dataTable, year, month, endDays):
+		if month > 12 or month < 1:
+			return
+		
+		lcDateSet = date.Date(self.database, dataTable)
+		
+		while True:
+			startDate = self.startDateForFuture(lcDateSet, year, month, endDays)
+			endDate = self.endDateForFuture(lcDateSet, year, month, endDays)
+			tableName = self._tableNameTemplate(futCode, year, month)
+			self.partReimport(dataTable, tableName, startDate, endDate)
+			
+			if startDate == lcDateSet.firstDate():
+				break
+			
+			year -= 1
 	

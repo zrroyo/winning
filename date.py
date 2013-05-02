@@ -102,4 +102,8 @@ class Date:
 			return self.dateSet[self.dateIndex][0]
 		else:
 			return None
-			
+	
+	def getDateNextDays (self, month, year):
+		
+		return
+		

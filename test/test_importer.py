@@ -16,8 +16,8 @@ import dataMgr.whImporter as WHIMPORT
 
 
 imp = WHIMPORT.WenhuaImport('history')
-imp.processRawRecords('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/rb10-test')
-imp.importFromDir('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/rb10-test', 'rb10')
+#imp.processRawRecords('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/rb10-test')
+#imp.importFromDir('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/rb10-test', 'rb10')
 
 ##imp.processRawRecords('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/m09-test')
 ##imp.importFromDir('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/m09-test', 'm09')
@@ -28,8 +28,11 @@ imp.importFromDir('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/da
 #imp.processRawRecords('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/pta09-test')
 #imp.importFromDir('/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/pta09-test', 'pta09')
 
-#imp = WHIMPORT.WenhuaImport('history')
-datafile = '/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/rb10/rb1310.txt'
-datatable = 'rb10'
-#imp.appendRecordsOnly(datafile, datatable)
-imp.appendUpdateRecords(datafile, datatable)
+##imp = WHIMPORT.WenhuaImport('history')
+#datafile = '/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/history/rb10/rb1310.txt'
+#datatable = 'rb10'
+##imp.appendRecordsOnly(datafile, datatable)
+#imp.appendUpdateRecords(datafile, datatable)
+
+imp.tableNameTemplate('pta', 2007, 9)
+imp.tableNameTemplate('pta', 2012, 12)
