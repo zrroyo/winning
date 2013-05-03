@@ -104,26 +104,28 @@ class Import:
 		if month > 12 or month < 1:
 			return None
 		
-		maxDatePrevMonth = self._maxDateInMonth(month-1, year-1)
+		maxDatePrevMonth = '%s' % self._maxDateInMonth(month-1, year-1)
 		
-		if maxDatePrevMonth <= lcDateSet.firstDate():
-			return lcDateSet.firstDate()
+		#print maxDatePrevMonth
+		if maxDatePrevMonth <= dateSet.firstDate():
+			return dateSet.firstDate()
 		
-		return lcDateSet.getDateNextDays(maxDatePrevMonth, endDays+1)
+		return dateSet.getDateNextDays(maxDatePrevMonth, endDays+1)
 		
 	def endDateForFuture (self, dateSet, year, month, endDays):
 		if month > 12 or month < 1:
 			return None
 		
-		maxDatePrevMonth = self._maxDateInMonth(month-1, year)
+		maxDatePrevMonth = '%s' % self._maxDateInMonth(month-1, year)
 		
-		if maxDatePrevMonth >= lcDateSet.lastDate():
-			return lcDateSet.lastDate()
+		#print maxDatePrevMonth
+		if maxDatePrevMonth >= dateSet.lastDate():
+			return dateSet.lastDate()
 		
-		return lcDateSet.getDateNextDays(maxDatePrevMonth, endDays)
+		return dateSet.getDateNextDays(maxDatePrevMonth, endDays)
 	
 		 
-	def _tableNameTemplate (self, futCode, year, month):
+	def tableNameTemplate (self, futCode, year, month):
 		if month > 12 or month < 1:
 			return None
 		
@@ -147,7 +149,9 @@ class Import:
 		while True:
 			startDate = self.startDateForFuture(lcDateSet, year, month, endDays)
 			endDate = self.endDateForFuture(lcDateSet, year, month, endDays)
-			tableName = self._tableNameTemplate(futCode, year, month)
+			tableName = self.tableNameTemplate(futCode, year, month)
+			tableName += '_dayk'
+			print tableName, startDate, endDate
 			self.partReimport(dataTable, tableName, startDate, endDate)
 			
 			if startDate == lcDateSet.firstDate():
