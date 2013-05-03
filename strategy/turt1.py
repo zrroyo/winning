@@ -50,7 +50,7 @@ class Turt1(turtle.Turtle):
 			if price > self.highestByDate(time, 10):
 				self.closeAllPostion(price, 'short')
 				print "	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestByDate(time, 10))
-				time = dateSet.getSetNextDate()
+				#time = dateSet.getSetNextDate()
 				break
 			
 			if price > self.data.M10(time):
@@ -110,7 +110,7 @@ class Turt1(turtle.Turtle):
 			if price < self.lowestByDate(time, 10):
 				self.closeAllPostion(price, 'long')
 				print "	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestByDate(time, 10))
-				time = dateSet.getSetNextDate()
+				#time = dateSet.getSetNextDate()
 				break
 			
 			if price < self.data.M10(time):
