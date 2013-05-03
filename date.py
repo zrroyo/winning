@@ -24,16 +24,20 @@ class Date:
 		#print self.dateSet
 		return
 	
+	def _formatRetDate (self, date):
+		retDate = '%s' % date
+		return retDate
+	
 	def curDate (self):
 		if self.dateIndex >= 0 and self.dateIndex < self.indexBound:
-			return self.dateSet[self.dateIndex][0]
+			return self._formatRetDate(self.dateSet[self.dateIndex][0])
 		return None
 	
 	def firstDate (self):
-		return self.dateSet[0][0]
+		return self._formatRetDate(self.dateSet[0][0])
 	
 	def lastDate (self):
-		return self.dateSet[self.indexBound-1][0]
+		return self._formatRetDate(self.dateSet[self.indexBound-1][0])
 	
 	def isFirstDate (self, date):
 		time = '%s' % (self.dateSet[0][0])
@@ -55,7 +59,7 @@ class Date:
 			time = '%s' % (self.dateSet[i][0])
 			if time == date:
 				if i+1 < self.indexBound:
-					return self.dateSet[i+1][0]
+					return self._formatRetDate(self.dateSet[i+1][0])
 				else:
 					return None
 			i = i + 1
@@ -68,7 +72,7 @@ class Date:
 			time = '%s' % (self.dateSet[i][0])
 			if time == date:
 				if i-1 >= 0:
-					return self.dateSet[i-1][0]
+					return self._formatRetDate(self.dateSet[i-1][0])
 				else:
 					return None	
 			i = i + 1
@@ -92,14 +96,14 @@ class Date:
 	def getSetNextDate (self):
 		if self.dateIndex + 1 < self.indexBound:
 			self.dateIndex = self.dateIndex + 1
-			return self.dateSet[self.dateIndex][0]
+			return self._formatRetDate(self.dateSet[self.dateIndex][0])
 		else:
 			return None
 	
 	def getSetPrevDate (self):
 		if self.dateIndex - 1 >= 0:
 			self.dateIndex = self.dateIndex - 1
-			return self.dateSet[self.dateIndex][0]
+			return self._formatRetDate(self.dateSet[self.dateIndex][0])
 		else:
 			return None
 	
