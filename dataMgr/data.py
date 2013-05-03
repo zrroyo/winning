@@ -1,5 +1,7 @@
 #! /usr/bin/python
 
+import sys
+sys.path.append("..")
 import db.mysqldb as sql
 
 class Data:

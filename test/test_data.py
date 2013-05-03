@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys
 sys.path.append("..")
-import data
+import dataMgr.data as data
 
 def test_data():
 	"""

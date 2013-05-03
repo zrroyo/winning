@@ -2,7 +2,7 @@
 import sys
 sys.path.append("..")
 import date
-import data
+import dataMgr.data as data
 
 def test_sim():
 

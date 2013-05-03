@@ -3,7 +3,7 @@
 import sys
 sys.path.append("..")
 
-import data
+import dataMgr.data as data 
 import trade
 import date as DATE
 import db.mysqldb as sql
