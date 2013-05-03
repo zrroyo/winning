@@ -44,7 +44,7 @@ class Turtle(FUT.Futures):
 		self.data = data.Data(database, dataTable)
 		self.dateSet = DATE.Date(database, dataTable)
 		self.tradeTable = tradeTable
-		self.tradeRec = trade.Trade(database, tradeTable)
+		#self.tradeRec = trade.Trade(database, tradeTable)
 
 		#print "Turtle initialized!"
 		return
@@ -177,6 +177,7 @@ class Turtle(FUT.Futures):
 			simply made calling setAttrs().
 			"""
 			return
+		print '\n\n	<<<<<<<<<<< Run %s >>>>>>>>>>>	\n\n' % self.futName
 		
 		lcDateSet = DATE.Date(self.database, self.dataTable)
 		#lcDateSet = self.dateSet

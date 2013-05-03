@@ -35,13 +35,18 @@ import dataMgr.whImporter as WHIMPORT
 ##imp.appendRecordsOnly(datafile, datatable)
 #imp.appendUpdateRecords(datafile, datatable)
 
-imp = WHIMPORT.WenhuaImport('futures')
-#print imp.tableNameTemplate('pta', 2007, 9)
-#print imp.tableNameTemplate('pta', 2012, 12)
+#imp = WHIMPORT.WenhuaImport('futures')
+##print imp.tableNameTemplate('pta', 2007, 9)
+##print imp.tableNameTemplate('pta', 2012, 12)
 
-imp.splitTable('m', 'm1305_day_k', 2013, 5, 10)
+#imp.splitTable('m', 'm1305_day_k', 2013, 5, 10)
 
-turt = TURT.Turt1('m1305', 'm1305_dayk', 'm13m1305_dayk_trade_rec')
-turt.atr()
+#turt = TURT.Turt1('m1305', 'm1305_dayk', 'm1305_dayk_trade_rec')
+#turt.atr()
+
+imp = WHIMPORT.WenhuaImport('history')
+
+#imp.splitTable('m', 'm09', 2013, 9, 10)
+imp.splitTable('sr', 'sr09', 2013, 9, 10)
 
 
