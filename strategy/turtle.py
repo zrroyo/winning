@@ -177,6 +177,7 @@ class Turtle(FUT.Futures):
 			simply made calling setAttrs().
 			"""
 			return
+		
 		print '\n\n	<<<<<<<<<<< Run %s >>>>>>>>>>>	\n\n' % self.futName
 		
 		lcDateSet = DATE.Date(self.database, self.dataTable)
@@ -194,10 +195,16 @@ class Turtle(FUT.Futures):
 			
 			if self.hitShortSignal(time):
 				mode = 'short'
-				self.doShort(lcDateSet, time);
+				time = self.doShort(lcDateSet, time);
+				# It also possibly hits the Long signal after quit short 
+				# mode in same day.
+				continue
 			elif self.hitLongSignal(time):
 				mode = 'long'
-				self.doLong(lcDateSet, time);
+				time = self.doLong(lcDateSet, time);
+				# It also possibly hits the Short signal after quit long 
+				# mode in same day.
+				continue
 			else:
 				mode = None
 

@@ -91,7 +91,9 @@ class Turt1(turtle.Turtle):
 					pLimitByM10 = 0
 				
 			time = dateSet.getSetNextDate()
-
+		
+		return time
+		
 	def doLong (self, dateSet, date):
 		days = 0
 		self.emptyPostion()
@@ -152,3 +154,5 @@ class Turt1(turtle.Turtle):
 						
 			time = dateSet.getSetNextDate()
 				
+		return time
+	
