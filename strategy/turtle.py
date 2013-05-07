@@ -213,11 +213,19 @@ class Turtle(FUT.Futures):
 		if mode is not None:
 			self.endRun(mode)
 	
-	# Get the lowest value for a field within recent $days counted from $date.
+	# Get the lowest value for a field within recent $days excluding $date.
 	def lowestBeforeDate (self, date, days, field='Close'):
 		return self.data.lowestBeforeDate(date, days, field)
 		
-	# Get the highest value for a field within recent $days counted from $date.
+	# Get the highest value for a field within recent $days excluding $date.
 	def highestBeforeDate (self, date, days, field='Close'):
 		return self.data.highestBeforeDate(date, days, field)
+	
+	# Return the lowest value in $days up to $date (including $date).
+	def lowestUpToDate (self, date, days, field='Close'):
+		return self.data.lowestUpToDate(date, days, field)
+	
+	# Return the highest value in $days up to $date (including $date).
+	def highestUpToDate (self, date, days, field='Close'):
+		return self.data.highestUpToDate(date, days, field)
 	

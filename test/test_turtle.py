@@ -24,3 +24,7 @@ print turt.lowestBeforeDate('2012-07-23', 4)
 print turt.highestBeforeDate('2012-07-23', 5)
 print turt.lowestBeforeDate('2012-07-23', 5)
 
+print turt.highestUpToDate('2012-07-23', 4)
+print turt.lowestUpToDate('2012-07-23', 4)
+print turt.highestUpToDate('2012-07-23', 5)
+print turt.lowestUpToDate('2012-07-23', 5)
