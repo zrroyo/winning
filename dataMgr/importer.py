@@ -171,3 +171,6 @@ class Import:
 			
 			year -= 1
 	
+	def dropFutureTable (self, dataTable):
+		return self.db.drop(dataTable)
+	
