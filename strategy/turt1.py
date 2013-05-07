@@ -19,16 +19,16 @@ class Turt1(turtle.Turtle):
 		return
 	
 	def hitShortSignal (self, date):
-		#if self.data.getClose(date) < self.lowestByDate(date, 20, 'Lowest'):
-		if self.data.getClose(date) < self.lowestByDate(date, 20):
-			print "%s Hit Short Signal: Close %s, Lowest %s" % (date, self.data.getClose(date), self.lowestByDate(date, 20))
+		#if self.data.getClose(date) < self.lowestBeforeDate(date, 20, 'Lowest'):
+		if self.data.getClose(date) < self.lowestBeforeDate(date, 20):
+			print "%s Hit Short Signal: Close %s, Lowest %s" % (date, self.data.getClose(date), self.lowestBeforeDate(date, 20))
 			return True
 		return False
 			
 	def hitLongSignal (self, date):
-		#if self.data.getClose(date) > self.highestByDate(date, 20, 'Highest'):
-		if self.data.getClose(date) > self.highestByDate(date, 20):
-			print "%s Hit Long Signal: (Close %s), (Highest %s)" % (date, self.data.getClose(date), self.highestByDate(date, 20))
+		#if self.data.getClose(date) > self.highestBeforeDate(date, 20, 'Highest'):
+		if self.data.getClose(date) > self.highestBeforeDate(date, 20):
+			print "%s Hit Long Signal: (Close %s), (Highest %s)" % (date, self.data.getClose(date), self.highestBeforeDate(date, 20))
 			return True
 		return False
 		
@@ -47,9 +47,9 @@ class Turt1(turtle.Turtle):
 			# Cut losses.
 			price = self.data.getClose(time)
 			#if price > self.data.M20(time):
-			if price > self.highestByDate(time, 10):
+			if price > self.highestBeforeDate(time, 10):
 				self.closeAllPostion(price, 'short')
-				print "	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestByDate(time, 10))
+				print "	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestBeforeDate(time, 10))
 				#time = dateSet.getSetNextDate()
 				break
 			
@@ -63,7 +63,7 @@ class Turt1(turtle.Turtle):
 					continue
 					
 				cutLossMode = True
-				pLimitByM10 = self.lowestByDate(time, 5)
+				pLimitByM10 = self.lowestBeforeDate(time, 5)
 				
 				mult = self.curPostion()*2/3
 				if mult == 0:
@@ -109,9 +109,9 @@ class Turt1(turtle.Turtle):
 			# Cut losses.
 			price = self.data.getClose(time)
 			#if price < self.data.M20(time):
-			if price < self.lowestByDate(time, 10):
+			if price < self.lowestBeforeDate(time, 10):
 				self.closeAllPostion(price, 'long')
-				print "	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestByDate(time, 10))
+				print "	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestBeforeDate(time, 10))
 				#time = dateSet.getSetNextDate()
 				break
 			
@@ -125,7 +125,7 @@ class Turt1(turtle.Turtle):
 					continue
 				
 				cutLossMode = True
-				pLimitByM10 = self.highestByDate(time, 5)
+				pLimitByM10 = self.highestBeforeDate(time, 5)
 					
 				mult = self.curPostion()*2/3
 				if mult == 0:

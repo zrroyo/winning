@@ -19,8 +19,8 @@ turt = Turt.Turtle('m1305', 'm1305_k_test', 'm1305_trade_rec', 'futures')
 
 #turt.openPosition()
 
-print turt.highestByDate('2012-07-23', 4)
-print turt.lowestByDate('2012-07-23', 4)
-print turt.highestByDate('2012-07-23', 5)
-print turt.lowestByDate('2012-07-23', 5)
+print turt.highestBeforeDate('2012-07-23', 4)
+print turt.lowestBeforeDate('2012-07-23', 4)
+print turt.highestBeforeDate('2012-07-23', 5)
+print turt.lowestBeforeDate('2012-07-23', 5)
 

@@ -31,10 +31,10 @@ def test_data():
 	res = dat.M5('2013-01-11 14:55', 'Close')
 	print res
 	
-	print "highest by 2012-07-23 in 4 days", dat.highestByDate('2012-07-23', 4, 'Close')
-	print "loweset by 2012-07-23 in 4 days", dat.lowestByDate('2012-07-23', 4, 'Close')
-	print "highest by 2012-07-23 in 5 days", dat.highestByDate('2012-07-23', 5, 'Close')
-	print "loweset by 2012-07-23 in 5 days", dat.lowestByDate('2012-07-23', 5, 'Close')
+	print "highest by 2012-07-23 in 4 days", dat.highestBeforeDate('2012-07-23', 4, 'Close')
+	print "loweset by 2012-07-23 in 4 days", dat.lowestBeforeDate('2012-07-23', 4, 'Close')
+	print "highest by 2012-07-23 in 5 days", dat.highestBeforeDate('2012-07-23', 5, 'Close')
+	print "loweset by 2012-07-23 in 5 days", dat.lowestBeforeDate('2012-07-23', 5, 'Close')
 
 if __name__ =='__main__':
 	test_data()
