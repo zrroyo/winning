@@ -132,10 +132,11 @@ class Turtle(FUT.Futures):
 	def query (self):
 		return
 	
-	def setAttrs (self, maxPos, minPos, minPosIntv):
+	def setAttrs (self, maxPos, minPos, minPosIntv, priceUnit):
 		self.maxPos = maxPos
 		self.minPos = minPos
 		self.minPosIntv = minPosIntv
+		self.priceUnit = priceUnit
 		return
 		
 	def checkAttrs (self):
@@ -144,6 +145,8 @@ class Turtle(FUT.Futures):
 		elif self.minPos is None:
 			return False
 		elif self.minPosIntv is None:
+			return False
+		elif self.priceUnit is None:
 			return False
 		else:
 			return True

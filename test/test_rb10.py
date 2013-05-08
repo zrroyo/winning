@@ -29,34 +29,35 @@ recDir = '/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/histor
 ## Split RB10 into each table by Year.
 #imp.splitTableToSubFutures('rb', 'rb10', 10, 15, 2013)
 
-#turt = TURT.Turt1('rb0910', 'rb0910_dayk', 'rb0910_dayk_trade_rec', 'history')
-#turt.setAttrs(3, 1, 40)
-#turt.run()
+minPosIntv=40
 
-#turt = TURT.Turt1('rb1010', 'rb1010_dayk', 'rb1010_dayk_trade_rec', 'history')
-#turt.setAttrs(3, 1, 40)
-#turt.run()
+turt = TURT.Turt1('rb0910', 'rb0910_dayk', 'rb0910_dayk_trade_rec', 'history')
+turt.setAttrs(3, 1, minPosIntv, 10)
+turt.run()
 
-#turt = TURT.Turt1('rb1110', 'rb1110_dayk', 'rb1110_dayk_trade_rec', 'history')
-#turt.setAttrs(3, 1, 40)
-#turt.run()
+turt = TURT.Turt1('rb1010', 'rb1010_dayk', 'rb1010_dayk_trade_rec', 'history')
+turt.setAttrs(3, 1, minPosIntv, 10)
+turt.run()
 
-#turt = TURT.Turt1('rb1210', 'rb1210_dayk', 'rb1210_dayk_trade_rec', 'history')
-#turt.setAttrs(3, 1, 40)
-#turt.run()
+turt = TURT.Turt1('rb1110', 'rb1110_dayk', 'rb1110_dayk_trade_rec', 'history')
+turt.setAttrs(3, 1, minPosIntv, 10)
+turt.run()
 
-##imp.appendRecordsOnly(dataFile, 'rb10')
-##imp.appendUpdateRecords(dataFile, 'rb10')
-#imp.dropFutureTable('rb1310_dayk')
-#imp.partReimport('rb10', 'rb1310_dayk', '2012-10-16')
+turt = TURT.Turt1('rb1210', 'rb1210_dayk', 'rb1210_dayk_trade_rec', 'history')
+turt.setAttrs(3, 1, minPosIntv, 10)
+turt.run()
 
-#turt = TURT.Turt1('rb1310', 'rb1310_dayk', 'rb1310_dayk_trade_rec', 'history')
-#turt.setAttrs(3, 1, 40)
-#turt.atr()
-#turt.run()
+imp.appendRecordsOnly(dataFile, 'rb10')
+imp.dropFutureTable('rb1310_dayk')
+imp.partReimport('rb10', 'rb1310_dayk', '2012-10-16')
 
-dat = data.Data('history', 'rb1310_dayk')
-#print dat.lowestBeforeDate('2013-05-07', 10)
-time = '2013-05-07'
-print 'lowest close up to %s : ' % time, dat.lowestUpToDate(time, 9)
-print 'highest close up to %s : ' % time, dat.highestUpToDate(time, 9)
+turt = TURT.Turt1('rb1310', 'rb1310_dayk', 'rb1310_dayk_trade_rec', 'history')
+turt.setAttrs(3, 1, minPosIntv, 10)
+turt.atr()
+turt.run()
+
+#dat = data.Data('history', 'rb1310_dayk')
+##print dat.lowestBeforeDate('2013-05-07', 10)
+#time = '2013-05-07'
+#print 'lowest close up to %s : ' % time, dat.lowestUpToDate(time, 9)
+#print 'highest close up to %s : ' % time, dat.highestUpToDate(time, 9)

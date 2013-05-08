@@ -21,33 +21,35 @@ dataFile = '/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/hist
 #imp.partReimport(table, 'pta0809_dayk', '2007-09-19', '2008-09-12')
 #imp.partReimport(table, 'pta0709_dayk', '2007-02-26', '2007-09-14')
 
+minPosIntv=80
+
 turt = TURT.Turt1('pta0709', 'pta0709_dayk', 'pta0709_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, 40)
+turt.setAttrs(3, 1, minPosIntv, 5)
 #turt.atr()
 turt.run()
 
 turt = TURT.Turt1('pta0809', 'pta0809_dayk', 'pta0809_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, 40)
+turt.setAttrs(3, 1, minPosIntv, 5)
 #turt.atr()
 turt.run()
 
 turt = TURT.Turt1('pta0909', 'pta0909_dayk', 'pta0909_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, 40)
+turt.setAttrs(3, 1, minPosIntv, 5)
 #turt.atr()
 turt.run()
 
 turt = TURT.Turt1('pta1009', 'pta1009_dayk', 'pta1009_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, 40)
+turt.setAttrs(3, 1, minPosIntv, 5)
 #turt.atr()
 turt.run()
 
 turt = TURT.Turt1('pta1109', 'pta1109_dayk', 'pta1109_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, 40)
+turt.setAttrs(3, 1, minPosIntv, 5)
 #turt.atr()
 turt.run()
 
 turt = TURT.Turt1('pta1209', 'pta1209_dayk', 'pta1209_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, 40)
+turt.setAttrs(3, 1, minPosIntv, 5)
 #turt.atr()
 turt.run()
 
@@ -56,6 +58,6 @@ imp.dropFutureTable('pta1309_dayk')
 imp.partReimport(table, 'pta1309_dayk', '2012-09-17')
 
 turt = TURT.Turt1('pta1309', 'pta1309_dayk', 'pta1309_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, 40)
+turt.setAttrs(3, 1, minPosIntv, 5)
 #turt.atr()
 turt.run()

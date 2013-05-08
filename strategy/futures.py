@@ -15,6 +15,7 @@ class Futures(STRT.Strategy):
 		self.maxPos = None		# The maximum positions a business allowes to add.
 		self.minPos = None		# The minimum unit to add positions.
 		self.minPosIntv = None		# The minimum interval to add positions.
+		self.priceUnit = None		# Price unit.
 		self._pList = []		# The list to contain all positions.
 		self.totalProfit = 0		# Total profit in one time of test.
 		self.profit = 0			# The current profit for a time of business.
@@ -32,7 +33,7 @@ class Futures(STRT.Strategy):
 	# setAttrs() and checkAttrs() might be the key methods too, especially 
 	# the tests which are sensitive to the values of maxPos, minPos, minPosIntv, 
 	# etc. You need inherit and adjust these two method in your own occasions.
-	def setAttrs (self, maxPos, minPos, minPosIntv):
+	def setAttrs (self, maxPos, minPos, minPosIntv, priceUnit):
 		return
 		
 	def checkAttrs (self):
@@ -68,6 +69,7 @@ class Futures(STRT.Strategy):
 		if self.curPostion() == 0:
 			return
 		profit = self._pList.pop() - price
+		profit *= self.priceUnit
 		self.profit += profit
 		self.totalProfit += profit
 		print "		<<-- Close: profit %s, poses %s -->>" % (profit, self.curPostion())
@@ -80,6 +82,7 @@ class Futures(STRT.Strategy):
 		if self.curPostion() == 0:
 			return
 		profit = price - self._pList.pop()
+		profit *= self.priceUnit
 		self.profit += profit
 		self.totalProfit += profit
 		print "		<<-- Close: profit %s, poses %s -->>" % (profit, self.curPostion())

@@ -71,7 +71,7 @@ class Turt1(turtle.Turtle):
 					
 				self.closeMultPostion(mult, price, 'short')
 				
-				print "	[Short] [%s] M10 BT lasted %d days:	open %s,  close %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, mult, pLimitByM10)
+				print "	[Short] [%s] M10 BT lasted %d days:	open %s,  close %s, M10 %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, self.data.M10(time), mult, pLimitByM10)
 				
 				if self.curPostion() == 0:
 					break
@@ -133,7 +133,7 @@ class Turt1(turtle.Turtle):
 					
 				self.closeMultPostion(mult, price, 'long')
 				
-				print "	[Long] [%s] M10 BT lasted %d days:	open %s,  close %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, mult, pLimitByM10)
+				print "	[Long] [%s] M10 BT lasted %d days:	open %s,  close %s, M10 %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, self.data.M10(time), mult, pLimitByM10)
 				
 				if self.curPostion() == 0:
 					break
