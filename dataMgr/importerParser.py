@@ -19,54 +19,91 @@ def importerOptionsHandler (options, args):
 		return
 	
 	if options.dropTable:
-		print "\nDrop '%s' from database '%s'.\n" % (options.dropTable, options.database)
+		print "\nDrop '%s' from database '%s'...\n" % (options.dropTable, options.database)
 		imp.dropFutureTable(options.dropTable)
 	
 	if options.mode == 'dir':
 		# 'directory' mode, import data records from a data directory to data table.
+		
 		directory = options.directory
 		table = options.dataTable
 		if not directory or not table:
 			print "\nPlease specify 'directory' and 'dataTable'\n"
+			return
 			
 		if options.raw:
 			imp.processRawRecords(directory)
 			
+		print "\nImporting new records from '%s' to '%s'...\n" % (directory, table)
+		
 		return imp.importFromDir(directory, table)
 		
 	elif options.mode == 'file':
 		# 'file' mode, import data records from a data file to data table.
-		print "\nImporting new records from '%s' to '%s'.\n" % (options.dataFile, options.dataTable)
 		
 		file = options.dataFile
 		table = options.dataTable
 		if not file or not table:
 			print "\nPlease specify 'dataFile' and 'dataTable'\n"
+			return
 			
+		print "\nImporting new records from '%s' to '%s'...\n" % (file, table)
+		
 		return imp.newImport(file, table)
 		
 	elif options.mode == 'append':
 		# 'append' mode, only append data records from a data file at the end of data table.
-		print "\nAppending records to '%s'.\n" % (options.dataTable)
 		
 		file = options.dataFile
 		table = options.dataTable
 		if not file or not table:
 			print "\nPlease specify 'dataFile' and 'dataTable'\n"
+			return
 			
+		print "\nAppending records to '%s'...\n" % (table)
+		
 		return imp.appendRecordsOnly(file, table)
 		
 	elif options.mode == 'update':
 		# 'update' mode, update the old records in data table and append the new records at 
 		# the end of data talbe using the records in data file.
-		print "\nUpdating and appending records to '%s'.\n" % (options.dataTable)
 		
 		file = options.dataFile
 		table = options.dataTable
 		if not file or not table:
 			print "\nPlease specify 'dataFile' and 'dataTable'\n"
+			return
 			
+		print "\nUpdating and appending records to '%s'...\n" % (table)
+		
 		return imp.appendUpdateRecords(file, table)
+		
+	elif options.mode == 'depart':
+		file = options.dataFile
+		table = options.dataTable
+		if not options.dataTable or not options.extra:
+			print "\nPlease specify 'dataTable' and 'extra'\n"
+			return
+		
+		time = options.extra.split(',')
+		table = options.dataTable.split(',')
+		endDate = 'Now'
+		
+		#print time, table
+		
+		if len(table) == 1:
+			print "\nPlease specify two data tables like '-t m09,m1309'\n"
+			return
+			
+		if len(time) == 2:
+			endDate = time[1]
+
+		print "\nDeparting '%s' to '%s' from '%s' to '%s'...\n" % (table[0], table[1], time[0], endDate)
+		
+		if endDate == 'Now':
+			imp.partReimport(table[0], table[1], time[0])
+		else:
+			imp.partReimport(table[0], table[1], time[0], endDate)
 		
 	elif options.mode is None:
 		return
@@ -91,7 +128,9 @@ def importerOptionsParser (parser):
 			help='Working mode. "dir", "file", "append", "update", etc.')
 	parser.add_option('-D', '--dropTable', dest='dropTable', 
 			help='Drop a table from database.')
-	
+	parser.add_option('-e', '--extra', dest='extra', 
+			help='extra informaton, contains details used with other options if needed.')
+			
 	(options, args) = parser.parse_args()
 
 	importerOptionsHandler(options, args)
