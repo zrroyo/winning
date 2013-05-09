@@ -83,7 +83,7 @@ def importerOptionsParser (parser):
 			help='The data table to which to import data records.')
 	parser.add_option('-d', '--directory', dest='directory', 
 			help='The directory from which to import data records.')
-	parser.add_option('-r', '--raw', action="store_false", dest='raw', 
+	parser.add_option('-r', '--raw', action="store_true", dest='raw', 
 			help='Only used with "-d" if the records are raw in directory.')
 	#parser.add_option('-u', action="store_false", dest='appendUpdate', 
 			#help='Append records and update the old records to data table.')
