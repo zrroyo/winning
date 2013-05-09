@@ -4,11 +4,12 @@ import sys
 from optparse import OptionParser
 
 import dataMgr.whImporter as IMPORT
+import regression
 
 parser = OptionParser()
 
 # Importer subsystem option handler transfering options to actions.
-def importerHandler (options, args):
+def importerOptionsHandler (options, args):
 	imp = None
 	if options.database:
 		imp = IMPORT.WenhuaImport(options.database)
@@ -65,6 +66,7 @@ def importerHandler (options, args):
 			print "\nPlease specify 'dataFile' and 'dataTable'\n"
 			
 		return imp.appendUpdateRecords(file, table)
+		
 	elif options.mode is None:
 		return
 	else:
@@ -91,13 +93,15 @@ def importerOptionsParser (parser):
 	
 	(options, args) = parser.parse_args()
 
-	importerHandler(options, args)
-
+	importerOptionsHandler(options, args)
+	
 def parseArgs ():
 	#print sys.argv[0], sys.argv[1]
 	arg1 = sys.argv[1]
 	if arg1 == 'importer':
 		importerOptionsParser(parser)
+	if arg1 == 'regress':
+		regression.regressionOptionsParser(parser)
 	else:
 		print "\nUnknown subsystem '%s'. \n" % arg1
 	
