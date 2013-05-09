@@ -44,19 +44,33 @@ def regressionFilter (regSet, filter):
 	return retRegSet
 
 # Core function to do regression for @test with @strategy
-def doRegression (database, test, strategy):
+def doRegression (options, database, test, strategy):
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
+	maxPos = 3
+	minPos = 1
 	minPosIntv=40
 	priceUnit=10
 	
 	if strategy == 'turtle':
 		import strategy.turtle as turtle
 		strategy = turtle.Turtle(test, test, tradeRec, database)
-		strategy.setAttrs(3, 1, minPosIntv, priceUnit)
+		strategy.setAttrs(maxPos, minPos, minPosIntv, priceUnit)
 	elif strategy == 'turt1':
+		if options.extra:
+			args = options.extra.split(',')
+			if len(args) == 4:
+				maxPos = int(args[0])
+				minPos = int(args[1])
+				minPosIntv= int(args[2])
+				priceUnit= int(args[3])
+				print args
+			else:
+				print "\nContains incomplete attributes with '-e' for Turt strategy.\n"
+				exit()
+			
 		import strategy.turt1 as turt1	
 		strategy = turt1.Turt1(test, test, tradeRec, database)
-		strategy.setAttrs(3, 1, minPosIntv, priceUnit)
+		strategy.setAttrs(maxPos, minPos, minPosIntv, priceUnit)
 	else:
 		print "\nUnknown strategy '%s'.\n" % options.strategy
 		return
@@ -92,7 +106,7 @@ def regressionOptionsHandler (options, args):
 		
 	#print regSet
 	for test in regSet:
-		doRegression(database, test, options.strategy)
+		doRegression(options, database, test, options.strategy)
 	
 # Regression subsystem Option Parser. Called in win.py.
 def regressionOptionsParser (parser):
@@ -108,6 +122,8 @@ def regressionOptionsParser (parser):
 			help='Only do regression tests for the Futures matching this filter.')
 	parser.add_option('-b', '--database', dest='database', 
 			help='The database with which regreesion tests will be done.')
+	parser.add_option('-e', '--extra', dest='extra', 
+			help='extra informaton, contains details used with other options if needed.')
 			
 	(options, args) = parser.parse_args()
 
