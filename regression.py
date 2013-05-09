@@ -38,9 +38,9 @@ def possibleRegressionTests (database):
 	db.close()
 	return regSet
 
-# Regression Filter omits all tests which do not match @futcode in @regSet.
-def regressionFilter (regSet, futcode):
-	retRegSet = [test for test in regSet if test.find(futcode) != -1]
+# Regression Filter omits all tests which do not match @filter in @regSet.
+def regressionFilter (regSet, filter):
+	retRegSet = [test for test in regSet if test.find(filter) != -1]
 	return retRegSet
 
 # Core function to do regression for @test with @strategy
@@ -87,8 +87,8 @@ def regressionOptionsHandler (options, args):
 	else:
 		regSet = possibleRegressionTests(database)
 		
-	if options.futcode:
-		regSet = regressionFilter(regSet, options.futcode)
+	if options.filter:
+		regSet = regressionFilter(regSet, options.filter)
 		
 	#print regSet
 	for test in regSet:
@@ -104,8 +104,8 @@ def regressionOptionsParser (parser):
 			help='Only do regression tests for the Futures listed in this set.')
 	parser.add_option('-s', '--strategy', dest='strategy', 
 			help='The strategy used to do regression tests.')
-	parser.add_option('-f', '--futcode', dest='futcode', 
-			help='Only do regression tests for the Futures matching this future code.')
+	parser.add_option('-f', '--filter', dest='filter', 
+			help='Only do regression tests for the Futures matching this filter.')
 	parser.add_option('-b', '--database', dest='database', 
 			help='The database with which regreesion tests will be done.')
 			
