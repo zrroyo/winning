@@ -73,7 +73,7 @@ def doRegression (options, database, test, strategy):
 		strategy.setAttrs(maxPos, minPos, minPosIntv, priceUnit)
 	else:
 		print "\nUnknown strategy '%s'.\n" % options.strategy
-		return
+		exit()
 	
 	strategy.run()
 

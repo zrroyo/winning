@@ -84,7 +84,7 @@ def importerOptionsHandler (options, args):
 			
 		print "\nUpdating and appending records to '%s'...\n" % (table)
 		
-		return imp.appendUpdateRecords(file, table)
+		return imp.updateRecordsFromFile(file, table)
 		
 	elif options.mode == 'export':
 		file = options.dataFile

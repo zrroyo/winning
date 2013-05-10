@@ -1,8 +1,12 @@
 #! /usr/bin/python
 
 import os
+import sys
+sys.path.append('..')
+
 import fileinput
 import importer as IMPORT
+import date
 
 class WenhuaImport(IMPORT.Import):
 	def __init__ (self, database='futures'):
@@ -38,11 +42,8 @@ class WenhuaImport(IMPORT.Import):
 		#print res
 		return res
 	
-	# Append a record at the end of a datatable.
-	def appendRecord (self, record, dataTable):
-		if self.recordExistInTable(record, dataTable):
-			return True
-		
+	# Insert a record into a datatable.
+	def insertRecord (self, record, dataTable):
 		time = self.getRecordFieldSepByComma(record, 1)
 		oPrice = self.getRecordFieldSepByComma(record, 2)
 		hPrice = self.getRecordFieldSepByComma(record, 3)
@@ -58,20 +59,31 @@ class WenhuaImport(IMPORT.Import):
 		self.db.insert(dataTable, values)
 		
 		return True
-	
+		
+	# Append a record at the end of a datatable.
+	def appendRecord (self, record, dataTable, date):
+		time = self.getRecordFieldSepByComma(record, 1)
+		
+		if time <= date:
+			return False
+		
+		return self.insertRecord(record, dataTable)
+		
 	# Omit all records which exist in datable, only append the records which does not 
 	# exist at the end of datatable.
 	def appendRecordsOnly (self, dataFile, dataTable):
 		self.prepareImport(dataTable)
 		
+		dataSet = date.Date(self.database, dataTable)
+		
 		for line in fileinput.input(dataFile):
-			self.appendRecord(line.strip(), dataTable)
+			self.appendRecord(line.strip(), dataTable, dataSet.lastDate())
 			
 	# Append and possibly update a record in datatable. If the record does not 
 	# exist, append it, othewise, update this record in datatable as passed $record.
-	def appendUpdateToTable (self, record, dataTable):
+	def updateToTable (self, record, dataTable):
 		if self.recordExistInTable(record, dataTable) == 0:
-			return self.appendRecord(record, dataTable)
+			return self.insertRecord(record, dataTable)
 		
 		# Record exists in datatable, update it.
 		time = self.getRecordFieldSepByComma(record, 1)
@@ -98,10 +110,10 @@ class WenhuaImport(IMPORT.Import):
 		self.db.update(dataTable, cond, values)
 		
 	# Append and possibly update all the records in dataFile to datatable.
-	def appendUpdateRecords (self, dataFile, dataTable):
+	def updateRecordsFromFile (self, dataFile, dataTable):
 		self.prepareImport(dataTable)
 		for line in fileinput.input(dataFile):
-			self.appendUpdateToTable(line.strip(), dataTable)
+			self.updateToTable(line.strip(), dataTable)
 		
 	# Get the Time (the first) field from records file.
 	def getDirRecordTime (self, record):
