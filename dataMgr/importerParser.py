@@ -9,6 +9,14 @@ from optparse import OptionParser
 
 import dataMgr.whImporter as IMPORT
 
+# Drops all Future tables listed in @tables.
+def dropFutureTables (imp, tables):
+	tableSet = tables.split(',')
+	
+	for table in tableSet:
+		imp.dropFutureTable(table)
+		print "Dropped '%s'. " % table
+
 # Importer subsystem option handler transfering options to actions.
 def importerOptionsHandler (options, args):
 	imp = None
@@ -19,9 +27,9 @@ def importerOptionsHandler (options, args):
 		return
 	
 	if options.dropTable:
-		print "\nDrop '%s' from database '%s'...\n" % (options.dropTable, options.database)
-		imp.dropFutureTable(options.dropTable)
-	
+		print "\nDropping '%s' from database '%s'...\n" % (options.dropTable, options.database)
+		dropFutureTables(imp, options.dropTable)
+		
 	if options.mode == 'dir':
 		# 'directory' mode, import data records from a data directory to data table.
 		
@@ -78,7 +86,7 @@ def importerOptionsHandler (options, args):
 		
 		return imp.appendUpdateRecords(file, table)
 		
-	elif options.mode == 'depart':
+	elif options.mode == 'export':
 		file = options.dataFile
 		table = options.dataTable
 		if not options.dataTable or not options.extra:
@@ -98,7 +106,7 @@ def importerOptionsHandler (options, args):
 		if len(time) == 2:
 			endDate = time[1]
 
-		print "\nDeparting '%s' to '%s' from '%s' to '%s'...\n" % (table[0], table[1], time[0], endDate)
+		print "\nExporting '%s' to '%s' from '%s' to '%s'...\n" % (table[0], table[1], time[0], endDate)
 		
 		if endDate == 'Now':
 			imp.partReimport(table[0], table[1], time[0])
