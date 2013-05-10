@@ -40,8 +40,12 @@ def possibleRegressionTests (database):
 
 # Regression Filter omits all tests which do not match @filter in @regSet.
 def regressionFilter (regSet, filter):
-	retRegSet = [test for test in regSet if test.find(filter) != -1]
-	return retRegSet
+	filters = filter.split('*')
+	
+	for f in filters:
+		if f is not None:
+			regSet = [test for test in regSet if test.find(f) != -1]
+	return regSet
 
 # Core function to do regression for @test with @strategy
 def doRegression (options, database, test, strategy):
