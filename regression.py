@@ -9,9 +9,19 @@ from optparse import OptionParser
 import string
 import db.mysqldb as sql
 
+# Regression Filter omits all tests which do not match @filter in @regSet.
+def regressionFilter (regSet, filter):
+	filters = filter.split('*')
+	
+	for f in filters:
+		if f is not None:
+			regSet = [test for test in regSet if test.find(f) != -1]
+	return regSet
+	
 # List all possible regression tests in database.
-def listFutureTables (database):
+def listFutureTables (database, filter):
 	regSet = possibleRegressionTests(database)
+	regSet = regressionFilter(regSet, filter)
 	print "\nAll possible regression test tables in '%s:'\n" % database
 	for test in regSet:
 		print test
@@ -38,16 +48,7 @@ def possibleRegressionTests (database):
 	db.close()
 	return regSet
 
-# Regression Filter omits all tests which do not match @filter in @regSet.
-def regressionFilter (regSet, filter):
-	filters = filter.split('*')
-	
-	for f in filters:
-		if f is not None:
-			regSet = [test for test in regSet if test.find(f) != -1]
-	return regSet
-
-# Core function to do regression for @test with @strategy
+# Core function to do regression for @test with @strategy.
 def doRegression (options, database, test, strategy):
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
 	maxPos = 3
@@ -90,7 +91,7 @@ def regressionOptionsHandler (options, args):
 	database = options.database
 	
 	if options.list:
-		listFutureTables (database)
+		listFutureTables (database, options.filter)
 		return
 
 	if options.strategy is None:
