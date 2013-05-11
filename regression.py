@@ -21,7 +21,8 @@ def regressionFilter (regSet, filter):
 # List all possible regression tests in database.
 def listFutureTables (database, filter):
 	regSet = possibleRegressionTests(database)
-	regSet = regressionFilter(regSet, filter)
+	if filter is not None:
+		regSet = regressionFilter(regSet, filter)
 	print "\nAll possible regression test tables in '%s:'\n" % database
 	for test in regSet:
 		print test
