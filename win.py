@@ -14,7 +14,7 @@ def parseArgs ():
 	arg1 = sys.argv[1]
 	if arg1 == 'importer':
 		importerParser.importerOptionsParser(parser)
-	if arg1 == 'data':
+	elif arg1 == 'data':
 		dataParser.dataOptionsParser(parser)
 	elif arg1 == 'regress':
 		regression.regressionOptionsParser(parser)

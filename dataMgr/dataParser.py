@@ -128,6 +128,7 @@ def dataOptionsHandler (options, args):
 	
 	if options.check:
 		getFirstLastRecords (database, table)
+		return
 	
 	if options.date is None:
 		print "\nPlease specify the date using '-d'.\n"
