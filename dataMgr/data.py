@@ -30,14 +30,20 @@ class Data:
 		return self.sum(data) / count
 	
 	def M (self, date, filed='Close', days=1):
-		cond = 'Time <= "%s" order by Time desc limit %d' % (date, days)
-		#print cond
-		num = self.db.search(self.table, cond, filed)
-		res = self.db.fetch('all')
-		#print res
-		#print res[0][0]
+		#cond = 'Time <= "%s" order by Time desc limit %d' % (date, days)
+		##print cond
+		#num = self.db.search(self.table, cond, filed)
+		#res = self.db.fetch('all')
+		##print res
+		##print res[0][0]
 
-		return self.avg(res, num)
+		#return self.avg(res, num)
+		
+		sqls = 'select sum(%s)/%s from (select * from %s where Time <= "%s" order by Time desc limit %s) as t1' % (filed, days, self.table, date, days)
+		
+		self.db.execSql(sqls)
+		res = self.db.fetch()
+		return res[0]
 	
 	def M5 (self, date, filed='Close'):
 		return self.M(date, filed, 5)
