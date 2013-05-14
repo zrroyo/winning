@@ -29,10 +29,10 @@ class Data:
 	def avg (self, data, count):
 		return self.sum(data) / count
 	
-	def M (self, date, filed='Close', days=1):
+	def M (self, date, field='Close', days=1):
 		cond = 'Time <= "%s" order by Time desc limit %d' % (date, days)
 		#print cond
-		num = self.db.search(self.table, cond, filed)
+		num = self.db.search(self.table, cond, field)
 		res = self.db.fetch('all')
 		#print res
 		#print res[0][0]
@@ -45,20 +45,20 @@ class Data:
 		#res = self.db.fetch()
 		#return res[0]
 	
-	def M5 (self, date, filed='Close'):
-		return self.M(date, filed, 5)
+	def M5 (self, date, field='Close'):
+		return self.M(date, field, 5)
 	
-	def M10 (self, date, filed='Close'):
-		return self.M(date, filed, 10)
+	def M10 (self, date, field='Close'):
+		return self.M(date, field, 10)
 	
-	def M20 (self, date, filed='Close'):
-		return self.M(date, filed, 20)
+	def M20 (self, date, field='Close'):
+		return self.M(date, field, 20)
 	
-	def M40 (self, date, filed='Close'):
-		return self.M(date, filed, 40)
+	def M40 (self, date, field='Close'):
+		return self.M(date, field, 40)
 	
-	def M60 (self, date, filed='Close'):
-		return self.M(date, filed, 60)
+	def M60 (self, date, field='Close'):
+		return self.M(date, field, 60)
 	
 	def getOpen (self, date):
 		return self.M(date, 'Open', 1)
