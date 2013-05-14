@@ -139,10 +139,7 @@ def dataOptionsHandler (options, args):
 	
 	if options.moving:
 		printMoving(dat, date, options.moving)
-	
-	if options.recent:
-		printRecent(database, table, date, options.recent)
-	
+		
 	if options.field:
 		printField(dat, date, options.field)
 			
@@ -151,6 +148,9 @@ def dataOptionsHandler (options, args):
 		
 	if options.lowest:
 		printLowest(dat, date, options.lowest)
+		
+	if options.recent:
+		printRecent(database, table, date, options.recent)
 		
 # Data subsystem Option Parser.
 def dataOptionsParser (parser):
