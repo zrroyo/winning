@@ -5,9 +5,12 @@ This is the core framework to import data records to data tables.
 '''
 
 import sys
+sys.path.append('..')
+
 from optparse import OptionParser
 
 import dataMgr.whImporter as IMPORT
+import db.mysqldb as sql
 
 # Drops all Future tables listed in @tables.
 def dropFutureTables (imp, tables):
@@ -16,6 +19,22 @@ def dropFutureTables (imp, tables):
 	for table in tableSet:
 		imp.dropFutureTable(table)
 		print "Dropped '%s'. " % table
+
+# List all tables in database.
+def listAllTables (database):
+	db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
+	db.connect()
+	
+	sqls = 'show tables'
+	db.execSql(sqls)
+	
+	res = list(db.fetch('all'))
+	
+	print "\nAll tables in '%s:'\n" % database
+	for test in res:
+		print test[0]
+		
+	db.close()	
 
 # Importer subsystem option handler transfering options to actions.
 def importerOptionsHandler (options, args):
@@ -30,6 +49,10 @@ def importerOptionsHandler (options, args):
 		print "\nDropping '%s' from database '%s'...\n" % (options.dropTable, options.database)
 		dropFutureTables(imp, options.dropTable)
 		
+	if options.list:
+		listAllTables (options.database)
+		return
+	
 	if options.mode == 'dir':
 		# 'directory' mode, import data records from a data directory to data table.
 		
@@ -138,6 +161,8 @@ def importerOptionsParser (parser):
 			help='Drop a table from database.')
 	parser.add_option('-e', '--extra', dest='extra', 
 			help='extra informaton, contains details used with other options if needed.')
+	parser.add_option('-l', '--list', action="store_true", dest='list', 
+			help='List all tables in database.')
 			
 	(options, args) = parser.parse_args()
 
