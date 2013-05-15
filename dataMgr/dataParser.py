@@ -83,11 +83,11 @@ def printHighest (data, date, highest):
 def printLowest (data, date, lowest):
 	args = lowest.split(',')
 	if len(args) < 2:
-		print "\nPlease specify a value for '-H' as 'Close,5'.\n"
+		print "\nPlease specify a value for '-L' as 'Close,5'.\n"
 		exit()
 		
 	if not args[1].isdigit():
-		print "\nPlease specify a value for '-H' as 'Close,5'.\n"
+		print "\nPlease specify a value for '-L' as 'Close,5'.\n"
 		exit()
 	
 	field = args[0]
