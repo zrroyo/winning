@@ -71,7 +71,7 @@ def doRegression (options, database, test, strategy):
 				priceUnit= int(args[3])
 				print args
 			else:
-				print "\nContains incomplete attributes with '-e' for Turt strategy.\n"
+				print "\nExtra imformation contains incomplete or wrong attributes for Turt strategy.\n"
 				exit()
 			
 		import strategy.turt1 as turt1	
@@ -82,7 +82,26 @@ def doRegression (options, database, test, strategy):
 		exit()
 	
 	strategy.run()
-
+	
+def strategyAssistant (options, database, extra):
+	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
+	table = extra.split(',')[0]
+	#print extra, table
+	#table = extra[0]
+	strategy = options.strategy
+	
+	if strategy == 'turtle':
+		import strategy.turtle as turtle
+		strategy = turtle.Turtle(table, table, tradeRec, database)
+	elif strategy == 'turt1':
+		import strategy.turt1 as turt1	
+		strategy = turt1.Turt1(table, table, tradeRec, database)
+	else:
+		print "\nUnknown strategy '%s' to do assistant.\n" % strategy
+		exit()
+		
+	strategy.assistant(extra)
+		
 # Regression subsystem option handler transfering options to actions.
 def regressionOptionsHandler (options, args):
 	if options.database is None:
@@ -93,17 +112,23 @@ def regressionOptionsHandler (options, args):
 	
 	if options.list:
 		listFutureTables (database, options.filter)
-		return
+		exit()
 
 	if options.strategy is None:
 		print "\nPlease specify a strategy to do regression using '-s'.\n"
-		return	
+		return
 	
+	if options.assistant:
+		if options.extra:
+			strategyAssistant(options, database, options.extra)
+		else:
+			print "\nPlease specify extra information by '-e' needed by strategy assistant.\n"
+		# Don't allow assistant option '-a' to be used with other options.
+		exit()
+			
 	regSet = []
 	if options.muster:
 		regSet = options.muster.split(',')
-	elif options.all:
-		regSet = possibleRegressionTests(database)
 	else:
 		regSet = possibleRegressionTests(database)
 		
@@ -116,8 +141,8 @@ def regressionOptionsHandler (options, args):
 	
 # Regression subsystem Option Parser. Called in win.py.
 def regressionOptionsParser (parser):
-	parser.add_option('-a', '--all', action="store_true", dest='all', 
-			help='Run all posssible regression tests.')
+	parser.add_option('-a', '--assistant', action="store_true", dest='assistant', 
+			help='Check if match any conditions defined in strategy.')
 	parser.add_option('-l', '--list', action="store_true", dest='list', 
 			help='List all posssible regression tests.')
 	parser.add_option('-m', '--muster', dest='muster', 

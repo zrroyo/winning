@@ -111,3 +111,8 @@ class Futures(STRT.Strategy):
 		
 		return self.curPostion()
 		
+	# Export any assistant/helper information to users here.
+	def assistant (self, extra):
+		print '\nNo assistant found!\n'
+		return
+	

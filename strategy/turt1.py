@@ -156,3 +156,20 @@ class Turt1(turtle.Turtle):
 				
 		return time
 	
+	def assistant (self, extra):
+		extra = extra.split(',')
+		if len(extra) < 3:
+			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'table,date,price'.\n"
+			return
+			
+		table = extra[0]
+		date = extra[1]
+		price = int(extra[2])
+		
+		if self.hitShortSignal(date, price):
+			print "\n	Turt1: Hit [Short] signal!.\n"
+		elif self.hitLongSignal(date, price):
+			print "\n	Turt1: Hit [Long] signal!.\n"
+		else:
+			print "\n	Turt1: No condition matched. Do nothing\n"
+	
