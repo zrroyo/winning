@@ -18,17 +18,17 @@ class Turt1(turtle.Turtle):
 		turtle.Turtle.__exit__(self)
 		return
 	
-	def hitShortSignal (self, date):
+	def hitShortSignal (self, date, price):
 		#if self.data.getClose(date) < self.lowestBeforeDate(date, 20, 'Lowest'):
-		if self.data.getClose(date) < self.lowestBeforeDate(date, 20):
-			print "%s Hit Short Signal: Close %s, Lowest %s" % (date, self.data.getClose(date), self.lowestBeforeDate(date, 20))
+		if price < self.lowestBeforeDate(date, 20):
+			print "%s Hit Short Signal: Close %s, Lowest %s" % (date, price, self.lowestBeforeDate(date, 20))
 			return True
 		return False
 			
-	def hitLongSignal (self, date):
+	def hitLongSignal (self, date, price):
 		#if self.data.getClose(date) > self.highestBeforeDate(date, 20, 'Highest'):
-		if self.data.getClose(date) > self.highestBeforeDate(date, 20):
-			print "%s Hit Long Signal: (Close %s), (Highest %s)" % (date, self.data.getClose(date), self.highestBeforeDate(date, 20))
+		if price > self.highestBeforeDate(date, 20):
+			print "%s Hit Long Signal: (Close %s), (Highest %s)" % (date, price, self.highestBeforeDate(date, 20))
 			return True
 		return False
 		

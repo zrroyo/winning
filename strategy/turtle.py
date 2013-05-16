@@ -157,10 +157,10 @@ class Turtle(FUT.Futures):
 	def doLong (self, dateSet, date):
 		return
 	
-	def hitShortSignal (self, date):
+	def hitShortSignal (self, date, price):
 		return
 		
-	def hitLongSignal (self, date):
+	def hitLongSignal (self, date, price):
 		return
 	
 	# End of a test run. Close all opened positions before stop test.
@@ -196,13 +196,15 @@ class Turtle(FUT.Futures):
 				time= lcDateSet.getSetNextDate()
 				continue
 			
-			if self.hitShortSignal(time):
+			price = self.data.getClose(time)
+			
+			if self.hitShortSignal(time, price):
 				mode = 'short'
 				time = self.doShort(lcDateSet, time);
 				# It also possibly hits the Long signal after quit short 
 				# mode in same day.
 				continue
-			elif self.hitLongSignal(time):
+			elif self.hitLongSignal(time, price):
 				mode = 'long'
 				time = self.doLong(lcDateSet, time);
 				# It also possibly hits the Short signal after quit long 
