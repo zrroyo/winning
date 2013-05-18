@@ -87,13 +87,20 @@ def importerOptionsHandler (options, args):
 		
 		file = options.dataFile
 		table = options.dataTable
-		if not file or not table:
-			print "\nPlease specify 'dataFile' and 'dataTable'\n"
-			return
-			
-		print "\nAppending records to '%s'...\n" % (table)
+		directory = options.directory
 		
-		return imp.appendRecordsOnly(file, table)
+		if table is not None and file is not None:
+			print "\nAppending records to '%s' from file '%s' ...\n" % (table, file)
+			
+			return imp.appendRecordsFromFile(file, table)
+		elif directory is not None:
+			print "\nAppending records from directory '%s' ...\n" % (directory)
+			
+			return imp.appendRecordsFromDir(directory)
+		else:
+			print "\nPlease specify -f 'dataFile' and -t 'dataTable' to append from file, or -d 'directory. to importer from a directory.\n"
+			
+			return
 		
 	elif options.mode == 'update':
 		# 'update' mode, update the old records in data table and append the new records at 

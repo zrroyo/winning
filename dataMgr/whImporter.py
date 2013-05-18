@@ -70,8 +70,8 @@ class WenhuaImport(IMPORT.Import):
 		return self.insertRecord(record, dataTable)
 		
 	# Omit all records which exist in datable, only append the records which does not 
-	# exist at the end of datatable.
-	def appendRecordsOnly (self, dataFile, dataTable):
+	# exist at the end of datatable from a file.
+	def appendRecordsFromFile (self, dataFile, dataTable):
 		self.prepareImport(dataTable)
 		
 		dataSet = date.Date(self.database, dataTable)
@@ -79,6 +79,23 @@ class WenhuaImport(IMPORT.Import):
 		for line in fileinput.input(dataFile):
 			self.appendRecord(line.strip(), dataTable, dataSet.lastDate())
 			
+	# Append all records files stored in a directory to databse omitting all
+	# records which exist in datable.
+	def appendRecordsFromDir (self, diretory):
+		fList = os.listdir(diretory)
+		
+		while len(fList) > 0:
+			#tableName = fList.pop().split('.')[0] + '_dayk'
+			#print tableName
+			fName = fList.pop()
+			tableName = fName.split('.')[0] + '_dayk'
+
+			if self.db.ifTableExist(tableName):
+				print "Appending '%s' to '%s'..." % (fName, tableName)
+				
+				file = diretory + '/' + fName
+				self.appendRecordsFromFile(file, tableName)
+		
 	# Append and possibly update a record in datatable. If the record does not 
 	# exist, append it, othewise, update this record in datatable as passed $record.
 	def updateToTable (self, record, dataTable):
