@@ -98,7 +98,7 @@ def importerOptionsHandler (options, args):
 			
 			return imp.appendRecordsFromDir(directory)
 		else:
-			print "\nPlease specify -f 'dataFile' and -t 'dataTable' to append from file, or -d 'directory. to importer from a directory.\n"
+			print "\nPlease specify -f 'dataFile' and -t 'dataTable' to append from file, or -d 'directory' to import from a directory.\n"
 			
 			return
 		
