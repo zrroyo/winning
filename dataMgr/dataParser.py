@@ -11,6 +11,7 @@ from optparse import OptionParser
 
 import data
 import db.mysqldb as sql
+import futcom
 
 # Format and print values.
 def formatPrint (date, comment, value):
@@ -125,6 +126,9 @@ def dataOptionsHandler (options, args):
 	if database is None or table is None:
 		print "\nPlease specify database ('-b') and datatable ('-t').\n"
 		return
+	
+	table = futcom.futcodeToDataTable(table)
+	#print table
 	
 	if options.check:
 		getFirstLastRecords (database, table)
