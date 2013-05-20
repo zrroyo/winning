@@ -83,7 +83,7 @@ class Turt1(turtle.Turtle):
 				time = dateSet.getSetNextDate()
 				continue
 			
-			if pLastAddPrice - price > self.minPosIntv:
+			if pLastAddPrice - price >= self.minPosIntv:
 				if self.curPostion() < self.maxPos:
 					self.openShortPostion(price)
 					print "	[Short] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, pLastAddPrice-price)	
@@ -145,7 +145,7 @@ class Turt1(turtle.Turtle):
 				time = dateSet.getSetNextDate()
 				continue
 				
-			if price - pLastAddPrice > self.minPosIntv:
+			if price - pLastAddPrice >= self.minPosIntv:
 				if self.curPostion() < self.maxPos:
 					self.openLongPostion(price)
 					print "	[Long] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, price-pLastAddPrice)
