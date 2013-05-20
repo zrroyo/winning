@@ -5,6 +5,7 @@ sys.path.append("..")
 
 import date as DATE
 import turtle
+import futcom
 
 class Turt1(turtle.Turtle):
 	def __init__ (self, futName, dataTable, tradeTable, database='futures'):
@@ -162,7 +163,7 @@ class Turt1(turtle.Turtle):
 			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'table,date,price'.\n"
 			return
 			
-		table = extra[0]
+		table = futcom.futcodeToDataTable(extra[0])
 		date = extra[1]
 		price = int(extra[2])
 		

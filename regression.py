@@ -8,6 +8,7 @@ import sys
 from optparse import OptionParser
 import string
 import db.mysqldb as sql
+import futcom
 
 # Regression Filter omits all tests which do not match @filter in @regSet.
 def regressionFilter (regSet, filter):
@@ -86,6 +87,7 @@ def doRegression (options, database, test, strategy):
 def strategyAssistant (options, database, extra):
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
 	table = extra.split(',')[0]
+	table = futcom.futcodeToDataTable(table)
 	#print extra, table
 	#table = extra[0]
 	strategy = options.strategy
@@ -128,7 +130,7 @@ def regressionOptionsHandler (options, args):
 			
 	regSet = []
 	if options.muster:
-		regSet = options.muster.split(',')
+		regSet = futcom.futcodeSetToDataTables(options.muster.split(','))
 	else:
 		regSet = possibleRegressionTests(database)
 		
