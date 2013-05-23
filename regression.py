@@ -84,9 +84,9 @@ def doRegression (options, database, test, strategy):
 	
 	strategy.run()
 	
-def strategyAssistant (options, database, extra):
+def strategyAssistant (options, database, table, extra):
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
-	table = extra.split(',')[0]
+	#table = extra.split(',')[0]
 	table = futcom.futcodeToDataTable(table)
 	#print extra, table
 	#table = extra[0]
@@ -121,10 +121,13 @@ def regressionOptionsHandler (options, args):
 		return
 	
 	if options.assistant:
-		if options.extra:
-			strategyAssistant(options, database, options.extra)
-		else:
+		if options.extra and options.tables:
+			strategyAssistant(options, database, options.tables, options.extra)
+		elif options.extra is None:
 			print "\nPlease specify extra information by '-e' needed by strategy assistant.\n"
+		elif options.tables is None:
+			print "\nPlease specify a Future code which needs assistance using '-t'.\n"
+			
 		# Don't allow assistant option '-a' to be used with other options.
 		exit()
 			
