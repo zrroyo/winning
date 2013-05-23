@@ -129,8 +129,8 @@ def regressionOptionsHandler (options, args):
 		exit()
 			
 	regSet = []
-	if options.muster:
-		regSet = futcom.futcodeSetToDataTables(options.muster.split(','))
+	if options.tables:
+		regSet = futcom.futcodeSetToDataTables(options.tables.split(','))
 	else:
 		regSet = possibleRegressionTests(database)
 		
@@ -147,7 +147,7 @@ def regressionOptionsParser (parser):
 			help='Check if match any conditions defined in strategy.')
 	parser.add_option('-l', '--list', action="store_true", dest='list', 
 			help='List all posssible regression tests.')
-	parser.add_option('-m', '--muster', dest='muster', 
+	parser.add_option('-t', '--tables', dest='tables', 
 			help='Only do regression tests for the Futures listed in this set.')
 	parser.add_option('-s', '--strategy', dest='strategy', 
 			help='The strategy used to do regression tests.')
