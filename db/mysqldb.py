@@ -130,3 +130,13 @@ class MYSQL(db.DB):
 		res = self.execSql(sqls)
 		return res
 	
+	# Return if a record already exists in a data table.
+	def ifRecordExist (self, table, primaryKey, value):
+		sqls = 'select * from %s where %s = "%s"' % (table, primaryKey, value)
+		res = self.execSql(sqls)
+		
+		if res == 1:
+			return True
+		else:
+			return False
+		
