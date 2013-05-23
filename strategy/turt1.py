@@ -6,6 +6,7 @@ sys.path.append("..")
 import date as DATE
 import turtle
 import futcom
+import db.mysqldb as sql
 
 class Turt1(turtle.Turtle):
 	def __init__ (self, futName, dataTable, tradeTable, database='futures'):
@@ -157,20 +158,61 @@ class Turt1(turtle.Turtle):
 				
 		return time
 	
-	def assistant (self, extra):
+	def _simulation (self, extra):
+		print '\n\n	<<<<<<<<<<< Turt1 simulation on %s >>>>>>>>>>>	\n\n' % self.futName
+		
 		extra = extra.split(',')
-		if len(extra) < 3:
-			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'table,date,price'.\n"
+		if len(extra) < 6:
+			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'date,price,maxPos,minPos,minPosIntv,priceUnit'.\n"
 			return
 			
-		table = futcom.futcodeToDataTable(extra[0])
-		date = extra[1]
-		price = int(extra[2])
+		table = self.dataTable
+		date = extra[0]
+		price = int(extra[1])
 		
-		if self.hitShortSignal(date, price):
-			print "\n	Turt1: Hit [Short] signal!.\n"
-		elif self.hitLongSignal(date, price):
-			print "\n	Turt1: Hit [Long] signal!.\n"
+		db = sql.MYSQL("localhost", 'win', 'winfwinf', self.database)
+		db.connect()
+		
+		if db.ifRecordExist(table, 'Time', date):
+			print "\nData record with Time '%s' exists in '%s', simulation may break data table, exit...\n"
+			db.close()
+			return
 		else:
-			print "\n	Turt1: No condition matched. Do nothing\n"
+			values = values = '"%s", 0, 0, 0, %s, 0, 0, 0, Null, Null' % (date, price)
+			db.insert(table, values)
+			
+		# Add New recored, need sync dataSet.
+		self.dateSet.fillDates(table)
+		
+		maxPos = int(extra[2])
+		minPos = int(extra[3])
+		minPosIntv = int(extra[4])
+		priceUnit = int(extra[5])
+		
+		self.setAttrs(maxPos, minPos, minPosIntv, priceUnit)
+		self.run()
+		
+		cond = 'Time = "%s"' % date
+		db.remove(table, cond)
+		db.close()
+		
+	def assistant (self, extra):
+		#extra = extra.split(',')
+		#if len(extra) < 3:
+			#print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'table,date,price'.\n"
+			#return
+			
+		#table = futcom.futcodeToDataTable(extra[0])
+		#date = extra[1]
+		#price = int(extra[2])
+		
+		#if self.hitShortSignal(date, price):
+			#print "\n	Turt1: Hit [Short] signal!.\n"
+		#elif self.hitLongSignal(date, price):
+			#print "\n	Turt1: Hit [Long] signal!.\n"
+		#else:
+			#print "\n	Turt1: No condition matched. Do nothing\n"
+			
+		self._simulation(extra)
+			
 	
