@@ -174,7 +174,7 @@ class Turt1(turtle.Turtle):
 		db.connect()
 		
 		if db.ifRecordExist(table, 'Time', date):
-			print "\nData record with Time '%s' exists in '%s', simulation may break data table, exit...\n"
+			print "\nData record with Time '%s' exists in '%s', simulation may break data table, exit...\n" % (date, table)
 			db.close()
 			return
 		else:
