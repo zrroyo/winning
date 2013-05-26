@@ -106,7 +106,13 @@ class Import:
 		if month > 12 or month < 1:
 			return None
 		
-		maxDatePrevMonth = self._maxDateInMonth(month-1, year-1)
+		if month == 1:
+			month = 12
+			year -= 1
+		else:
+			month -= 1
+		
+		maxDatePrevMonth = self._maxDateInMonth(month, year-1)
 		
 		#print maxDatePrevMonth
 		if maxDatePrevMonth <= dateSet.firstDate():
@@ -120,7 +126,13 @@ class Import:
 		if month > 12 or month < 1:
 			return None
 		
-		maxDatePrevMonth = self._maxDateInMonth(month-1, year)
+		if month == 1:
+			month = 12
+			year -= 1
+		else:
+			month -= 1
+					
+		maxDatePrevMonth = self._maxDateInMonth(month, year)
 		
 		#print maxDatePrevMonth
 		if maxDatePrevMonth >= dateSet.lastDate():
