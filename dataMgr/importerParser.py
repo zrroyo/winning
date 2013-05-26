@@ -112,7 +112,7 @@ def importerOptionsHandler (options, args):
 			print "\nPlease specify 'dataFile' and 'dataTable'\n"
 			return
 			
-		print "\nUpdating and appending records to '%s'...\n" % (table)
+		print "\nUpdating and inserting records to '%s'...\n" % (table)
 		
 		return imp.updateRecordsFromFile(file, table)
 		

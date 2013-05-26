@@ -126,7 +126,7 @@ class WenhuaImport(IMPORT.Import):
 
 		self.db.update(dataTable, cond, values)
 		
-	# Append and possibly update all the records in dataFile to datatable.
+	# Insert and possibly update all the records in dataFile to datatable.
 	def updateRecordsFromFile (self, dataFile, dataTable):
 		self.prepareImport(dataTable)
 		for line in fileinput.input(dataFile):
