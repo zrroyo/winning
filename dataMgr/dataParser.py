@@ -127,7 +127,12 @@ def dataOptionsHandler (options, args):
 		print "\nPlease specify database ('-b') and datatable ('-t').\n"
 		return
 	
-	table = futcom.futcodeToDataTable(table)
+	# Try to find the passed table in database, otherwise it may cause run error.
+	if futcom.futureTalbeExists(table, database) == False:
+		table = futcom.futcodeToDataTable(table)
+		if futcom.futureTalbeExists(table, database) == False:
+			print "\nCan not find any table matching '%s', exit...\n" % options.dataTable
+			exit()
 	#print table
 	
 	if options.check:

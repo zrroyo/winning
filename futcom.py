@@ -4,6 +4,8 @@
 This module defines commonly used functions to do futures trading.
 '''
 
+import db.mysqldb as sql
+
 # Transfer a futCode to a data table.
 def futcodeToDataTable (futCode):
 	if futCode.find('_dayk') != -1:
@@ -19,3 +21,13 @@ def futcodeSetToDataTables (futcodeSet):
 		
 	return newSet
 	
+# Return if a table marked by futCode does exist.	
+def futureTalbeExists (futCode, database):
+	db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
+	db.connect()
+	
+	ret = db.ifTableExist(futCode)
+	
+	db.close()
+	
+	return ret
