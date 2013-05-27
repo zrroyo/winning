@@ -159,7 +159,7 @@ class Turt1(turtle.Turtle):
 		return time
 	
 	def _simulation (self, extra):
-		print '\n\n	<<<<<<<<<<< Turt1 simulation on %s >>>>>>>>>>>	\n\n' % self.futName
+		print '\n	<<<<<<<<<<< Turt1 simulation on %s >>>>>>>>>>>	' % self.futName
 		
 		extra = extra.split(',')
 		if len(extra) < 6:
