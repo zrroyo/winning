@@ -181,7 +181,7 @@ class Turt1(turtle.Turtle):
 			values = values = '"%s", 0, 0, 0, %s, 0, 0, 0, Null, Null' % (date, price)
 			db.insert(table, values)
 			
-		# Add New recored, need sync dataSet.
+		# Add new record, need sync dateSet.
 		self.dateSet.fillDates(table)
 		
 		maxPos = int(extra[2])
