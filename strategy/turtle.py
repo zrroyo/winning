@@ -37,8 +37,8 @@ class TurtData:
 
 
 class Turtle(FUT.Futures):
-	def __init__ (self, futName, dataTable, tradeTable, database='futures'):
-		FUT.Futures.__init__(self, futName)
+	def __init__ (self, futName, dataTable, tradeTable, database='futures', runStat=None):
+		FUT.Futures.__init__(self, futName, runStat)
 		self.database = database
 		self.dataTable = dataTable
 		self.data = data.Data(database, dataTable)

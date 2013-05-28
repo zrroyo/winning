@@ -1,7 +1,10 @@
 #! /usr/bin/python
 
-import strategy as STRT
+import sys
+sys.path.append("..")
 
+import strategy as STRT
+import regress.runstat as runstat
 #
 # Futures strategy super class which defines the most common methods 
 # used to do futures business. Any futures strategy must inherit this 
@@ -10,7 +13,7 @@ import strategy as STRT
 #
 
 class Futures(STRT.Strategy):
-	def __init__ (self, futName):
+	def __init__ (self, futName, runStat=None):
 		self.futName = futName		# The future name to test.
 		self.maxPos = None		# The maximum positions a business allowes to add.
 		self.minPos = None		# The minimum unit to add positions.
@@ -19,6 +22,7 @@ class Futures(STRT.Strategy):
 		self._pList = []		# The list to contain all positions.
 		self.totalProfit = 0		# Total profit in one time of test.
 		self.profit = 0			# The current profit for a time of business.
+		self.runStat = runStat		# Count runtime statistics.
 		
 		return
 	
@@ -72,9 +76,17 @@ class Futures(STRT.Strategy):
 		profit *= self.priceUnit
 		self.profit += profit
 		self.totalProfit += profit
+		
+		# If need do runtime statistics, update status.
+		if self.runStat is not None:
+			self.runStat.update(profit)
+			
 		print "		<<-- Close: profit %s, poses %s -->>" % (profit, self.curPostion())
 		if self.curPostion() == 0:
 			self.showProfit()
+			# If need do runtime statistics, update status.
+			if self.runStat is not None:
+				self.runStat.updateBusinessProfit(self.profit)
 			
 		return self.curPostion()
 	
@@ -85,9 +97,17 @@ class Futures(STRT.Strategy):
 		profit *= self.priceUnit
 		self.profit += profit
 		self.totalProfit += profit
+		
+		# If need do runtime statistics, update status.
+		if self.runStat is not None:
+			self.runStat.update(profit)
+			
 		print "		<<-- Close: profit %s, poses %s -->>" % (profit, self.curPostion())
 		if self.curPostion() == 0:
 			self.showProfit()
+			# If need do runtime statistics, update status.
+			if self.runStat is not None:
+				self.runStat.updateBusinessProfit(self.profit)
 			
 		return self.curPostion()
 		
