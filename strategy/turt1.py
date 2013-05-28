@@ -9,9 +9,9 @@ import futcom
 import db.mysqldb as sql
 
 class Turt1(turtle.Turtle):
-	def __init__ (self, futName, dataTable, tradeTable, database='futures'):
+	def __init__ (self, futName, dataTable, tradeTable, database='futures', runStat=None):
 		# Inherit all public methods and attributes from Turtle Class.
-		turtle.Turtle.__init__(self, futName, dataTable, tradeTable, database)
+		turtle.Turtle.__init__(self, futName, dataTable, tradeTable, database, runStat)
 		#self.test = turtle.Turtle.table
 		#print self.dataTable, self.tradeTable, self.database
 		return
