@@ -9,6 +9,7 @@ from optparse import OptionParser
 import string
 import db.mysqldb as sql
 import futcom
+import regress.runstat as runstat
 
 # Regression Filter omits all tests which do not match @filter in @regSet.
 def regressionFilter (regSet, filter):
@@ -76,14 +77,19 @@ def doRegression (options, database, test, strategy):
 				exit()
 			
 		import strategy.turt1 as turt1	
-		strategy = turt1.Turt1(test, test, tradeRec, database)
+		runStat = runstat.RunStat(test)
+		strategy = turt1.Turt1(test, test, tradeRec, database, runStat)
 		strategy.setAttrs(maxPos, minPos, minPosIntv, priceUnit)
 	else:
 		print "\nUnknown strategy '%s'.\n" % options.strategy
 		exit()
 	
+	# Run regression test.
 	strategy.run()
+	# Show the run time statistics at the end of execution.
+	strategy.runStat.showStat()
 	
+# Do assistant provided by strategies.
 def strategyAssistant (options, database, table, extra):
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
 	#table = extra.split(',')[0]
