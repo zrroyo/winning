@@ -5,7 +5,7 @@ from optparse import OptionParser
 
 import dataMgr.importerParser as importerParser
 import dataMgr.dataParser as dataParser
-import regression
+import regress.regression as regression
 
 parser = OptionParser()
 
