@@ -87,7 +87,8 @@ def doRegression (options, database, test, strategy):
 	# Run regression test.
 	strategy.run()
 	# Show the run time statistics at the end of execution.
-	strategy.runStat.showStat()
+	if strategy.runStat is not None:
+		strategy.runStat.showStat()
 	
 # Do assistant provided by strategies.
 def strategyAssistant (options, database, table, extra):
