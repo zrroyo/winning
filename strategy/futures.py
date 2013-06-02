@@ -114,9 +114,9 @@ class Futures(STRT.Strategy):
 	def closeAllPostion (self, price, short):
 		while self.curPostion():
 			if short is 'short':
-				poses = self.closeShortPostion(price)
+				self.closeShortPostion(price)
 			else:
-				poses = self.closeLongPostion(price)
+				self.closeLongPostion(price)
 					
 		return self.curPostion()
 			
@@ -124,9 +124,9 @@ class Futures(STRT.Strategy):
 		i = 0
 		while self.curPostion() and i < poses:
 			if short is 'short':
-				poses = self.closeShortPostion(price)
+				self.closeShortPostion(price)
 			else:
-				poses = self.closeLongPostion(price)
+				self.closeLongPostion(price)
 			i = i + 1
 		
 		return self.curPostion()
