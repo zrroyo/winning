@@ -73,6 +73,7 @@ class Futures(STRT.Strategy):
 		if self.curPostion() == 0:
 			return
 		profit = self._pList.pop() - price
+		profit *= self.minPos
 		profit *= self.priceUnit
 		self.profit += profit
 		self.totalProfit += profit
@@ -94,6 +95,7 @@ class Futures(STRT.Strategy):
 		if self.curPostion() == 0:
 			return
 		profit = price - self._pList.pop()
+		profit *= self.minPos
 		profit *= self.priceUnit
 		self.profit += profit
 		self.totalProfit += profit
