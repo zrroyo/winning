@@ -15,7 +15,7 @@ import regress.runstat as runstat
 class Futures(STRT.Strategy):
 	def __init__ (self, futName, runStat=None):
 		self.futName = futName		# The future name to test.
-		self.maxPos = None		# The maximum positions a business allowes to add.
+		self.maxAddPos = None		# The max actions allowd to add for a business.
 		self.minPos = None		# The minimum unit to add positions.
 		self.minPosIntv = None		# The minimum interval to add positions.
 		self.priceUnit = None		# Price unit.
@@ -35,9 +35,9 @@ class Futures(STRT.Strategy):
 		return
 	
 	# setAttrs() and checkAttrs() might be the key methods too, especially 
-	# the tests which are sensitive to the values of maxPos, minPos, minPosIntv, 
+	# the tests which are sensitive to the values of maxAddPos, minPos, minPosIntv, 
 	# etc. You need inherit and adjust these two method in your own occasions.
-	def setAttrs (self, maxPos, minPos, minPosIntv, priceUnit):
+	def setAttrs (self, maxAddPos, minPos, minPosIntv, priceUnit):
 		return
 		
 	def checkAttrs (self):
@@ -56,14 +56,14 @@ class Futures(STRT.Strategy):
 		self.profit = 0
 	
 	def openShortPostion (self, price):
-		if self.curPostion() >= self.maxPos:
+		if self.curPostion() >= self.maxAddPos:
 			return
 		self._pList.append(price)
 		print "		-->> Open: %s, poses %s <<--" % (price, self.curPostion())
 		return self.curPostion()
 		
 	def openLongPostion (self, price):
-		if self.curPostion() >= self.maxPos:
+		if self.curPostion() >= self.maxAddPos:
 			return
 		self._pList.append(price)
 		print "		-->> Open: %s, poses %s <<--" % (price, self.curPostion())

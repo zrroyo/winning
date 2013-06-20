@@ -85,7 +85,7 @@ class Turt1(turtle.Turtle):
 				continue
 			
 			if pLastAddPrice - price >= self.minPosIntv:
-				if self.curPostion() < self.maxPos:
+				if self.curPostion() < self.maxAddPos:
 					self.openShortPostion(price)
 					print "	[Short] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, pLastAddPrice-price)	
 					pLastAddPrice = price
@@ -147,7 +147,7 @@ class Turt1(turtle.Turtle):
 				continue
 				
 			if price - pLastAddPrice >= self.minPosIntv:
-				if self.curPostion() < self.maxPos:
+				if self.curPostion() < self.maxAddPos:
 					self.openLongPostion(price)
 					print "	[Long] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, price-pLastAddPrice)
 					pLastAddPrice = price
@@ -163,7 +163,7 @@ class Turt1(turtle.Turtle):
 		
 		extra = extra.split(',')
 		if len(extra) < 6:
-			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'date,price,maxPos,minPos,minPosIntv,priceUnit'.\n"
+			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'date,price,maxAddPos,minPos,minPosIntv,priceUnit'.\n"
 			return
 			
 		table = self.dataTable
@@ -184,12 +184,12 @@ class Turt1(turtle.Turtle):
 		# Add new record, need sync dateSet.
 		self.dateSet.fillDates(table)
 		
-		maxPos = int(extra[2])
+		maxAddPos = int(extra[2])
 		minPos = int(extra[3])
 		minPosIntv = int(extra[4])
 		priceUnit = int(extra[5])
 		
-		self.setAttrs(maxPos, minPos, minPosIntv, priceUnit)
+		self.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 		self.run()
 		
 		cond = 'Time = "%s"' % date

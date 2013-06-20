@@ -54,7 +54,7 @@ def possibleRegressionTests (database):
 # Core function to do regression for @test with @strategy.
 def doRegression (options, database, test, strategy):
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
-	maxPos = 3
+	maxAddPos = 3
 	minPos = 1
 	minPosIntv=40
 	priceUnit=10
@@ -62,12 +62,12 @@ def doRegression (options, database, test, strategy):
 	if strategy == 'turtle':
 		import strategy.turtle as turtle
 		strategy = turtle.Turtle(test, test, tradeRec, database)
-		strategy.setAttrs(maxPos, minPos, minPosIntv, priceUnit)
+		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 	elif strategy == 'turt1':
 		if options.extra:
 			args = options.extra.split(',')
 			if len(args) == 4:
-				maxPos = int(args[0])
+				maxAddPos = int(args[0])
 				minPos = int(args[1])
 				minPosIntv= int(args[2])
 				priceUnit= int(args[3])
@@ -79,7 +79,7 @@ def doRegression (options, database, test, strategy):
 		import strategy.turt1 as turt1	
 		runStat = runstat.RunStat(test)
 		strategy = turt1.Turt1(test, test, tradeRec, database, runStat)
-		strategy.setAttrs(maxPos, minPos, minPosIntv, priceUnit)
+		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 	else:
 		print "\nUnknown strategy '%s'.\n" % options.strategy
 		exit()
