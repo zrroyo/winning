@@ -58,8 +58,6 @@ class Turt1(turtle.Turtle):
 		else:
 			minPosIntv = self.minPosIntv
 		
-		#print '	minPosIntv %d' % minPosIntv
-		
 		while time is not None:
 			days = days + 1
 			
@@ -127,8 +125,6 @@ class Turt1(turtle.Turtle):
 		else:
 			minPosIntv = self.minPosIntv
 			
-		#print '	minPosIntv %d' % minPosIntv
-			
 		while time is not None:
 			days = days + 1
 			
@@ -187,7 +183,7 @@ class Turt1(turtle.Turtle):
 		
 		extra = extra.split(',')
 		if len(extra) < 6:
-			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'date,price,maxAddPos,minPos,minPosIntv(or null),priceUnit'.\n"
+			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'date,price,maxAddPos,minPos,minPosIntv(or ''),priceUnit'.\n"
 			return
 			
 		table = self.dataTable
