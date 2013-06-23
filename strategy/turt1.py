@@ -23,14 +23,24 @@ class Turt1(turtle.Turtle):
 	def hitShortSignal (self, date, price):
 		#if self.data.getClose(date) < self.lowestBeforeDate(date, 20, 'Lowest'):
 		if price < self.lowestBeforeDate(date, 20):
-			print "%s Hit Short Signal: Close %s, Lowest %s" % (date, price, self.lowestBeforeDate(date, 20))
+			if self.workMode == 'atr':
+				minPosIntv = self.turtData.getAtr(date) / 2
+			else:
+				minPosIntv = self.minPosIntv
+			
+			print "%s Hit Short Signal: Close %s, Lowest %s, minPosIntv %d" % (date, price, self.lowestBeforeDate(date, 20), minPosIntv)
 			return True
 		return False
 			
 	def hitLongSignal (self, date, price):
 		#if self.data.getClose(date) > self.highestBeforeDate(date, 20, 'Highest'):
 		if price > self.highestBeforeDate(date, 20):
-			print "%s Hit Long Signal: (Close %s), (Highest %s)" % (date, price, self.highestBeforeDate(date, 20))
+			if self.workMode == 'atr':
+				minPosIntv = self.turtData.getAtr(date) / 2
+			else:
+				minPosIntv = self.minPosIntv
+				
+			print "%s Hit Long Signal: Close %s, Highest %s, minPosIntv %d" % (date, price, self.highestBeforeDate(date, 20), minPosIntv)
 			return True
 		return False
 		
@@ -42,6 +52,13 @@ class Turt1(turtle.Turtle):
 		cutLossMode = False
 		pLimitByM10 = 0
 		time = dateSet.getSetNextDate()
+		
+		if self.workMode == 'atr':
+			minPosIntv = self.turtData.getAtr(date) / 2
+		else:
+			minPosIntv = self.minPosIntv
+		
+		#print '	minPosIntv %d' % minPosIntv
 		
 		while time is not None:
 			days = days + 1
@@ -84,7 +101,7 @@ class Turt1(turtle.Turtle):
 				time = dateSet.getSetNextDate()
 				continue
 			
-			if pLastAddPrice - price >= self.minPosIntv:
+			if pLastAddPrice - price >= minPosIntv:
 				if self.curPostion() < self.maxAddPos:
 					self.openShortPostion(price)
 					print "	[Short] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, pLastAddPrice-price)	
@@ -105,6 +122,13 @@ class Turt1(turtle.Turtle):
 		pLimitByM10 = 0
 		time = dateSet.getSetNextDate()
 		
+		if self.workMode == 'atr':
+			minPosIntv = self.turtData.getAtr(date) / 2
+		else:
+			minPosIntv = self.minPosIntv
+			
+		#print '	minPosIntv %d' % minPosIntv
+			
 		while time is not None:
 			days = days + 1
 			
@@ -146,7 +170,7 @@ class Turt1(turtle.Turtle):
 				time = dateSet.getSetNextDate()
 				continue
 				
-			if price - pLastAddPrice >= self.minPosIntv:
+			if price - pLastAddPrice >= minPosIntv:
 				if self.curPostion() < self.maxAddPos:
 					self.openLongPostion(price)
 					print "	[Long] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, price-pLastAddPrice)
@@ -163,7 +187,7 @@ class Turt1(turtle.Turtle):
 		
 		extra = extra.split(',')
 		if len(extra) < 6:
-			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'date,price,maxAddPos,minPos,minPosIntv,priceUnit'.\n"
+			print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'date,price,maxAddPos,minPos,minPosIntv(or null),priceUnit'.\n"
 			return
 			
 		table = self.dataTable

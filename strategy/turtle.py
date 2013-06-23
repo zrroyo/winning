@@ -34,8 +34,27 @@ class TurtData:
 		#print cond, value
 		self.db.update(self.table, cond, value)
 		return
+		
+	# Check whether 'Atr' field in data table are all calculated.
+	def checkAtr (self):
+		cond = 'Atr is NULL'
+		
+		res = self.db.search (self.table, cond)
+		if res > 0:
+			return False
+		else:
+			return True
+		
+	# Get the 'Atr' filed for a record specified by @time
+	def getAtr (self, time):
+		cond = 'Time=\'%s\'' % (time)
+		
+		self.db.search (self.table, cond, 'Atr')
+		res = self.db.fetch(0)
+		#print res
 
-
+		return res[0]
+		
 class Turtle(FUT.Futures):
 	def __init__ (self, futName, dataTable, tradeTable, database='futures', runStat=None):
 		FUT.Futures.__init__(self, futName, runStat)
@@ -45,7 +64,9 @@ class Turtle(FUT.Futures):
 		self.dateSet = DATE.Date(database, dataTable)
 		self.tradeTable = tradeTable
 		#self.tradeRec = trade.Trade(database, tradeTable)
-
+		self.workMode = None
+		self.turtData = None
+		
 		#print "Turtle initialized!"
 		return
 	
@@ -144,12 +165,18 @@ class Turtle(FUT.Futures):
 			return False
 		elif self.minPos is None:
 			return False
-		elif self.minPosIntv is None:
-			return False
 		elif self.priceUnit is None:
 			return False
-		else:
-			return True
+		
+		# If minPosIntv is not set, use ATR as minPosIntv by default.
+		if self.minPosIntv is None:
+			self.workMode = 'atr'
+			self.turtData = TurtData(self.database, self.dataTable)
+			if self.turtData.checkAtr() == False:
+				print "	Turtle: Calculating ATRs for '%s'" % self.dataTable
+				self.atr()
+		
+		return True
 	
 	def doShort (self, dateSet, date):
 		return

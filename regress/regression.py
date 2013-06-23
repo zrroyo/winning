@@ -69,8 +69,13 @@ def doRegression (options, database, test, strategy):
 			if len(args) == 4:
 				maxAddPos = int(args[0])
 				minPos = int(args[1])
-				minPosIntv= int(args[2])
 				priceUnit= int(args[3])
+				
+				if args[2] is '':
+					minPosIntv = None
+				else:
+					minPosIntv= int(args[2])
+					
 				print args
 			else:
 				print "\nExtra imformation contains incomplete or wrong attributes for Turt strategy.\n"
