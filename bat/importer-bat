@@ -1,0 +1,19 @@
+./win.py importer -b history -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/update
+./win.py importer -b history -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/update01/
+# 13
+./win.py data -b history -c -t rb1310
+./win.py data -b history -c -t pta1309
+./win.py data -b history -c -t sr1309
+./win.py data -b history -c -t m1309
+./win.py data -b history -c -t P1309
+./win.py data -b history -c -t fg1309
+./win.py data -b history -c -t rm1309
+# 14 
+./win.py data -b history -c -t fg1401
+./win.py data -b history -c -t sr1401
+./win.py data -b history -c -t pta1401
+./win.py data -b history -c -t m1401
+./win.py data -b history -c -t P1401
+./win.py data -b history -c -t rb1401
+./win.py data -b history -c -t rm1401
+
