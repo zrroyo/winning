@@ -1,0 +1,10 @@
+DATE=2013-7-3
+./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t m1309
+./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t pta1309
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t rm$1309
+
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t sr1309
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t fg1309
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t P1309
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t rb1310
+
