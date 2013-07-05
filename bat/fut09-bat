@@ -1,0 +1,10 @@
+HIS_DIR=/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk
+# Sync futures '09'
+./win.py importer -b history -m append -f ${HIS_DIR}/update/rb1310.txt -t rb10
+./win.py importer -b history -m append -f ${HIS_DIR}/update/m1309.txt -t m09
+./win.py importer -b history -m append -f ${HIS_DIR}/update/sr1309.txt -t sr09
+./win.py importer -b history -m append -f ${HIS_DIR}/update/pta1309.txt -t pta09
+./win.py importer -b history -m append -f ${HIS_DIR}/update/P1309.txt -t P09
+./win.py importer -b history -m append -f ${HIS_DIR}/update/fg1309.txt -t fg09
+#./win.py importer -b history -m append -f ${HIS_DIR}/update/rm1309.txt -t rm09
+
