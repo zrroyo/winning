@@ -17,6 +17,19 @@ class WenhuaImport(IMPORT.Import):
 		IMPORT.Import.__exit__(self)
 		return
 	
+	# Support 2 types of time formats, "yyyy-mm-dd" and "mm/dd/yyyy", in data files, 
+	# but only "yyyy-mm-dd" is allowed to insert into database.
+	def _formatTime (self, time):
+		if time.find('-') != -1:
+			return time
+		elif time.find('/') != -1:
+			sep = time.split('/')
+			#print sep
+			return '%s-%s-%s' % (sep[2], sep[0], sep[1])
+		else:
+			print 'Wrong time format found!'
+			exit()
+	
 	# Import all records from a file into a datatable.
 	def newImport (self, dataFile, dataTable):
 		self.prepareImport(dataTable)
@@ -24,7 +37,7 @@ class WenhuaImport(IMPORT.Import):
 		for line in fileinput.input(dataFile):
 			cmdStr = 'echo %s | awk \'BEGIN {FS=","} {OFS=","} END {print $1}\'' % line.strip()
 			res = os.popen(cmdStr)
-			values = '"' + res.read().strip() + '"'
+			values = '"' + self._formatTime(res.read().strip()) + '"'
 			cmdStr = 'echo %s | awk \'BEGIN {FS=","} {OFS=","} END {print $2, $3, $4, $5, $6, $7, $8}\'' % line.strip()
 			res = os.popen(cmdStr)
 			values = values + ',' + res.read().strip()
@@ -44,7 +57,7 @@ class WenhuaImport(IMPORT.Import):
 	
 	# Insert a record into a datatable.
 	def insertRecord (self, record, dataTable):
-		time = self.getRecordFieldSepByComma(record, 1)
+		time = self._formatTime(self.getRecordFieldSepByComma(record, 1))
 		oPrice = self.getRecordFieldSepByComma(record, 2)
 		hPrice = self.getRecordFieldSepByComma(record, 3)
 		lPrice = self.getRecordFieldSepByComma(record, 4)
@@ -62,7 +75,7 @@ class WenhuaImport(IMPORT.Import):
 		
 	# Append a record at the end of a datatable.
 	def appendRecord (self, record, dataTable, date):
-		time = self.getRecordFieldSepByComma(record, 1)
+		time = self._formatTime(self.getRecordFieldSepByComma(record, 1))
 		
 		if time <= date:
 			return False
@@ -103,7 +116,7 @@ class WenhuaImport(IMPORT.Import):
 			return self.insertRecord(record, dataTable)
 		
 		# Record exists in datatable, update it.
-		time = self.getRecordFieldSepByComma(record, 1)
+		time = self._formatTime(self.getRecordFieldSepByComma(record, 1))
 		oPrice = self.getRecordFieldSepByComma(record, 2)
 		hPrice = self.getRecordFieldSepByComma(record, 3)
 		lPrice = self.getRecordFieldSepByComma(record, 4)
@@ -160,7 +173,7 @@ class WenhuaImport(IMPORT.Import):
 			#print lLine
 			#print cLine	
 			
-			time = self.getDirRecordTime(oLine)
+			time = self._formatTime(self.getDirRecordTime(oLine))
 			oPrice = self.getDirRecordData(oLine)
 			hPrice = self.getDirRecordData(hLine)
 			lPrice = self.getDirRecordData(lLine)
