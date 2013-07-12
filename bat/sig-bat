@@ -1,0 +1,43 @@
+DATE=2013-7-11
+# M
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t m1309
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t m1309
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t m1401
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t m1401
+
+# RB
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t rb1310
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t rb1310
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t rb1401
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t rb1401
+
+# FG
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t fg1309
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t fg1309
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t fg1401
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t fg1401
+
+# SR 
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t sr1309
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t sr1309
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t sr1401
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t sr1401
+
+# RM 
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t rm1309
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t rm1309
+./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t rm1401
+#./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t rm1401
+
+# PTA
+./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t pta1309
+#./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t pta1309
+./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t pta1401
+#./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t pta1401
+
+# P
+#./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t P1309
+./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t P1309
+./win.py data -b history -d ${DATE} -H Close,19 -L Close,19 -t P1401
+#./win.py data -b history -d ${DATE} -H Close,9 -L Close,9 -m Close,10 -t P1401
+
