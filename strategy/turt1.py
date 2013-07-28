@@ -28,7 +28,7 @@ class Turt1(turtle.Turtle):
 			else:
 				minPosIntv = self.minPosIntv
 			
-			print "%s Hit Short Signal: Close %s, Lowest %s, minPosIntv %d" % (date, price, self.lowestBeforeDate(date, 20), minPosIntv)
+			self.log("%s Hit Short Signal: Close %s, Lowest %s, minPosIntv %d" % (date, price, self.lowestBeforeDate(date, 20), minPosIntv))
 			return True
 		return False
 			
@@ -40,7 +40,7 @@ class Turt1(turtle.Turtle):
 			else:
 				minPosIntv = self.minPosIntv
 				
-			print "%s Hit Long Signal: Close %s, Highest %s, minPosIntv %d" % (date, price, self.highestBeforeDate(date, 20), minPosIntv)
+			self.log("%s Hit Long Signal: Close %s, Highest %s, minPosIntv %d" % (date, price, self.highestBeforeDate(date, 20), minPosIntv))
 			return True
 		return False
 		
@@ -51,7 +51,7 @@ class Turt1(turtle.Turtle):
 		self.openShortPostion(pLastAddPrice)
 		cutLossMode = False
 		pLimitByM10 = 0
-		time = dateSet.getSetNextDate()
+		time = self.moveToNextTick(dateSet)
 		
 		if self.workMode == 'atr':
 			minPosIntv = self.turtData.getAtr(date) / 2
@@ -59,6 +59,11 @@ class Turt1(turtle.Turtle):
 			minPosIntv = self.minPosIntv
 		
 		while time is not None:
+			if self.emuRunCtrl is not None:
+				tickReady = self.emuRunCtrl.tickIsReady(time)
+				if tickReady is 'False':
+					continue
+				
 			days = days + 1
 			
 			# Cut losses.
@@ -66,17 +71,17 @@ class Turt1(turtle.Turtle):
 			#if price > self.data.M20(time):
 			if price > self.highestBeforeDate(time, 10):
 				self.closeAllPostion(price, 'short')
-				print "	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestBeforeDate(time, 10))
+				self.log("	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
 			
 			if price > self.data.M10(time):
 				if cutLossMode:
-					time = dateSet.getSetNextDate()
+					time = self.moveToNextTick(dateSet)
 					continue
 				
 				if self.curPostion() == 1:
-					time = dateSet.getSetNextDate()
+					time = self.moveToNextTick(dateSet)
 					continue
 					
 				cutLossMode = True
@@ -88,26 +93,26 @@ class Turt1(turtle.Turtle):
 					
 				self.closeMultPostion(mult, price, 'short')
 				
-				print "	[Short] [%s] M10 BT lasted %d days:	open %s,  close %s, M10 %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, self.data.M10(time), mult, pLimitByM10)
+				self.log("	[Short] [%s] M10 BT lasted %d days:	open %s,  close %s, M10 %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, self.data.M10(time), mult, pLimitByM10))
 				
 				if self.curPostion() == 0:
 					break
-				time = dateSet.getSetNextDate()
+				time = self.moveToNextTick(dateSet)
 				continue
 			
 			if cutLossMode and price >= pLimitByM10:
-				time = dateSet.getSetNextDate()
+				time = self.moveToNextTick(dateSet)
 				continue
 			
 			if pLastAddPrice - price >= minPosIntv:
 				if self.curPostion() < self.maxAddPos:
-					self.openShortPostion(price)
-					print "	[Short] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, pLastAddPrice-price)	
-					pLastAddPrice = price
-					cutLossMode = False
-					pLimitByM10 = 0
+					if self.openShortPostion(price):
+						self.log("	[Short] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, pLastAddPrice-price))
+						pLastAddPrice = price
+						cutLossMode = False
+						pLimitByM10 = 0
 				
-			time = dateSet.getSetNextDate()
+			time = self.moveToNextTick(dateSet)
 		
 		return time
 		
@@ -118,7 +123,7 @@ class Turt1(turtle.Turtle):
 		self.openLongPostion(pLastAddPrice)
 		cutLossMode = False
 		pLimitByM10 = 0
-		time = dateSet.getSetNextDate()
+		time = self.moveToNextTick(dateSet)
 		
 		if self.workMode == 'atr':
 			minPosIntv = self.turtData.getAtr(date) / 2
@@ -126,6 +131,11 @@ class Turt1(turtle.Turtle):
 			minPosIntv = self.minPosIntv
 			
 		while time is not None:
+			if self.emuRunCtrl is not None:
+				tickReady = self.emuRunCtrl.tickIsReady(time)
+				if tickReady is 'False':
+					continue
+					
 			days = days + 1
 			
 			# Cut losses.
@@ -133,17 +143,17 @@ class Turt1(turtle.Turtle):
 			#if price < self.data.M20(time):
 			if price < self.lowestBeforeDate(time, 10):
 				self.closeAllPostion(price, 'long')
-				print "	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestBeforeDate(time, 10))
+				self.log("	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
 			
 			if price < self.data.M10(time):
 				if cutLossMode:
-					time = dateSet.getSetNextDate()
+					time = self.moveToNextTick(dateSet)
 					continue
 					
 				if self.curPostion() == 1:
-					time = dateSet.getSetNextDate()
+					time = self.moveToNextTick(dateSet)
 					continue
 				
 				cutLossMode = True
@@ -155,26 +165,26 @@ class Turt1(turtle.Turtle):
 					
 				self.closeMultPostion(mult, price, 'long')
 				
-				print "	[Long] [%s] M10 BT lasted %d days:	open %s,  close %s, M10 %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, self.data.M10(time), mult, pLimitByM10)
+				self.log("	[Long] [%s] M10 BT lasted %d days:	open %s,  close %s, M10 %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, self.data.M10(time), mult, pLimitByM10))
 				
 				if self.curPostion() == 0:
 					break
-				time = dateSet.getSetNextDate()
+				time = self.moveToNextTick(dateSet)
 				continue
 				
 			if cutLossMode and price <= pLimitByM10:
-				time = dateSet.getSetNextDate()
+				time = self.moveToNextTick(dateSet)
 				continue
 				
 			if price - pLastAddPrice >= minPosIntv:
 				if self.curPostion() < self.maxAddPos:
-					self.openLongPostion(price)
-					print "	[Long] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, price-pLastAddPrice)
-					pLastAddPrice = price
-					cutLossMode = False
-					pLimitByM10 = 0
+					if self.openLongPostion(price):
+						self.log("	[Long] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, price-pLastAddPrice))
+						pLastAddPrice = price
+						cutLossMode = False
+						pLimitByM10 = 0
 						
-			time = dateSet.getSetNextDate()
+			time = self.moveToNextTick(dateSet)
 				
 		return time
 	
