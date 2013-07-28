@@ -10,6 +10,9 @@ import string
 import db.mysqldb as sql
 import futcom
 import regress.runstat as runstat
+import emulate
+import tick
+import thread
 
 # Regression Filter omits all tests which do not match @filter in @regSet.
 def regressionFilter (regSet, filter):
@@ -95,13 +98,29 @@ def doRegression (options, database, test, strategy):
 	if strategy.runStat is not None:
 		strategy.runStat.showStat()
 	
+# Do regressions for a set of or all possible tables.
+def doAllRegressions (options, database):
+	regSet = []
+	if options.tables:
+		regSet = futcom.futcodeSetToDataTables(options.tables.split(','))
+	else:
+		regSet = possibleRegressionTests(database)
+		
+	if options.filter:
+		regSet = regressionFilter(regSet, options.filter)
+		
+	#print regSet
+	for test in regSet:
+		doRegression(options, database, test, options.strategy)
+			
 # Do assistant provided by strategies.
-def strategyAssistant (options, database, table, extra):
+def strategyAssistant (options, database):
+	if options.extra is None or options.tables is None:
+		print "\nPlease specify extra information by '-e' and tables '-t'...\n"
+		exit()
+			
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
-	#table = extra.split(',')[0]
-	table = futcom.futcodeToDataTable(table)
-	#print extra, table
-	#table = extra[0]
+	table = futcom.futcodeToDataTable(options.tables)
 	strategy = options.strategy
 	
 	if strategy == 'turtle':
@@ -114,7 +133,62 @@ def strategyAssistant (options, database, table, extra):
 		print "\nUnknown strategy '%s' to do assistant.\n" % strategy
 		exit()
 		
-	strategy.assistant(extra)
+	strategy.assistant(options.extra)
+		
+# Do emulation for a set of or all possible tables.
+def doEmulation(options, database):
+	# Check extra info is filled.
+	extra = options.extra.split(',')
+	if options.extra is None or len(extra) != 7:
+		print "\nPlease specify extra information by '-e' with format (xxx)...\n"
+		exit()
+			
+	# Prepare emulation tables set.
+	emuSet = []
+	if options.tables:
+		emuSet = futcom.futcodeSetToDataTables(options.tables.split(','))
+	else:
+		emuSet = possibleRegressionTests(database)
+		
+	if options.filter:
+		emuSet = regressionFilter(emuSet, options.filter)
+			
+	# Do emulation in a reverse order for tables set.
+	emuSet.reverse()
+	
+	# Prepare run-time control blocks below.
+	
+	# Fill common attributes.
+	maxAddPos = int(extra[0])
+	minPos = int(extra[1])
+	priceUnit= int(extra[3])
+	
+	if extra[2] is '':
+		minPosIntv = None
+	else:
+		minPosIntv= int(extra[2])
+		
+	maxAllowedPos = int(extra[4])
+	startTick1 = extra[5]
+	startTick2 = extra[6]
+			
+	# Initialise run-time control blocks.
+	comAttr = emulate.CommonAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
+	runCtrl1 = emulate.RunControl(False, thread.allocate_lock(), None, comAttr, False)
+	runCtrl2 = emulate.RunControl(False, thread.allocate_lock(), None, comAttr, False, startTick2)
+	
+	# Initialise tick source.
+	tickSrc = tick.Tick()
+	tickSrc.setCurTick(startTick1)
+	
+	runCtrlSet = emulate.RunCtrlSet(maxAllowedPos, tickSrc)
+	runCtrlSet.add(runCtrl1)
+	runCtrlSet.add(runCtrl2)
+	
+	runCtrlSet.enableMarketRunStat()
+	
+	emu = emulate.Emulate(options.strategy, runCtrlSet, emuSet)
+	emu.run()
 		
 # Regression subsystem option handler transfering options to actions.
 def regressionOptionsHandler (options, args):
@@ -132,34 +206,19 @@ def regressionOptionsHandler (options, args):
 		print "\nPlease specify a strategy to do regression using '-s'.\n"
 		return
 	
-	if options.assistant:
-		if options.extra and options.tables:
-			strategyAssistant(options, database, options.tables, options.extra)
-		elif options.extra is None:
-			print "\nPlease specify extra information by '-e' needed by strategy assistant.\n"
-		elif options.tables is None:
-			print "\nPlease specify a Future code which needs assistance using '-t'.\n"
-			
+	if options.mode == 'assis':
+		strategyAssistant(options, database)
 		# Don't allow assistant option '-a' to be used with other options.
-		exit()
-			
-	regSet = []
-	if options.tables:
-		regSet = futcom.futcodeSetToDataTables(options.tables.split(','))
+		#exit()
+	elif options.mode == 'emul':
+		doEmulation(options, database)
 	else:
-		regSet = possibleRegressionTests(database)
-		
-	if options.filter:
-		regSet = regressionFilter(regSet, options.filter)
-		
-	#print regSet
-	for test in regSet:
-		doRegression(options, database, test, options.strategy)
+		doAllRegressions(options, database)
 	
 # Regression subsystem Option Parser. Called in win.py.
 def regressionOptionsParser (parser):
-	parser.add_option('-a', '--assistant', action="store_true", dest='assistant', 
-			help='Check if match any conditions defined in strategy.')
+	parser.add_option('-m', '--mode', dest='mode', 
+			help='Regression mode, such as, assis[tant], emu[late], regression.')
 	parser.add_option('-l', '--list', action="store_true", dest='list', 
 			help='List all posssible regression tests.')
 	parser.add_option('-t', '--tables', dest='tables', 
