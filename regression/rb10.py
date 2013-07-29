@@ -29,35 +29,50 @@ recDir = '/media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/histor
 ## Split RB10 into each table by Year.
 #imp.splitTableToSubFutures('rb', 'rb10', 10, 15, 2013)
 
-minPosIntv=40
+#####  SEP ####
+#minPosIntv=40
 
-turt = TURT.Turt1('rb0910', 'rb0910_dayk', 'rb0910_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, minPosIntv, 10)
-turt.run()
+#turt = TURT.Turt1('rb0910', 'rb0910_dayk', 'rb0910_dayk_trade_rec', 'history')
+#turt.setAttrs(3, 1, minPosIntv, 10)
+#turt.run()
 
-turt = TURT.Turt1('rb1010', 'rb1010_dayk', 'rb1010_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, minPosIntv, 10)
-turt.run()
+#turt = TURT.Turt1('rb1010', 'rb1010_dayk', 'rb1010_dayk_trade_rec', 'history')
+#turt.setAttrs(3, 1, minPosIntv, 10)
+#turt.run()
 
-turt = TURT.Turt1('rb1110', 'rb1110_dayk', 'rb1110_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, minPosIntv, 10)
-turt.run()
+#turt = TURT.Turt1('rb1110', 'rb1110_dayk', 'rb1110_dayk_trade_rec', 'history')
+#turt.setAttrs(3, 1, minPosIntv, 10)
+#turt.run()
 
-turt = TURT.Turt1('rb1210', 'rb1210_dayk', 'rb1210_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, minPosIntv, 10)
-turt.run()
+#turt = TURT.Turt1('rb1210', 'rb1210_dayk', 'rb1210_dayk_trade_rec', 'history')
+#turt.setAttrs(3, 1, minPosIntv, 10)
+#turt.run()
 
-imp.appendRecordsOnly(dataFile, 'rb10')
-imp.dropFutureTable('rb1310_dayk')
-imp.partReimport('rb10', 'rb1310_dayk', '2012-10-16')
+#imp.appendRecordsOnly(dataFile, 'rb10')
+#imp.dropFutureTable('rb1310_dayk')
+#imp.partReimport('rb10', 'rb1310_dayk', '2012-10-16')
 
-turt = TURT.Turt1('rb1310', 'rb1310_dayk', 'rb1310_dayk_trade_rec', 'history')
-turt.setAttrs(3, 1, minPosIntv, 10)
-turt.atr()
-turt.run()
+#turt = TURT.Turt1('rb1310', 'rb1310_dayk', 'rb1310_dayk_trade_rec', 'history')
+#turt.setAttrs(3, 1, minPosIntv, 10)
+#turt.atr()
+#turt.run()
 
 #dat = data.Data('history', 'rb1310_dayk')
 ##print dat.lowestBeforeDate('2013-05-07', 10)
 #time = '2013-05-07'
 #print 'lowest close up to %s : ' % time, dat.lowestUpToDate(time, 9)
 #print 'highest close up to %s : ' % time, dat.highestUpToDate(time, 9)
+
+#imp = IMPORT.WenhuaImport('history')
+#imp.partReimport('rb05', 'rb1405_dayk', '2013-5-16')
+#imp.partReimport('rb05', 'rb1305_dayk', '2012-5-16', '2013-5-15')
+#imp.partReimport('rb05', 'rb1205_dayk', '2011-5-16', '2012-5-15')
+#imp.partReimport('rb05', 'rb1105_dayk', '2010-5-16', '2011-5-15')
+#imp.partReimport('rb05', 'rb1005_dayk', '2009-5-16', '2010-5-15')
+
+imp = IMPORT.WenhuaImport('history')
+imp.partReimport('rb01', 'rb1401_dayk', '2013-1-16')
+imp.partReimport('rb01', 'rb1301_dayk', '2012-1-16', '2013-1-15')
+imp.partReimport('rb01', 'rb1201_dayk', '2011-1-16', '2012-1-15')
+imp.partReimport('rb01', 'rb1101_dayk', '2010-1-16', '2011-1-15')
+imp.partReimport('rb01', 'rb1001_dayk', '2009-1-16', '2010-1-15')
