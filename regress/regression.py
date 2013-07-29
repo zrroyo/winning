@@ -142,6 +142,8 @@ def doEmulation(options, database):
 	if options.extra is None or len(extra) != 7:
 		print "\nPlease specify extra information by '-e' with format (xxx)...\n"
 		exit()
+		
+	print extra
 			
 	# Prepare emulation tables set.
 	emuSet = []
