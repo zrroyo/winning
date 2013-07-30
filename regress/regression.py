@@ -21,6 +21,10 @@ def regressionFilter (regSet, filter):
 	for f in filters:
 		if f is not None:
 			regSet = [test for test in regSet if test.find(f) != -1]
+			
+	if filter[0] != '*':
+		regSet = [test for test in regSet if test[0] == filter[0]]
+		
 	return regSet
 	
 # List all possible regression tests in database.
