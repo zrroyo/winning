@@ -1,11 +1,16 @@
 #-*- coding:utf-8 -*-
 
-import UserApiStruct as ustruct
-import UserApiType as utype
-from MdApi import MdApi, MdSpi
-from TraderApi import TraderApi, TraderSpi  
+from ctp.futures import ApiStruct, MdApi, TraderApi
 
-class MdSpiDelegate(MdSpi):
+#日内最后交易时间，超过为越界
+LAST_TRADE_TIME = 1515
+
+#数据定义中唯一一个enum
+THOST_TERT_RESTART  = ApiStruct.TERT_RESTART
+THOST_TERT_RESUME   = ApiStruct.TERT_RESUME
+THOST_TERT_QUICK    = ApiStruct.TERT_QUICK
+
+class MdSpiDelegate(MdApi):
     '''
         将行情信息转发到Agent
         并自行处理杂务
@@ -29,6 +34,7 @@ class MdSpiDelegate(MdSpi):
         ##必须在每日重新连接时初始化它. 这一点用到了生产行情服务器收盘后关闭的特点(模拟的不关闭)
         MdSpiDelegate.last_map = dict([(id,0) for id in instruments])
         self.last_day = 0
+        agent.add_mdapi(self)
 
     def checkErrorRspInfo(self, info):
         if info.ErrorID !=0:
@@ -46,8 +52,8 @@ class MdSpiDelegate(MdSpi):
         self.user_login(self.broker_id, self.investor_id, self.passwd)
 
     def user_login(self, broker_id, investor_id, passwd):
-        req = ustruct.ReqUserLogin(BrokerID=broker_id, UserID=investor_id, Password=passwd)
-        r=self.api.ReqUserLogin(req,self.agent.inc_request_id())
+        req = ApiStruct.ReqUserLogin(BrokerID=broker_id, UserID=investor_id, Password=passwd)
+        r=self.ReqUserLogin(req,self.agent.inc_request_id())
 
     def OnRspUserLogin(self, userlogin, info, rid, is_last):
         self.logger.info(u'MD:user login,info:%s,rid:%s,is_last:%s' % (info,rid,is_last))
@@ -58,11 +64,11 @@ class MdSpiDelegate(MdSpi):
             self.agent.day_switch(scur_day)
             MdSpiDelegate.last_map = dict([(id,0) for id in self.instruments])
         if is_last and not self.checkErrorRspInfo(info):
-            self.logger.info(u"MD:get today's trading day:%s" % repr(self.api.GetTradingDay()))
+            self.logger.info(u"MD:get today's trading day:%s" % repr(self.GetTradingDay()))
             self.subscribe_market_data(self.instruments)
 
     def subscribe_market_data(self, instruments):
-        self.api.SubscribeMarketData(list(instruments))
+        self.SubscribeMarketData(list(instruments))
 
     def OnRtnDepthMarketData(self, depth_market_data):
         #print depth_market_data.BidPrice1,depth_market_data.BidVolume1,depth_market_data.AskPrice1,depth_market_data.AskVolume1,depth_market_data.LastPrice,depth_market_data.Volume,depth_market_data.UpdateTime,depth_market_data.UpdateMillisec,depth_market_data.InstrumentID
@@ -138,7 +144,7 @@ class MdSpiDelegate(MdSpi):
             self.logger.warning(u'MD:%s 行情数据转换错误:%s,updateTime="%s",msec="%s",tday="%s"' % (market_data.InstrumentID,str(inst),market_data.UpdateTime,market_data.UpdateMillisec,market_data.TradingDay))
         return rev
 
-class TraderSpiDelegate(TraderSpi):
+class TraderSpiDelegate(TraderApi):
     '''
         将服务器回应转发到Agent
         并自行处理杂务
@@ -178,8 +184,8 @@ class TraderSpiDelegate(TraderSpi):
         self.logger.info(u'TD:trader front disconnected,reason=%s' % (nReason,))
 
     def user_login(self, broker_id, investor_id, passwd):
-        req = ustruct.ReqUserLogin(BrokerID=broker_id, UserID=investor_id, Password=passwd)
-        r=self.api.ReqUserLogin(req,self.agent.inc_request_id())
+        req = ApiStruct.ReqUserLogin(BrokerID=broker_id, UserID=investor_id, Password=passwd)
+        r=self.ReqUserLogin(req,self.agent.inc_request_id())
 
     def OnRspUserLogin(self, pRspUserLogin, pRspInfo, nRequestID, bIsLast):
         self.logger.info(u'TD:trader login')
@@ -193,7 +199,7 @@ class TraderSpiDelegate(TraderSpi):
         self.logger.info(u'TD:trader login success')
         self.agent.login_success(pRspUserLogin.FrontID,pRspUserLogin.SessionID,pRspUserLogin.MaxOrderRef)
         #self.settlementInfoConfirm()
-        self.agent.set_trading_day(self.api.GetTradingDay())
+        self.agent.set_trading_day(self.GetTradingDay())
         #self.query_settlement_info()
         self.query_settlement_confirm() 
 
@@ -224,21 +230,21 @@ class TraderSpiDelegate(TraderSpi):
             2011-3-1 确认每天未确认前查询确认情况时,返回的响应中pSettlementInfoConfirm为空指针
             并且妥善处理空指针之后,仍然有问题,在其中查询结算单无动静
         '''
-        req = ustruct.QrySettlementInfoConfirm(BrokerID=self.broker_id,InvestorID=self.investor_id)
-        self.api.ReqQrySettlementInfoConfirm(req,self.agent.inc_request_id())
+        req = ApiStruct.QrySettlementInfoConfirm(BrokerID=self.broker_id,InvestorID=self.investor_id)
+        self.ReqQrySettlementInfoConfirm(req,self.agent.inc_request_id())
 
     def query_settlement_info(self):
         #不填日期表示取上一天结算单,并在响应函数中确认
         self.logger.info(u'TD:取上一日结算单信息并确认,BrokerID=%s,investorID=%s' % (self.broker_id,self.investor_id))
-        req = ustruct.QrySettlementInfo(BrokerID=self.broker_id,InvestorID=self.investor_id,TradingDay=u'')
+        req = ApiStruct.QrySettlementInfo(BrokerID=self.broker_id,InvestorID=self.investor_id,TradingDay=u'')
         #print req.BrokerID,req.InvestorID,req.TradingDay
         time.sleep(1)
-        self.api.ReqQrySettlementInfo(req,self.agent.inc_request_id())
+        self.ReqQrySettlementInfo(req,self.agent.inc_request_id())
 
     def confirm_settlement_info(self):
         self.logger.info(u'TD-CSI:准备确认结算单')
-        req = ustruct.SettlementInfoConfirm(BrokerID=self.broker_id,InvestorID=self.investor_id)
-        self.api.ReqSettlementInfoConfirm(req,self.agent.inc_request_id())
+        req = ApiStruct.SettlementInfoConfirm(BrokerID=self.broker_id,InvestorID=self.investor_id)
+        self.ReqSettlementInfoConfirm(req,self.agent.inc_request_id())
 
     def OnRspQrySettlementInfo(self, pSettlementInfo, pRspInfo, nRequestID, bIsLast):
         '''请求查询投资者结算信息响应'''
