@@ -1,6 +1,7 @@
 #-*- coding:utf-8 -*-
 
-from ctp.futures import ApiStruct, MdApi, TraderApi
+import logging
+from futures import ApiStruct, MdApi, TraderApi
 
 #日内最后交易时间，超过为越界
 LAST_TRADE_TIME = 1515
@@ -34,7 +35,6 @@ class MdSpiDelegate(MdApi):
         ##必须在每日重新连接时初始化它. 这一点用到了生产行情服务器收盘后关闭的特点(模拟的不关闭)
         MdSpiDelegate.last_map = dict([(id,0) for id in instruments])
         self.last_day = 0
-        agent.add_mdapi(self)
 
     def checkErrorRspInfo(self, info):
         if info.ErrorID !=0:
