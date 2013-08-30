@@ -13,16 +13,17 @@ class TestVar:
 	
 
 def doTest():
-	mdSpi = MdSpiDelegate('m1401', '9000', '2600940', 'xxxx', None)
-	mdSpi.Create("Md")
-	mdSpi.RegisterFront('tcp://gfqh-md5.financial-trading-platform.com:41213')
-	mdSpi.Init()
-	#tSpi = TraderSpi()
-	#tApi.RegisterSpi(tSpi)
-	#tApi.SubscribePublicTopic(THOST_TERT_QUICK)
-	#tApi.SubscribePrivateTopic(THOST_TERT_QUICK)
-	#tApi.RegisterFront("tcp://172.16.0.31:26205")
-	#tApi.Init()
+	#mdSpi = MdSpiDelegate('m1401', '9000', '2600940', 'xxxx', None)
+	#mdSpi.Create("Md")
+	#mdSpi.RegisterFront('tcp://gfqh-md5.financial-trading-platform.com:41213')
+	#mdSpi.Init()
+
+	tdSpi = TraderSpiDelegate('m1401', '9000', '2600940', 'xxxx', None)
+	tdSpi.Create('Trader')
+	tdSpi.SubscribePublicTopic(THOST_TERT_QUICK)
+	tdSpi.SubscribePrivateTopic(THOST_TERT_QUICK)
+	tdSpi.RegisterFront('tcp://gfqh-md5.financial-trading-platform.com:41213')
+	tdSpi.Init()
 	
 	#var = TestVar()
 	#print var.happy
