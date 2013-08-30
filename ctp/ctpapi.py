@@ -2,6 +2,7 @@
 
 import logging
 from futures import ApiStruct, MdApi, TraderApi
+import ctpagent
 
 #日内最后交易时间，超过为越界
 LAST_TRADE_TIME = 1515
