@@ -3,6 +3,7 @@
 import logging
 from futures import ApiStruct, MdApi, TraderApi
 import ctpapi
+import instrument
 
 class Agent:
 	def __init__(self,cuser,instruments,strategy_cfg):
