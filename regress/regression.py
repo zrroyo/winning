@@ -144,7 +144,7 @@ def doEmulation(options, database):
 	# Check extra info is filled.
 	extra = options.extra.split(',')
 	if options.extra is None or len(extra) != 7:
-		print "\nPlease specify extra information by '-e' with format (xxx)...\n"
+		print "\nPlease specify extra information by '-e' with format like 'maxAddPos,minPos,minPosIntv,priceUnit,maxAllowedPos,startTick1,startTick2'\n"
 		exit()
 		
 	print extra
