@@ -50,6 +50,10 @@ class Agent:
 	def init_init(self):    #init中的init,用于子类的处理
 		pass
 	
+	def inc_request_id(self):
+		self.request_id += 1
+		return self.request_id
+	    
 	def open_position(self,order):
 		''' 
 		发出下单指令
