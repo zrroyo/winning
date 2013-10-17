@@ -99,7 +99,14 @@ MYSQL in Winfutre.
 	4) 安装Mysql-python库：sudo easy_install mysql-python
 	===
 	如果出错: 
-	sudo easy_install -U distribute，再执行4)步。	
+	
+	Ubuntu 11.04:
+		sudo easy_install -U distribute，再执行4)步。
+
+	Ubuntu 12.04:
+		sudo apt-get remove  python-setuptools
+		sudo which easy_install | sudo xargs rm
+		然后再重复3)、4)步。
 	===
 
 
