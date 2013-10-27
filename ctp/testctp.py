@@ -1,6 +1,8 @@
 #! /usr/bin/python
 
-from ctpapi import MdSpiDelegate, TraderSpiDelegate
+#from ctpapi import MdSpiDelegate, TraderSpiDelegate
+from ctpapi import CtpMdApi
+import time
 
 #THOST_TERT_RESTART  = 0
 #THOST_TERT_RESUME   = 1
@@ -13,21 +15,14 @@ class TestVar:
 	
 
 def doTest():
-	#mdSpi = MdSpiDelegate('m1401', '9000', '2600940', 'xxxx', None)
-	#mdSpi.Create("Md")
-	#mdSpi.RegisterFront('tcp://gfqh-md5.financial-trading-platform.com:41213')
-	#mdSpi.Init()
+	inst=[u'm1401', u'p1401']
+	mdSpi = CtpMdApi(inst, '2030', '00092', '888888', None)
+	mdSpi.Create("Md")
+	mdSpi.RegisterFront('tcp://asp-sim2-md1.financial-trading-platform.com:26213')
+	mdSpi.Init()
 
-	tdSpi = TraderSpiDelegate('m1401', '9000', '2600940', 'xxxx', None)
-	tdSpi.Create('Trader')
-	tdSpi.SubscribePublicTopic(THOST_TERT_QUICK)
-	tdSpi.SubscribePrivateTopic(THOST_TERT_QUICK)
-	tdSpi.RegisterFront('tcp://gfqh-md5.financial-trading-platform.com:41213')
-	tdSpi.Init()
-	
-	#var = TestVar()
-	#print var.happy
-	pass
+	while 1:
+		time.sleep(1)
 
 if __name__ == '__main__':
 	doTest()
