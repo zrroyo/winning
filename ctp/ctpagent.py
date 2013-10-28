@@ -11,7 +11,7 @@ class MarketDataAgent:
 		pass
 		
 	# 在开始行情服务前必须被调用	
-	def initAgent (self, instList, logger):
+	def initAgent (self, logger, instList):
 		self.logger = logger
 		self.instruments = instList
 		pass
@@ -28,14 +28,19 @@ class MarketDataAgent:
 			
 			#self.logger.debug(u'MD:收到行情，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.last_map[dp.InstrumentID]))
 			
-			if dp.Volume <= self.dataMap[dp.InstrumentID].Volume:
-				#行情未变化
-				self.logger.debug(u'MD:行情无变化，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.last_map[dp.InstrumentID]))
-				return  
+			if self.dataMap.isMdDataExisted(dp.InstrumentID):
+				print self.dataMap.getMdData(dp.InstrumentID)
+				if dp.Volume <= self.dataMap[dp.InstrumentID].Volume:
+					#行情未变化
+					self.logger.debug(u'MD:行情无变化，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.last_map[dp.InstrumentID]))
+					return  
 			
-			#行情发生变化，记录到行情数据映射中.
-			self.dataMap.addMdData(dp.InstrumentID, dp)
-
+				#行情发生变化，记录到行情数据映射中.
+				self.dataMap.updateMdData(dp.InstrumentID, dp)
+			else:	
+				# 合约行情数据还不存在于已知映射中
+				self.dataMap.addMdData(dp.InstrumentID, dp)
+	
 			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 		finally:
 			self.logger.debug(u'接收行情数据异常!')

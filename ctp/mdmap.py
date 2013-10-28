@@ -25,3 +25,11 @@ class MarketDataMap:
 	def getMdData (self, instrument):
 		return self.dataDict[instrument]
 	
+	def isMdDataExisted (self, instrument):
+		if self.getMdData(instrument) is None:
+			return False
+		else:
+			return True
+		
+		
+		
