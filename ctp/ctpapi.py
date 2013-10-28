@@ -2,17 +2,22 @@
 
 import logging
 from futures import ApiStruct, MdApi, TraderApi
+import ctpagent
 
 class CtpMdApi(MdApi):
 	logger = logging.getLogger('ctp.CtpMdApi')
 	
-	def __init__(self, instruments, broker_id,
-			investor_id, passwd, *args,**kwargs):
+	def __init__(self, instruments, broker_id, investor_id, passwd, agent=None):
 		self.requestid=0
 		self.instruments = instruments
 		self.broker_id =broker_id
 		self.investor_id = investor_id
 		self.passwd = passwd
+		
+		#初始化实际处理对象
+		self.agent = agent
+		if self.agent is not None:
+			self.agent.initAgent(self.logger, self.instruments)
 	
 	def checkErrorRspInfo(self, info):
 		if info.ErrorID !=0:
@@ -44,30 +49,11 @@ class CtpMdApi(MdApi):
 		self.SubscribeMarketData(list(instruments))
 	
 	def OnRtnDepthMarketData(self, depth_market_data):
-		print "OnRtnDepthMarketData"
-		##print depth_market_data.BidPrice1,depth_market_data.BidVolume1,depth_market_data.AskPrice1,depth_market_data.AskVolume1,depth_market_data.LastPrice,depth_market_data.Volume,depth_market_data.UpdateTime,depth_market_data.UpdateMillisec,depth_market_data.InstrumentID	
-		try:
-			if depth_market_data.LastPrice > 999999 or depth_market_data.LastPrice < 10:
-				self.logger.warning(u'MD:收到的行情数据有误:%s,LastPrice=:%s' %(depth_market_data.InstrumentID,depth_market_data.LastPrice))
-			if depth_market_data.InstrumentID not in self.instruments:
-				self.logger.warning(u'MD:收到未订阅的行情:%s' %(depth_market_data.InstrumentID,))
-	
+		if self.agent is None:
 			dp = depth_market_data
-			#self.logger.debug(u'MD:收到行情，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.last_map[dp.InstrumentID]))
-			#if dp.Volume <= self.last_map[dp.InstrumentID]:
-				#self.logger.debug(u'MD:行情无变化，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.last_map[dp.InstrumentID]))
-				#return  #行情未变化
-			
-			#self.last_map[dp.InstrumentID] = dp.Volume
-			
-			#self.agent.inc_tick()
-			#ctick = self.market_data2tick(depth_market_data)
-			#print ctick
-			#self.agent.RtnTick(ctick)
-			
-			print depth_market_data.BidPrice1,depth_market_data.BidVolume1,depth_market_data.AskPrice1,depth_market_data.AskVolume1,depth_market_data.LastPrice,depth_market_data.Volume,depth_market_data.UpdateTime,depth_market_data.UpdateMillisec,depth_market_data.InstrumentID	
-		finally:
-			pass
+			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+		else:
+			self.agent.OnRtnDepthMarketData(depth_market_data)
 			
 	#def market_data2tick(self,market_data):
 		##market_data的格式转换和整理, 交易数据都转换为整数

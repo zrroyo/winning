@@ -2,11 +2,10 @@
 
 #from ctpapi import MdSpiDelegate, TraderSpiDelegate
 from ctpapi import CtpMdApi
+#from mdmap import MarketDataMap
+#from ctpagent import MarketDataAgent
+import ctpagent
 import time
-
-#THOST_TERT_RESTART  = 0
-#THOST_TERT_RESUME   = 1
-#THOST_TERT_QUICK    = 2
 
 class TestVar:
 	happy = 1
@@ -15,8 +14,12 @@ class TestVar:
 	
 
 def doTest():
-	inst=[u'm1401', u'p1401']
+	#inst=[u'm1401', u'p1401']
+	inst=[u'rb1401', u'm1401']
 	mdSpi = CtpMdApi(inst, '2030', '00092', '888888', None)
+	
+	#agent = ctpagent.MarketDataAgent()
+	#mdSpi = CtpMdApi(inst, '2030', '00092', '888888', agent)
 	mdSpi.Create("Md")
 	mdSpi.RegisterFront('tcp://asp-sim2-md1.financial-trading-platform.com:26213')
 	mdSpi.Init()
