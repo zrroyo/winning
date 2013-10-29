@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
 #from ctpapi import MdSpiDelegate, TraderSpiDelegate
-from ctpapi import CtpMdApi
+from ctpapi import CtpMdApi, CtpTraderApi
 #from mdmap import MarketDataMap
 #from ctpagent import MarketDataAgent
 import ctpagent
@@ -13,12 +13,12 @@ class TestVar:
 		pass
 	
 
-def doTest():
+def testMdApi():
 	''' Test CtpMdApi '''
 	
 	#inst=[u'm1401', u'p1401']
 	inst=[u'rb1401', u'm1401']
-	#inst=[u'rb1401']
+	#inst=[u'm1401']
 	#mdSpi = CtpMdApi(inst, '2030', '00092', '888888', None)
 	
 	agent = ctpagent.MarketDataAgent()
@@ -30,5 +30,22 @@ def doTest():
 	while 1:
 		time.sleep(1)
 
+def testTraderApi():
+	''' Test TraderApi '''
+	''' Test CtpMdApi '''
+	
+	#inst=[u'm1401', u'p1401']
+	inst=[u'rb1401', u'm1401']
+	#inst=[u'm1401']
+	traderSpi = CtpTraderApi(inst, broker_id="2030",investor_id="wang.yc",passwd="123456")
+	traderSpi.Create("trader")
+	traderSpi.RegisterFront('tcp://asp-sim2-front1.financial-trading-platform.com:26205')
+	traderSpi.Init()
+	
+	while 1:
+		time.sleep(1)
+	
 if __name__ == '__main__':
-	doTest()
+	#testMdApi()
+	testTraderApi()
+	

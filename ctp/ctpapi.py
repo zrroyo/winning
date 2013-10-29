@@ -56,3 +56,67 @@ class CtpMdApi(MdApi):
 		else:
 			self.agent.OnRtnDepthMarketData(depth_market_data)
 			
+# CTP交易接口
+class CtpTraderApi(TraderApi):
+	logger = logging.getLogger('ctp.CtpTraderApi')
+	
+	def __init__(self,
+		instruments, 	#合约映射 name ==>c_instrument 
+		broker_id,   	#期货公司ID
+		investor_id, 	#投资者ID
+		passwd, 	#口令
+		agent = None  	#实际操作对象
+		):        
+		self.instruments = instruments
+		self.broker_id =broker_id
+		self.investor_id = investor_id
+		self.passwd = passwd
+		self.agent = agent
+		self.is_logged = False
+		self.request_id = 0
+	
+	def isRspSuccess(self, RspInfo):
+		return RspInfo == None or RspInfo.ErrorID == 0
+	
+	def login(self):
+		self.logger.info(u'try login...')
+		self.user_login(self.broker_id, self.investor_id, self.passwd)
+	
+	##交易初始化
+	def OnFrontConnected(self):
+		'''
+		当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
+		'''
+		self.logger.info(u'TD:trader front connected')
+		self.login()
+	
+	def OnFrontDisconnected(self, nReason):
+		self.logger.info(u'TD:trader front disconnected,reason=%s' % (nReason,))
+	
+	def user_login(self, broker_id, investor_id, passwd):
+		req = ApiStruct.ReqUserLogin(BrokerID=broker_id, UserID=investor_id, Password=passwd)
+		#r=self.ReqUserLogin(req,self.agent.inc_request_id())
+		r=self.ReqUserLogin(req, self.request_id)
+	
+	def OnRspUserLogin(self, pRspUserLogin, pRspInfo, nRequestID, bIsLast):
+		self.logger.info(u'TD:trader login')
+		self.logger.debug(u"TD:loggin %s" % str(pRspInfo))
+		if not self.isRspSuccess(pRspInfo):
+			self.logger.warning('TD:trader login failed, errMsg=%s' %(pRspInfo.ErrorMsg))
+			print u'综合交易平台登陆失败，请检查网络或用户名/口令'
+			self.is_logged = False
+			return
+		
+		self.is_logged = True
+		self.logger.info(u'TD:trader login success')
+		#self.agent.login_success(pRspUserLogin.FrontID,pRspUserLogin.SessionID,pRspUserLogin.MaxOrderRef)
+		#self.settlementInfoConfirm()
+		#self.agent.set_trading_day(self.GetTradingDay())
+		#self.query_settlement_info()
+		#self.query_settlement_confirm() 
+	
+	def OnRspUserLogout(self, pUserLogout, pRspInfo, nRequestID, bIsLast):
+		'''登出请求响应'''
+		self.logger.info(u'TD:trader logout')
+		self.is_logged = False
+		
