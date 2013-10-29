@@ -4,6 +4,7 @@ import logging
 from futures import ApiStruct, MdApi, TraderApi
 import ctpagent
 
+# CTP行情数据接口
 class CtpMdApi(MdApi):
 	logger = logging.getLogger('ctp.CtpMdApi')
 	
@@ -51,37 +52,7 @@ class CtpMdApi(MdApi):
 	def OnRtnDepthMarketData(self, depth_market_data):
 		if self.agent is None:
 			dp = depth_market_data
-			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 		else:
 			self.agent.OnRtnDepthMarketData(depth_market_data)
 			
-	#def market_data2tick(self,market_data):
-		##market_data的格式转换和整理, 交易数据都转换为整数
-		#try:
-			##rev的后四个字段在模拟行情中经常出错
-			#rev = BaseObject(instrument = market_data.InstrumentID,date=self.agent.scur_day,bid_price=0,bid_volume=0,ask_price=0,ask_volume=0)
-			#rev.min1 = int(market_data.UpdateTime[:2]+market_data.UpdateTime[3:5])
-			#rev.sec = int(market_data.UpdateTime[-2:])
-			#rev.msec = int(market_data.UpdateMillisec)
-			#rev.holding = int(market_data.OpenInterest+0.1)
-			#rev.dvolume = market_data.Volume
-			#rev.price = int(market_data.LastPrice*10+0.1)
-			#rev.high = int(market_data.HighestPrice*10+0.1)
-			#rev.low = int(market_data.LowestPrice*10+0.1)
-			#rev.bid_price = int(market_data.BidPrice1*10+0.1)
-			#rev.bid_volume = market_data.BidVolume1
-			#rev.ask_price = int(market_data.AskPrice1*10+0.1)
-			#rev.ask_volume = market_data.AskVolume1
-			
-			#if len(market_data.TradingDay.strip()) > 0:
-				#rev.date = int(market_data.TradingDay)
-			#else:#有时候会有错
-				#rev.date = self.last_day
-				
-			#rev.time = rev.date%10000 * 1000000+ rev.min1*100 + rev.sec
-			#rev.switch_min = False  #分钟切换
-			#self.last_day = rev.date
-		#except Exception,inst:
-			#self.logger.warning(u'MD:%s 行情数据转换错误:%s,updateTime="%s",msec="%s",tday="%s"' % (market_data.InstrumentID,str(inst),market_data.UpdateTime,market_data.UpdateMillisec,market_data.TradingDay))
-		#return rev
-		

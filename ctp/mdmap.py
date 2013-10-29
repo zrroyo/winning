@@ -1,5 +1,8 @@
 #-*- coding:utf-8 -*-
 
+import copy
+from futures import ApiStruct
+
 # Market Data Dict Map.
 class MarketDataMap:
 	def __init__ (self):
@@ -7,10 +10,11 @@ class MarketDataMap:
 		pass
 	
 	def addMdData (self, instrument, depthMarketData):
-		self.dataDict[instrument] = depthMarketData
+		dp = copy.deepcopy(depthMarketData)
+		self.dataDict[instrument] = dp
 		pass
 	
-	def delMdData (self):
+	def delMdData (self, instrument):
 		return self.dataDict.pop(instrument)
 	
 	# Delete the entire Market Data Map.
@@ -19,17 +23,15 @@ class MarketDataMap:
 		pass
 		
 	def updateMdData (self, instrument, depthMarketData):
-		self.dataDict[instrument] = depthMarketData
+		self.addMdData(instrument, depthMarketData)
 		pass
 	
 	def getMdData (self, instrument):
 		return self.dataDict[instrument]
 	
 	def isMdDataExisted (self, instrument):
-		if self.getMdData(instrument) is None:
-			return False
-		else:
+		if instrument in self.dataDict.keys():
 			return True
-		
-		
+		else:
+			return False
 		

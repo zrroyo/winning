@@ -14,8 +14,11 @@ class TestVar:
 	
 
 def doTest():
+	''' Test CtpMdApi '''
+	
 	#inst=[u'm1401', u'p1401']
 	inst=[u'rb1401', u'm1401']
+	#inst=[u'rb1401']
 	#mdSpi = CtpMdApi(inst, '2030', '00092', '888888', None)
 	
 	agent = ctpagent.MarketDataAgent()
