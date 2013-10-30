@@ -201,3 +201,140 @@ class CtpTraderApi(TraderApi):
 			self.logger.info(u'TD:结算单确认时间: %s-%s' %(pSettlementInfoConfirm.ConfirmDate,pSettlementInfoConfirm.ConfirmTime))
 		self.agent.initialize()
 		
+	###交易准备
+	def OnRspQryInstrumentMarginRate(self, pInstrumentMarginRate, pRspInfo, nRequestID, bIsLast):
+		'''
+		保证金率回报。返回的必然是绝对值
+		'''
+		if bIsLast and self.isRspSuccess(pRspInfo):
+			self.agent.rsp_qry_instrument_marginrate(pInstrumentMarginRate)
+		else:
+			#logging
+			pass
+	
+	def OnRspQryInstrument(self, pInstrument, pRspInfo, nRequestID, bIsLast):
+		'''
+		合约回报。
+		'''
+		if bIsLast and self.isRspSuccess(pRspInfo):
+			self.agent.rsp_qry_instrument(pInstrument)
+			#print pInstrument
+		else:
+			#logging
+			#print pInstrument
+			self.agent.rsp_qry_instrument(pInstrument)  #模糊查询的结果,获得了多个合约的数据，只有最后一个的bLast是True
+	
+	def OnRspQryTradingAccount(self, pTradingAccount, pRspInfo, nRequestID, bIsLast):
+		'''
+		请求查询资金账户响应
+		'''
+		print u'查询资金账户响应'
+		self.logger.info(u'TD:资金账户响应:%s' % pTradingAccount)
+		if bIsLast and self.isRspSuccess(pRspInfo):
+			self.agent.rsp_qry_trading_account(pTradingAccount)
+		else:
+			#logging
+			pass
+	
+	def OnRspQryInvestorPosition(self, pInvestorPosition, pRspInfo, nRequestID, bIsLast):
+		'''请求查询投资者持仓响应'''
+		#print u'查询持仓响应',str(pInvestorPosition),str(pRspInfo)
+		if self.isRspSuccess(pRspInfo): #每次一个单独的数据报
+			self.agent.rsp_qry_position(pInvestorPosition)
+		else:
+			#logging
+			pass
+	
+	def OnRspQryInvestorPositionDetail(self, pInvestorPositionDetail, pRspInfo, nRequestID, bIsLast):
+		'''请求查询投资者持仓明细响应'''
+		logging.info(str(pInvestorPositionDetail))
+		if self.isRspSuccess(pRspInfo): #每次一个单独的数据报
+			self.agent.rsp_qry_position_detail(pInvestorPositionDetail)
+		else:
+			#logging
+			pass
+	
+	def OnRspError(self, info, RequestId, IsLast):
+		''' 错误应答
+		'''
+		self.logger.error(u'TD:requestID:%s,IsLast:%s,info:%s' % (RequestId,IsLast,str(info)))
+	
+	def OnRspQryOrder(self, pOrder, pRspInfo, nRequestID, bIsLast):
+		'''请求查询报单响应'''
+		if bIsLast and self.isRspSuccess(pRspInfo):
+			self.agent.rsp_qry_order(pOrder)
+		else:
+			self.logger.error(u'TD:requestID:%s,IsLast:%s,info:%s' % (nRequestID,bIsLast,str(pRspInfo)))
+			pass
+	
+	def OnRspQryTrade(self, pTrade, pRspInfo, nRequestID, bIsLast):
+		'''请求查询成交响应'''
+		if bIsLast and self.isRspSuccess(pRspInfo):
+			self.agent.rsp_qry_trade(pTrade)
+		else:
+			#logging
+			pass
+	
+	###交易操作
+	def OnRspOrderInsert(self, pInputOrder, pRspInfo, nRequestID, bIsLast):
+		'''
+		报单未通过参数校验,被CTP拒绝
+		正常情况后不应该出现
+		'''
+		print pRspInfo,nRequestID
+		self.logger.warning(u'TD:CTP报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
+		#self.logger.warning(u'报单校验错误,ErrorID=%s,ErrorMsg=%s,pRspInfo=%s,bIsLast=%s' % (pRspInfo.ErrorID,pRspInfo.ErrorMsg,str(pRspInfo),bIsLast))
+		#self.agent.rsp_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+		self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+	
+	def OnErrRtnOrderInsert(self, pInputOrder, pRspInfo):
+		'''
+		交易所报单录入错误回报
+		正常情况后不应该出现
+		这个回报因为没有request_id,所以没办法对应
+		'''
+		print u'ERROR Order Insert'
+		self.logger.warning(u'TD:交易所报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
+		self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+	
+	def OnRtnOrder(self, pOrder):
+		''' 报单通知
+		CTP、交易所接受报单
+		Agent中不区分，所得信息只用于撤单
+		'''
+		#print repr(pOrder)
+		self.logger.info(u'报单响应,Order=%s' % str(pOrder))
+		if pOrder.OrderStatus == 'a':
+			#CTP接受，但未发到交易所
+			#print u'CTP接受Order，但未发到交易所, BrokerID=%s,BrokerOrderSeq = %s,TraderID=%s, OrderLocalID=%s' % (pOrder.BrokerID,pOrder.BrokerOrderSeq,pOrder.TraderID,pOrder.OrderLocalID)
+			self.logger.info(u'TD:CTP接受Order，但未发到交易所, BrokerID=%s,BrokerOrderSeq = %s,TraderID=%s, OrderLocalID=%s' % (pOrder.BrokerID,pOrder.BrokerOrderSeq,pOrder.TraderID,pOrder.OrderLocalID))
+			self.agent.rtn_order(pOrder)
+		else:
+			#print u'交易所接受Order,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' % (pOrder.ExchangeID,pOrder.OrderSysID,pOrder.TraderID,pOrder.OrderLocalID)
+			self.logger.info(u'TD:交易所接受Order,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' % (pOrder.ExchangeID,pOrder.OrderSysID,pOrder.TraderID,pOrder.OrderLocalID))
+			#self.agent.rtn_order_exchange(pOrder)
+			self.agent.rtn_order(pOrder)
+	
+	def OnRtnTrade(self, pTrade):
+		'''成交通知'''
+		self.logger.info(u'TD:成交通知,BrokerID=%s,BrokerOrderSeq = %s,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' %(pTrade.BrokerID,pTrade.BrokerOrderSeq,pTrade.ExchangeID,pTrade.OrderSysID,pTrade.TraderID,pTrade.OrderLocalID))
+		self.logger.info(u'TD:成交回报,Trade=%s' % repr(pTrade))
+		self.agent.rtn_trade(pTrade)
+	
+	def OnRspOrderAction(self, pInputOrderAction, pRspInfo, nRequestID, bIsLast):
+		'''
+		ctp撤单校验错误
+		'''
+		self.logger.warning(u'TD:CTP撤单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
+		#self.agent.rsp_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+		self.agent.err_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+	
+	def OnErrRtnOrderAction(self, pOrderAction, pRspInfo):
+		''' 
+		交易所撤单操作错误回报
+		正常情况后不应该出现
+		'''
+		self.logger.warning(u'TD:交易所撤单录入错误回报, 可能已经成交,rspInfo=%s'%(str(pRspInfo),))
+		self.agent.err_order_action(pOrderAction.OrderRef,pOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+			
+		
