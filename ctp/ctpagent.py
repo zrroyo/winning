@@ -50,7 +50,7 @@ class MarketDataAgent:
 		
 		
 class TraderAgent:
-	def __init__(self,
+	def __init__ (self,
 		instruments, 	#合约映射 name ==>c_instrument 
 		broker_id,   	#期货公司ID
 		investor_id, 	#投资者ID
@@ -83,7 +83,7 @@ class TraderAgent:
 		self.isSettlementInfoConfirmed = False  #结算单未确认
 		
 	#init中的init,用于子类的处理
-	def init_init(self):
+	def init_init (self):
 		traderSpi = ctpapi.CtpTraderApi(self.instruments, self.broker_id, self.investor_id, self.passwd, self)
 		traderSpi.Create("TraderAgent")
 		traderSpi.RegisterFront(self.server_port)
@@ -92,17 +92,22 @@ class TraderAgent:
 		#self.initialized = True
 		pass
 		
-	def initialize(self):
+	def initialize (self):
 		pass
 		
-	def login_success(self,frontID, sessionID, max_order_ref):
+	def login_success (self,frontID, sessionID, max_order_ref):
 		#print u'FrondId %s, SessionID %s, OrderRef %s' % (frontID, sessionID, max_order_ref)
 		self.front_id = frontID
 		self.session_id = sessionID
 		self.order_ref = int(max_order_ref)
 	
-	def inc_request_id(self):
+	def inc_request_id (self):
 		self.request_id += 1
 		return self.request_id
 	 
+	def open_position (self, direction, price, volume):
+		self.trader.open_position(self.instruments, direction, '%s' % self.order_ref, price, volume)
+		
+		pass
+	
 		

@@ -341,4 +341,36 @@ class CtpTraderApi(TraderApi):
 		self.logger.warning(u'TD:交易所撤单录入错误回报, 可能已经成交,rspInfo=%s'%(str(pRspInfo),))
 		self.agent.err_order_action(pOrderAction.OrderRef,pOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 			
+	#下单
+	def open_position (self, 
+		instrument, 	#所开合约代号
+		direction,	#所开方向
+		order_ref,	#
+		price,		#所开价格
+		volume,		#所开仓位
+		):
+
+		req = ApiStruct.InputOrder(
+			InstrumentID = instrument,
+			Direction = direction,
+			OrderRef = str(order_ref),
+			LimitPrice = price,   #有个疑问，double类型如何保证舍入舍出，在服务器端取整?
+			VolumeTotalOriginal = volume,
+			OrderPriceType = ApiStruct.OPT_LimitPrice,
+			
+			BrokerID = self.broker_id,
+			InvestorID = self.investor_id,
+			CombOffsetFlag = ApiStruct.OF_Open,         #开仓 5位字符,但是只用到第0位
+			CombHedgeFlag = ApiStruct.HF_Speculation,   #投机 5位字符,但是只用到第0位
+	
+			VolumeCondition = ApiStruct.VC_AV,
+			MinVolume = 1,  #这个作用有点不确定,有的文档设成0了
+			ForceCloseReason = ApiStruct.FCC_NotForceClose,
+			IsAutoSuspend = 1,
+			UserForceClose = 0,
+			TimeCondition = ApiStruct.TC_GFD
+			)
+		logging.info(u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price))
+		r = self.trader.ReqOrderInsert(req,self.inc_request_id())
+			
 		

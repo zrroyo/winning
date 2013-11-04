@@ -35,8 +35,8 @@ def testTraderApi():
 	''' Test CtpMdApi '''
 	
 	#inst=[u'm1401', u'p1401']
-	inst=[u'rb1401', u'm1401']
-	#inst=[u'm1401']
+	#inst=[u'rb1401', u'm1401']
+	inst=[u'm1401']
 	
 	# v1
 	#agent = TraderAgent(inst)
@@ -48,6 +48,8 @@ def testTraderApi():
 	#v2
 	agent = TraderAgent(inst, "1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
 	agent.init_init()
+	
+	agent.open_position('0', '3588', '1')
 	
 	while 1:
 		time.sleep(1)
