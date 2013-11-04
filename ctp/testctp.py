@@ -4,7 +4,7 @@
 from ctpapi import CtpMdApi, CtpTraderApi
 #from mdmap import MarketDataMap
 #from ctpagent import MarketDataAgent
-import ctpagent
+from ctpagent import MarketDataAgent, TraderAgent
 import time
 
 class TestVar:
@@ -37,10 +37,17 @@ def testTraderApi():
 	#inst=[u'm1401', u'p1401']
 	inst=[u'rb1401', u'm1401']
 	#inst=[u'm1401']
-	traderSpi = CtpTraderApi(inst, broker_id="1024",investor_id="00000038",passwd="123456")
-	traderSpi.Create("trader")
-	traderSpi.RegisterFront('tcp://180.166.30.117:41205')
-	traderSpi.Init()
+	
+	# v1
+	#agent = TraderAgent(inst)
+	#traderSpi = CtpTraderApi(inst, broker_id="1024",investor_id="00000038",passwd="123456", agent=agent)
+	#traderSpi.Create("trader")
+	#traderSpi.RegisterFront('tcp://180.166.30.117:41205')
+	#traderSpi.Init()
+	
+	#v2
+	agent = TraderAgent(inst, "1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
+	agent.init_init()
 	
 	while 1:
 		time.sleep(1)

@@ -1,6 +1,7 @@
 #-*- coding:utf-8 -*-
 
 import logging
+import time
 from futures import ApiStruct, MdApi, TraderApi
 import ctpagent
 
@@ -56,7 +57,7 @@ class CtpMdApi(MdApi):
 		else:
 			self.agent.OnRtnDepthMarketData(depth_market_data)
 			
-# CTP交易接口
+# 基本CTP交易接口
 class CtpTraderApi(TraderApi):
 	logger = logging.getLogger('ctp.CtpTraderApi')
 	
@@ -65,7 +66,7 @@ class CtpTraderApi(TraderApi):
 		broker_id,   	#期货公司ID
 		investor_id, 	#投资者ID
 		passwd, 	#口令
-		agent = None  	#实际操作对象
+		agent		#实际操作对象
 		):        
 		self.instruments = instruments
 		self.broker_id =broker_id
@@ -73,8 +74,7 @@ class CtpTraderApi(TraderApi):
 		self.passwd = passwd
 		self.agent = agent
 		self.is_logged = False
-		self.request_id = 0
-	
+		
 	def isRspSuccess(self, RspInfo):
 		return RspInfo == None or RspInfo.ErrorID == 0
 	
@@ -87,16 +87,19 @@ class CtpTraderApi(TraderApi):
 		'''
 		当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
 		'''
+		print u'前端已连接'
 		self.logger.info(u'TD:trader front connected')
 		self.login()
 	
 	def OnFrontDisconnected(self, nReason):
 		self.logger.info(u'TD:trader front disconnected,reason=%s' % (nReason,))
 	
+	def inc_request_id (self):
+		return self.agent.inc_request_id()
+		
 	def user_login(self, broker_id, investor_id, passwd):
 		req = ApiStruct.ReqUserLogin(BrokerID=broker_id, UserID=investor_id, Password=passwd)
-		#r=self.ReqUserLogin(req,self.agent.inc_request_id())
-		r=self.ReqUserLogin(req, self.request_id)
+		r=self.ReqUserLogin(req, self.inc_request_id())
 	
 	def OnRspUserLogin(self, pRspUserLogin, pRspInfo, nRequestID, bIsLast):
 		self.logger.info(u'TD:trader login')
@@ -107,9 +110,10 @@ class CtpTraderApi(TraderApi):
 			self.is_logged = False
 			return
 		
+		print u'前端已登录'
 		self.is_logged = True
 		self.logger.info(u'TD:trader login success')
-		#self.agent.login_success(pRspUserLogin.FrontID,pRspUserLogin.SessionID,pRspUserLogin.MaxOrderRef)
+		self.agent.login_success(pRspUserLogin.FrontID, pRspUserLogin.SessionID, pRspUserLogin.MaxOrderRef)
 		#self.settlementInfoConfirm()
 		#self.agent.set_trading_day(self.GetTradingDay())
 		#self.query_settlement_info()
@@ -144,7 +148,7 @@ class CtpTraderApi(TraderApi):
 		并且妥善处理空指针之后,仍然有问题,在其中查询结算单无动静
 		'''
 		req = ApiStruct.QrySettlementInfoConfirm(BrokerID=self.broker_id,InvestorID=self.investor_id)
-		self.ReqQrySettlementInfoConfirm(req,self.agent.inc_request_id())
+		self.ReqQrySettlementInfoConfirm(req, self.inc_request_id())
 		
 	def query_settlement_info(self):
 		#不填日期表示取上一天结算单,并在响应函数中确认
@@ -152,12 +156,12 @@ class CtpTraderApi(TraderApi):
 		req = ApiStruct.QrySettlementInfo(BrokerID=self.broker_id,InvestorID=self.investor_id,TradingDay=u'')
 		#print req.BrokerID,req.InvestorID,req.TradingDay
 		time.sleep(1)
-		self.ReqQrySettlementInfo(req,self.agent.inc_request_id())
+		self.ReqQrySettlementInfo(req, self.inc_request_id())
 	
 	def confirm_settlement_info(self):
 		self.logger.info(u'TD-CSI:准备确认结算单')
 		req = ApiStruct.SettlementInfoConfirm(BrokerID=self.broker_id,InvestorID=self.investor_id)
-		self.ReqSettlementInfoConfirm(req,self.agent.inc_request_id())
+		self.ReqSettlementInfoConfirm(req, self.inc_request_id())
 	
 	def OnRspQrySettlementInfo(self, pSettlementInfo, pRspInfo, nRequestID, bIsLast):
 		'''请求查询投资者结算信息响应'''
