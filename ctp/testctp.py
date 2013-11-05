@@ -1,11 +1,12 @@
 #! /usr/bin/python
+#-*- coding:utf-8 -*-
 
+import sys
+import time
 #from ctpapi import MdSpiDelegate, TraderSpiDelegate
 from ctpapi import CtpMdApi, CtpTraderApi
-#from mdmap import MarketDataMap
-#from ctpagent import MarketDataAgent
 from ctpagent import MarketDataAgent, TraderAgent
-import time
+from futures import ApiStruct
 
 class TestVar:
 	happy = 1
@@ -17,11 +18,11 @@ def testMdApi():
 	''' Test CtpMdApi '''
 	
 	#inst=[u'm1401', u'p1401']
-	inst=[u'rb1401', u'm1401']
-	#inst=[u'm1401']
+	#inst=[u'rb1401', u'm1401']
+	inst=[u'm1401']
 	#mdSpi = CtpMdApi(inst, '1024', '00092', '888888', None)
 	
-	agent = ctpagent.MarketDataAgent()
+	agent = MarketDataAgent()
 	mdSpi = CtpMdApi(inst, '1024', '00000038', '123456', agent)
 	mdSpi.Create("Md")
 	mdSpi.RegisterFront('tcp://180.166.30.117:41213')
@@ -30,13 +31,14 @@ def testMdApi():
 	while 1:
 		time.sleep(1)
 
-def testTraderApi():
+def testTraderApi(price):
 	''' Test TraderApi '''
 	''' Test CtpMdApi '''
 	
 	#inst=[u'm1401', u'p1401']
 	#inst=[u'rb1401', u'm1401']
-	inst=[u'm1401']
+	#inst=[u'm1401']
+	inst=u'm1401'
 	
 	# v1
 	#agent = TraderAgent(inst)
@@ -49,12 +51,19 @@ def testTraderApi():
 	agent = TraderAgent(inst, "1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
 	agent.init_init()
 	
-	agent.open_position('0', '3588', '1')
-	
+	price = int(price)
+	agent.open_position(ApiStruct.D_Buy, price, 1)
+
 	while 1:
 		time.sleep(1)
 	
 if __name__ == '__main__':
-	#testMdApi()
-	testTraderApi()
+	if len(sys.argv) < 2:
+		print u'请指定测试功能：md／行情，td／交易'
+		exit()
+		
+	if sys.argv[1] == 'md':
+		testMdApi()
+	elif sys.argv[1] == 'td':
+		testTraderApi(sys.argv[2])
 	

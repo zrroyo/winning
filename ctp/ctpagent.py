@@ -106,7 +106,7 @@ class TraderAgent:
 		return self.request_id
 	 
 	def open_position (self, direction, price, volume):
-		self.trader.open_position(self.instruments, direction, '%s' % self.order_ref, price, volume)
+		self.trader.open_position(self.instruments, direction, self.order_ref, price, volume)
 		
 		pass
 	

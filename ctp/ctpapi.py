@@ -306,7 +306,7 @@ class CtpTraderApi(TraderApi):
 		CTP、交易所接受报单
 		Agent中不区分，所得信息只用于撤单
 		'''
-		#print repr(pOrder)
+		print u'接受报单'
 		self.logger.info(u'报单响应,Order=%s' % str(pOrder))
 		if pOrder.OrderStatus == 'a':
 			#CTP接受，但未发到交易所
@@ -321,6 +321,7 @@ class CtpTraderApi(TraderApi):
 	
 	def OnRtnTrade(self, pTrade):
 		'''成交通知'''
+		print u'报单成交'
 		self.logger.info(u'TD:成交通知,BrokerID=%s,BrokerOrderSeq = %s,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' %(pTrade.BrokerID,pTrade.BrokerOrderSeq,pTrade.ExchangeID,pTrade.OrderSysID,pTrade.TraderID,pTrade.OrderLocalID))
 		self.logger.info(u'TD:成交回报,Trade=%s' % repr(pTrade))
 		self.agent.rtn_trade(pTrade)
@@ -329,6 +330,7 @@ class CtpTraderApi(TraderApi):
 		'''
 		ctp撤单校验错误
 		'''
+		print u'撤单校验错误'
 		self.logger.warning(u'TD:CTP撤单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.agent.rsp_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 		self.agent.err_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
@@ -343,12 +345,12 @@ class CtpTraderApi(TraderApi):
 			
 	#下单
 	def open_position (self, 
-		instrument, 	#所开合约代号
-		direction,	#所开方向
-		order_ref,	#
-		price,		#所开价格
-		volume,		#所开仓位
-		):
+			instrument, 	#所开合约代号
+			direction,	#所开方向
+			order_ref,	#
+			price,		#所开价格
+			volume,		#所开仓位
+			):
 
 		req = ApiStruct.InputOrder(
 			InstrumentID = instrument,
@@ -370,7 +372,6 @@ class CtpTraderApi(TraderApi):
 			UserForceClose = 0,
 			TimeCondition = ApiStruct.TC_GFD
 			)
-		logging.info(u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price))
-		r = self.trader.ReqOrderInsert(req,self.inc_request_id())
-			
+		self.logger.info(u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price))
+		r = self.ReqOrderInsert(req,self.inc_request_id())
 		
