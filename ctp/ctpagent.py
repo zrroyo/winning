@@ -93,6 +93,7 @@ class TraderAgent:
 		pass
 		
 	def initialize (self):
+		print u'代理初始化完成'
 		pass
 		
 	def login_success (self,frontID, sessionID, max_order_ref):

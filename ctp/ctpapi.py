@@ -285,7 +285,7 @@ class CtpTraderApi(TraderApi):
 		报单未通过参数校验,被CTP拒绝
 		正常情况后不应该出现
 		'''
-		print pRspInfo,nRequestID
+		print u'报单被拒绝, RID %d' % nRequestID
 		self.logger.warning(u'TD:CTP报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.logger.warning(u'报单校验错误,ErrorID=%s,ErrorMsg=%s,pRspInfo=%s,bIsLast=%s' % (pRspInfo.ErrorID,pRspInfo.ErrorMsg,str(pRspInfo),bIsLast))
 		#self.agent.rsp_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
