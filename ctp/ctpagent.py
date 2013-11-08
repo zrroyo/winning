@@ -93,6 +93,8 @@ class TraderAgent:
 		pass
 		
 	def initialize (self):
+		while self.isSettlementInfoConfirmed == False:
+			time.sleep(1)
 		print u'代理初始化完成'
 		pass
 		
@@ -111,4 +113,17 @@ class TraderAgent:
 		
 		pass
 	
+	def close_position (self, direction, price, volume, cos_flag):
+		self.trader.close_position(self.instruments, direction, self.order_ref, price, volume, cos_flag)
 		
+		pass
+		
+	def rtn_order (self, porder):
+		pass
+	
+	def rtn_trade (self, ptrader):
+		pass
+		 
+	#def err_order_insert (self, ptrader):
+		#pass
+			

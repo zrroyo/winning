@@ -51,8 +51,14 @@ def testTraderApi(price):
 	agent = TraderAgent(inst, "1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
 	agent.init_init()
 	
+	#time.sleep(2)
+	#print 'Waiting.'
+
 	price = int(price)
 	agent.open_position(ApiStruct.D_Buy, price, 1)
+	time.sleep(2)
+	print price
+	agent.close_position(ApiStruct.D_Sell, price, 1, ApiStruct.OF_Close)
 
 	while 1:
 		time.sleep(1)
