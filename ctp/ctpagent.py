@@ -107,14 +107,18 @@ class TraderAgent:
 	def inc_request_id (self):
 		self.request_id += 1
 		return self.request_id
-	 
+	
+	def inc_order_ref(self):
+		self.order_ref += 1
+		return self.order_ref
+		
 	def open_position (self, direction, price, volume):
-		self.trader.open_position(self.instruments, direction, self.order_ref, price, volume)
+		self.trader.open_position(self.instruments, direction, self.inc_order_ref(), price, volume)
 		
 		pass
 	
 	def close_position (self, direction, price, volume, cos_flag):
-		self.trader.close_position(self.instruments, direction, self.order_ref, price, volume, cos_flag)
+		self.trader.close_position(self.instruments, direction, self.inc_order_ref(), price, volume, cos_flag)
 		
 		pass
 		
