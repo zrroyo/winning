@@ -421,8 +421,10 @@ class CtpTraderApi(TraderApi):
 			ForceCloseReason = ApiStruct.FCC_NotForceClose,
 			IsAutoSuspend = 1,
 			UserForceClose = 0,
+			ContingentCondition = ApiStruct.CC_Immediately,
 			TimeCondition = ApiStruct.TC_GFD,
 		)
-		print u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price)		
+		self.logger.info(u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price))
+		print u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price)	
 		r = self.ReqOrderInsert(req, self.inc_request_id())
 			
