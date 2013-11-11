@@ -5,6 +5,8 @@ import time
 from futures import ApiStruct, MdApi, TraderApi
 import ctpagent
 
+logging.basicConfig(filename="ctp_api.log",level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
+
 # CTP行情数据接口
 class CtpMdApi(MdApi):
 	logger = logging.getLogger('ctp.CtpMdApi')
@@ -302,7 +304,7 @@ class CtpTraderApi(TraderApi):
 		'''
 		print u'ERROR Order Insert'
 		self.logger.warning(u'TD:交易所报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
-		self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+		#self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 	
 	def OnRtnOrder(self, pOrder):
 		''' 报单通知
@@ -373,11 +375,13 @@ class CtpTraderApi(TraderApi):
 			ForceCloseReason = ApiStruct.FCC_NotForceClose,
 			IsAutoSuspend = 1,
 			UserForceClose = 0,
+			ContingentCondition = ApiStruct.CC_Immediately,
 			TimeCondition = ApiStruct.TC_GFD
 			)
+		#print req
 		self.logger.info(u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price))
 		print u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price)
-		r = self.ReqOrderInsert(req,self.inc_request_id())
+		r = self.ReqOrderInsert(req, self.inc_request_id())
 		
 	#def close_position(self, order, CombOffsetFlag = ApiStruct.OF_CloseToday):
 	def close_position(self, 
