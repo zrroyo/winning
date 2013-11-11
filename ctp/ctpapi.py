@@ -338,7 +338,7 @@ class CtpTraderApi(TraderApi):
 		print u'撤单校验错误'
 		self.logger.warning(u'TD:CTP撤单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.agent.rsp_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
-		self.agent.err_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+		#self.agent.err_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 	
 	def OnErrRtnOrderAction(self, pOrderAction, pRspInfo):
 		''' 
@@ -346,7 +346,7 @@ class CtpTraderApi(TraderApi):
 		正常情况后不应该出现
 		'''
 		self.logger.warning(u'TD:交易所撤单录入错误回报, 可能已经成交,rspInfo=%s'%(str(pRspInfo),))
-		self.agent.err_order_action(pOrderAction.OrderRef,pOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+		#self.agent.err_order_action(pOrderAction.OrderRef,pOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 			
 	#下单
 	def open_position (self, 
@@ -427,4 +427,24 @@ class CtpTraderApi(TraderApi):
 		self.logger.info(u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price))
 		print u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price)	
 		r = self.ReqOrderInsert(req, self.inc_request_id())
+			
+	def cancel_command(self, instrument, order_ref):
+		'''
+		发出撤单指令
+		'''
+		#print 'in cancel command'
+		self.logger.info(u'A_CC:取消命令: %s, OrderRef %d' % (instrument, order_ref))
+		req = ApiStruct.InputOrderAction(
+			InstrumentID = instrument,
+			OrderRef = str(order_ref),
+			BrokerID = self.broker_id,
+			InvestorID = self.investor_id,
+			FrontID = self.agent.front_id,
+			SessionID = self.agent.session_id,
+			ActionFlag = ApiStruct.AF_Delete,
+			#OrderActionRef = self.inc_order_ref()  #没用,不关心这个，每次撤单成功都需要去查资金
+		)
+		#print req
+		r = self.ReqOrderAction(req, self.inc_request_id())
+			
 			

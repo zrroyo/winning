@@ -57,9 +57,12 @@ def testTraderApi(price):
 
 	price = int(price)
 	agent.open_position(ApiStruct.D_Buy, price, 1)
-	time.sleep(2)
-	print price
-	agent.close_position(ApiStruct.D_Sell, price, 1, ApiStruct.OF_Close)
+	#time.sleep(2)
+	#print price
+	#agent.close_position(ApiStruct.D_Sell, price, 1, ApiStruct.OF_CloseToday)
+	time.sleep(10)
+	print u'撤单:'
+	agent.cancel_command(inst, agent.order_ref)
 
 	while 1:
 		time.sleep(1)
