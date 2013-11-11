@@ -117,7 +117,7 @@ class TraderAgent:
 		
 		pass
 	
-	def close_position (self, direction, price, volume, cos_flag):
+	def close_position (self, direction, price, volume, cos_flag=ApiStruct.OF_Close):
 		self.trader.close_position(self.instruments, direction, self.inc_order_ref(), price, volume, cos_flag)
 		
 		pass
