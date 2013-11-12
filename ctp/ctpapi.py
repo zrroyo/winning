@@ -77,6 +77,8 @@ class CtpTraderApi(TraderApi):
 		self.agent = agent
 		self.is_logged = False
 		
+	## 交易服务器端操作接口部分 ##
+	
 	def isRspSuccess(self, RspInfo):
 		return RspInfo == None or RspInfo.ErrorID == 0
 	
@@ -84,7 +86,7 @@ class CtpTraderApi(TraderApi):
 		self.logger.info(u'try login...')
 		self.user_login(self.broker_id, self.investor_id, self.passwd)
 	
-	##交易初始化
+	#交易初始化
 	def OnFrontConnected(self):
 		'''
 		当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
@@ -283,7 +285,7 @@ class CtpTraderApi(TraderApi):
 			#logging
 			pass
 	
-	###交易操作
+	#交易操作
 	def OnRspOrderInsert(self, pInputOrder, pRspInfo, nRequestID, bIsLast):
 		'''
 		报单未通过参数校验,被CTP拒绝
@@ -348,7 +350,9 @@ class CtpTraderApi(TraderApi):
 		self.logger.warning(u'TD:交易所撤单录入错误回报, 可能已经成交,rspInfo=%s'%(str(pRspInfo),))
 		#self.agent.err_order_action(pOrderAction.OrderRef,pOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 			
-	#下单
+	## Agent操作接口部分 ##
+	
+	#下单、开仓
 	def open_position (self, 
 			instrument, 	#所开合约代号
 			direction,	#所开方向
@@ -383,8 +387,8 @@ class CtpTraderApi(TraderApi):
 		print u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price)
 		r = self.ReqOrderInsert(req, self.inc_request_id())
 		
-	#def close_position(self, order, CombOffsetFlag = ApiStruct.OF_CloseToday):
-	def close_position(self, 
+	#平仓
+	def close_position (self, 
 			instrument, 	#所开合约代号
 			direction,	#所开方向
 			order_ref,	#
@@ -428,7 +432,11 @@ class CtpTraderApi(TraderApi):
 		print u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price)	
 		r = self.ReqOrderInsert(req, self.inc_request_id())
 			
-	def cancel_command(self, instrument, order_ref):
+	#撤单
+	def cancel_command (self, 
+		instrument, 
+		order_ref	#本地报单编号
+		):
 		'''
 		发出撤单指令
 		'''
@@ -447,4 +455,18 @@ class CtpTraderApi(TraderApi):
 		#print req
 		r = self.ReqOrderAction(req, self.inc_request_id())
 			
-			
+	#查询报单
+	def query_order (self, 
+		instrument, 	#合约
+		order_sys_id	#交易服务器端报单编号
+		):
+		req = ApiStruct.QryOrder(
+			BrokerID = self.broker_id,
+			InvestorID = self.investor_id,
+			InstrumentID = instrument,
+			OrderSysID = str(order_sys_id),
+		)
+		print req
+		self.logger.info(u'查询下单: %s, OrderRef %s' % (instrument, order_sys_id))
+		r = self.ReqQryOrder(req, self.inc_request_id())
+	

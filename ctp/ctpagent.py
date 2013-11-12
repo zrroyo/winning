@@ -77,8 +77,6 @@ class TraderAgent:
 		self.server_port = server_port
 		self.trader = None
 		
-		print self.broker_id
-		
 		#结算单
 		self.isSettlementInfoConfirmed = False  #结算单未确认
 		
@@ -99,7 +97,7 @@ class TraderAgent:
 		pass
 		
 	def login_success (self,frontID, sessionID, max_order_ref):
-		#print u'FrondId %s, SessionID %s, OrderRef %s' % (frontID, sessionID, max_order_ref)
+		print u'FrondId %s, SessionID %s, OrderRef %s' % (frontID, sessionID, max_order_ref)
 		self.front_id = frontID
 		self.session_id = sessionID
 		self.order_ref = int(max_order_ref)
@@ -115,19 +113,14 @@ class TraderAgent:
 	def open_position (self, direction, price, volume):
 		self.trader.open_position(self.instruments, direction, self.inc_order_ref(), price, volume)
 		
-		pass
-	
 	def close_position (self, direction, price, volume, cos_flag=ApiStruct.OF_Close):
 		self.trader.close_position(self.instruments, direction, self.inc_order_ref(), price, volume, cos_flag)
-		
-		pass
 		
 	def cancel_command(self, instrument, order_ref):
 		self.trader.cancel_command(instrument, order_ref)
 		
-		pass
-	
 	def rtn_order (self, porder):
+		self.order = porder
 		pass
 	
 	def rtn_trade (self, ptrader):
@@ -138,4 +131,12 @@ class TraderAgent:
 			
 	#def err_order_action (self, ptrader):
 		#pass
+			
+	def query_order (self, instrument, order_sys_id):
+		self.trader.query_order(instrument, order_sys_id)
+		
+	def rsp_qry_order (self, order):
+		print order
+		pass	
+		
 			
