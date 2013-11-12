@@ -56,14 +56,30 @@ def testTraderApi(price):
 	print 'Waiting.'
 
 	price = int(price)
-	agent.open_position(ApiStruct.D_Buy, price, 1)
+	#agent.open_position(ApiStruct.D_Buy, price, 1)
+	#agent.open_position(ApiStruct.D_Buy, price, 1)
+	agent.open_position(ApiStruct.D_Buy, 3622, 1)
+	agent.open_position(ApiStruct.D_Buy, 3600, 1)
+		
+	##time.sleep(2)
+	##print price
+	##agent.close_position(ApiStruct.D_Sell, price, 1, ApiStruct.OF_CloseToday)
 	#time.sleep(2)
-	#print price
-	#agent.close_position(ApiStruct.D_Sell, price, 1, ApiStruct.OF_CloseToday)
-	time.sleep(10)
+	#print u'撤单:'
+	#agent.cancel_command(inst, agent.order_ref)
+	
+	#time.sleep(2)
+	#print u'查询: %s' % agent.order.OrderSysID
+	#agent.querry_order(inst, agent.order.OrderSysID)
+	
+	print agent.orderMap.elemDict
+	time.sleep(2)
 	print u'撤单:'
-	agent.cancel_command(inst, agent.order_ref)
-
+	agent.cancel_command(inst, 2)
+	time.sleep(1)
+	print agent.orderMap.elemDict
+	print agent.errOrderMap.elemDict
+	
 	while 1:
 		time.sleep(1)
 	
