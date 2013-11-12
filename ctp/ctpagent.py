@@ -4,11 +4,11 @@ import logging
 import time
 from futures import ApiStruct
 import ctpapi
-import mdmap
+from elemmap import ElementMap
 
 class MarketDataAgent:
 	def __init__ (self):
-		self.dataMap = mdmap.MarketDataMap()
+		self.dataMap = ElementMap()
 		pass
 		
 	# 在开始行情服务前必须被调用	
@@ -28,19 +28,19 @@ class MarketDataAgent:
 				self.logger.warning(u'MD:收到未订阅的行情:%s' %(dp.InstrumentID,))
 				return
 			
-			if self.dataMap.isMdDataExisted(dp.InstrumentID):
+			if self.dataMap.isElementExisted(dp.InstrumentID):
 				#已接受过该合约行情，如果行情发生改变则更新映射
 				#print dp.Volume, self.dataMap.getMdData(dp.InstrumentID).Volume
-				if dp.Volume <= self.dataMap.getMdData(dp.InstrumentID).Volume:
+				if dp.Volume <= self.dataMap.getElement(dp.InstrumentID).Volume:
 					#行情未变化
 					#self.logger.debug(u'MD:行情无变化，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.dataMap.getMdData(dp.InstrumentID).Volume))
 					return 
 			
 				#行情发生变化，记录到行情数据映射中.
-				self.dataMap.updateMdData(dp.InstrumentID, dp)
+				self.dataMap.updateElement(dp.InstrumentID, dp)
 			else:	
 				#合约行情数据还不存在于已知映射中
-				self.dataMap.addMdData(dp.InstrumentID, dp)
+				self.dataMap.addElement(dp.InstrumentID, dp)
 	
 			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 		finally:
