@@ -3,26 +3,26 @@
 import logging
 import time
 from futures import ApiStruct, MdApi, TraderApi
-import ctpagent
-
-#logging.basicConfig(filename="ctp_api.log",level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
 
 # CTP行情数据接口
 class CtpMdApi(MdApi):
-	logger = logging.getLogger('ctp.CtpMdApi')
-	
-	def __init__(self, instruments, broker_id, investor_id, passwd, agent=None):
-		self.requestid=0
+	def __init__(self,
+		instruments, 	#合约
+		broker_id,   	#期货公司ID
+		investor_id, 	#投资者ID
+		passwd, 	#口令
+		agent		#实际操作对象
+		):
 		self.instruments = instruments
 		self.broker_id =broker_id
 		self.investor_id = investor_id
 		self.passwd = passwd
-		
-		#初始化实际处理对象
 		self.agent = agent
-		if self.agent is not None:
-			self.agent.initAgent(self.logger, self.instruments)
-	
+		self.logger = agent.logger
+		
+	def inc_request_id (self):
+		return self.agent.inc_request_id()
+		
 	def checkErrorRspInfo(self, info):
 		if info.ErrorID !=0:
 			logger.error(u"MD:ErrorID:%s,ErrorMsg:%s" %(info.ErrorID,info.ErrorMsg))
@@ -40,11 +40,10 @@ class CtpMdApi(MdApi):
 	
 	def user_login(self, broker_id, investor_id, passwd):
 		req = ApiStruct.ReqUserLogin(BrokerID=broker_id, UserID=investor_id, Password=passwd)
-		self.requestid += 1
-		r=self.ReqUserLogin(req, self.requestid)
+		r=self.ReqUserLogin(req, self.inc_request_id())
 	
 	def OnRspUserLogin(self, userlogin, info, rid, is_last):
-		print "OnRspUserLogin", is_last, info
+		#print "OnRspUserLogin", is_last, info
 		if is_last and not self.checkErrorRspInfo(info):
 			print "get today's trading day:", repr(self.GetTradingDay())
 			self.subscribe_market_data(self.instruments)
@@ -53,23 +52,23 @@ class CtpMdApi(MdApi):
 		self.SubscribeMarketData(list(instruments))
 	
 	def OnRtnDepthMarketData(self, depth_market_data):
-		if self.agent is None:
-			dp = depth_market_data
-			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
-		else:
-			self.agent.OnRtnDepthMarketData(depth_market_data)
+		#if self.agent is None:
+			#dp = depth_market_data
+			#print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+		#else:
+			#self.agent.rtn_depth_market_data(depth_market_data)
+		
+		self.agent.rtn_depth_market_data(depth_market_data)
 			
 # 基本CTP交易接口
 class CtpTraderApi(TraderApi):
-	#logger = logging.getLogger('ctp.CtpTraderApi')
-	
 	def __init__(self,
-		instruments, 	#合约映射 name ==>c_instrument 
+		instruments, 	#合约
 		broker_id,   	#期货公司ID
 		investor_id, 	#投资者ID
 		passwd, 	#口令
 		agent		#实际操作对象
-		):        
+		):
 		self.instruments = instruments
 		self.broker_id =broker_id
 		self.investor_id = investor_id
