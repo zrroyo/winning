@@ -18,16 +18,24 @@ def testMdApi():
 	''' Test CtpMdApi '''
 	
 	#inst=[u'm1401', u'p1401']
-	#inst=[u'rb1401', u'm1401']
-	inst=[u'm1401']
+	inst=['rb1401', 'm1401', 'p1401']
+	#inst=[u'm1401']
 	#mdSpi = CtpMdApi(inst, '1024', '00092', '888888', None)
 	
-	agent = MarketDataAgent()
-	mdSpi = CtpMdApi(inst, '1024', '00000038', '123456', agent)
-	mdSpi.Create("Md")
-	mdSpi.RegisterFront('tcp://180.166.30.117:41213')
-	mdSpi.Init()
+	#v1
+	#agent = MarketDataAgent()
+	#mdSpi = CtpMdApi(inst, '1024', '00000038', '123456', agent)
+	#mdSpi.Create("Md")
+	#mdSpi.RegisterFront('tcp://180.166.30.117:41213')
+	#mdSpi.Init()
 
+	#v2
+	agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
+	agent.init_init()
+	
+	#time.sleep(10)
+	#print agent.dataMap.elemDict
+	
 	while 1:
 		time.sleep(1)
 
