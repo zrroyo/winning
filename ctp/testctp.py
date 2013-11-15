@@ -32,13 +32,17 @@ def testMdApi():
 	#v2
 	agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
 	agent.init_init()
-	agent.start_monitor()
+	#agent.start_monitor()
 	
 	#time.sleep(10)
 	#print agent.dataMap.elemDict
 	
-	#while 1:
-		#time.sleep(1)
+	while 1:
+		time.sleep(1)
+		print agent.mdlocal.getClose(inst[0]), agent.mdlocal.getVolume(inst[0])
+		print agent.mdlocal.getClose(inst[1]), agent.mdlocal.getVolume(inst[1])
+		print agent.mdlocal.getClose(inst[2]), agent.mdlocal.getVolume(inst[2])
+		
 
 def testTraderApi(price):
 	''' Test TraderApi '''
@@ -67,7 +71,7 @@ def testTraderApi(price):
 	price = int(price)
 	#agent.open_position(ApiStruct.D_Buy, price, 1)
 	#agent.open_position(ApiStruct.D_Buy, price, 1)
-	agent.open_position(ApiStruct.D_Buy, 3622, 1)
+	agent.open_position(ApiStruct.D_Buy, price, 1)
 	agent.open_position(ApiStruct.D_Buy, 3600, 1)
 		
 	##time.sleep(2)
