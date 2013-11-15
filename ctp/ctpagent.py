@@ -8,6 +8,7 @@ from futures import ApiStruct
 from ctpapi import CtpMdApi, CtpTraderApi
 from misc.elemmap import ElementMap
 from misc.painter import Painter
+from mdtolocal import MarketDataAccess
 
 #行情数据服务器端代理
 class MarketDataAgent:
@@ -28,6 +29,7 @@ class MarketDataAgent:
 		self.request_id = 1
 		
 		self.dataMap = ElementMap()	#行情记录映射表
+		self.mdlocal = MarketDataAccess(self.dataMap)	#初始化行情访问接口
 		
 	# 在开始行情服务前必须被调用	
 	def init_init (self):
@@ -59,12 +61,12 @@ class MarketDataAgent:
 				return
 			
 			if self.dataMap.isElementExisted(dp.InstrumentID):
-				#已接受过该合约行情，如果行情发生改变则更新映射
-				#print dp.Volume, self.dataMap.getMdData(dp.InstrumentID).Volume
-				if dp.Volume <= self.dataMap.getElement(dp.InstrumentID).Volume:
-					#行情未变化
-					#self.logger.debug(u'MD:行情无变化，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.dataMap.getMdData(dp.InstrumentID).Volume))
-					return 
+				##已接受过该合约行情，如果行情发生改变则更新映射
+				##print dp.Volume, self.dataMap.getMdData(dp.InstrumentID).Volume
+				#if dp.Volume <= self.dataMap.getElement(dp.InstrumentID).Volume:
+					##行情未变化
+					##self.logger.debug(u'MD:行情无变化，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.dataMap.getMdData(dp.InstrumentID).Volume))
+					#return 
 			
 				#行情发生变化，记录到行情数据映射中.
 				self.dataMap.updateElement(dp.InstrumentID, dp)
