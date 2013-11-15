@@ -1,9 +1,12 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 import sys
 sys.path.append("..")
+import time
 import db.mysqldb as sql
+from ctp.ctpagent import MarketDataAgent
 
+#数据库数据对象
 class Data:
 	def __init__ (self, database, table):
 		self.db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
@@ -118,3 +121,54 @@ class Data:
 		
 		return None
 	
+#CTP数据对象
+class CtpData(Data):
+	def __init__ (self, 
+		instrument, 	#合约号
+		database, 	#存储数据库名
+		table, 		#数据库中的数据表
+		workDay,	#工作日,必须以'%Y-%m-%d'格式
+		mdagent		#行情数据代理
+		):
+		Data.__init__(self, database, table)
+		self.workDay = workDay
+		self.mdlocal = mdagent.mdlocal
+		
+	def __isPastDate (self, date):
+		t1 = time.strptime(date, '%Y-%m-%d')
+		t2 = time.strptime(self.workDay, '%Y-%m-%d')
+		
+		if t1 < t2:
+			return True
+		elif t1 == t2:
+			return False
+		else:
+			print 'CtpData: Bad date'
+			return False
+			
+	def ctp_M (self, date, field='Close', days=1):
+	
+	def getOpen (self, date):
+		if self.__isPastDate(date):
+			return self.M(date, 'Open', 1)
+		else:
+			return self.mdlocal.getOpen(self.instrument)
+		
+	def getClose (self, date):
+		if self.__isPastDate(date):
+			return self.M(date, 'Close', 1)
+		else:
+			return self.mdlocal.getClose(self.instrument)
+			
+	def getHighest (self, date):
+		if self.__isPastDate(date):
+			return self.M(date, 'Highest', 1)
+		else:
+			return self.mdlocal.getHighest(self.instrument)
+			
+	def getLowest (self, date):
+		if self.__isPastDate(date):
+			return self.M(date, 'Lowest', 1)
+		else:
+			return self.mdlocal.getLowest(self.instrument)
+				
