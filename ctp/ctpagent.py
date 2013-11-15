@@ -6,7 +6,7 @@ import logging
 import time
 from futures import ApiStruct
 from ctpapi import CtpMdApi, CtpTraderApi
-from elemmap import ElementMap
+from misc.elemmap import ElementMap
 from misc.painter import Painter
 
 #行情数据服务器端代理
