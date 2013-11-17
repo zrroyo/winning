@@ -1,10 +1,13 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 import sys
 sys.path.append("..")
 
 import strategy as STRT
 import regress.runstat as runstat
+from dataMgr.data import Data, CtpData
+from date import Date
+
 #
 # Futures strategy super class which defines the most common methods 
 # used to do futures business. Any futures strategy must inherit this 
@@ -13,7 +16,12 @@ import regress.runstat as runstat
 #
 
 class Futures(STRT.Strategy):
-	def __init__ (self, futName, runStat=None):
+	def __init__ (self, 
+		futName, 		#合约代号
+		dataTable, 		#数据表名
+		database='futures', 	#数据库名
+		runStat=None		#运行时数据统计模块
+		):
 		self.futName = futName		# The future name to test.
 		self.maxAddPos = None		# The max actions allowd to add for a business.
 		self.minPos = None		# The minimum unit to add positions.
@@ -24,6 +32,13 @@ class Futures(STRT.Strategy):
 		self.profit = 0			# The current profit for a time of business.
 		self.runStat = runStat		# Count runtime statistics.
 		self.emuRunCtrl = None		# The emulation run control block.
+		
+		self.database = database
+		self.dataTable = dataTable
+		self.data = Data(database, dataTable)
+		self.dateSet = Date(database, dataTable)
+		
+		self.workDay = None
 		
 		return
 	
@@ -182,6 +197,19 @@ class Futures(STRT.Strategy):
 	def enableEmulate (self, runCtrl):
 		self.emuRunCtrl = runCtrl
 	
+	#打开CTP模式
+	def enableCTP (self, 
+		workDay,	#交易日
+		runCtrl, 	#CTP运行时控制模块
+		mdAgent, 	#行情数据代理
+		tdAgent		#交易服务器端代理
+		):
+		self.workDay = workDay
+		self.ctpRunCtrl = runCtrl
+		self.mdAgent = mdAgent
+		self.tdAgent = tdAgent
+		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
+			
 	# Manage storing logs.
 	def log (self, logMsg, *args):
 		logs = logMsg % (args)
