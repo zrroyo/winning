@@ -3,7 +3,6 @@
 import sys
 sys.path.append("..")
 
-import dataMgr.data as data 
 import trade
 import date as DATE
 import db.mysqldb as sql
@@ -57,11 +56,7 @@ class TurtData:
 		
 class Turtle(FUT.Futures):
 	def __init__ (self, futName, dataTable, tradeTable, database='futures', runStat=None):
-		FUT.Futures.__init__(self, futName, runStat)
-		self.database = database
-		self.dataTable = dataTable
-		self.data = data.Data(database, dataTable)
-		self.dateSet = DATE.Date(database, dataTable)
+		FUT.Futures.__init__(self, futName, dataTable, database, runStat)
 		self.tradeTable = tradeTable
 		#self.tradeRec = trade.Trade(database, tradeTable)
 		self.workMode = None
