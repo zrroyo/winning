@@ -2,11 +2,13 @@
 #-*- coding:utf-8 -*-
 
 import sys
+sys.path.append('..')
 import time
 #from ctpapi import MdSpiDelegate, TraderSpiDelegate
 from ctpapi import CtpMdApi, CtpTraderApi
 from ctpagent import MarketDataAgent, TraderAgent
 from futures import ApiStruct
+from dataMgr.data import CtpData
 
 class TestVar:
 	happy = 1
@@ -37,11 +39,15 @@ def testMdApi():
 	#time.sleep(10)
 	#print agent.dataMap.elemDict
 	
+	workDay = time.strftime('%Y-%m-%d')
+	print workDay
+	ctpData = CtpData('m1401', 'history', 'm1401_dayk', workDay, agent)
 	while 1:
 		time.sleep(1)
-		print agent.mdlocal.getClose(inst[0]), agent.mdlocal.getVolume(inst[0])
-		print agent.mdlocal.getClose(inst[1]), agent.mdlocal.getVolume(inst[1])
-		print agent.mdlocal.getClose(inst[2]), agent.mdlocal.getVolume(inst[2])
+		#print agent.mdlocal.getClose(inst[0]), agent.mdlocal.getVolume(inst[0])
+		#print agent.mdlocal.getClose(inst[1]), agent.mdlocal.getVolume(inst[1])
+		#print agent.mdlocal.getClose(inst[2]), agent.mdlocal.getVolume(inst[2])
+		print ctpData.getClose(workDay), ctpData.getOpen(workDay), ctpData.M10(workDay), ctpData.lowestBeforeDate(workDay, 5), ctpData.lowestUpToDate(workDay, 5), ctpData.highestBeforeDate(workDay, 5), ctpData.highestUpToDate(workDay, 5)
 		
 
 def testTraderApi(price):
