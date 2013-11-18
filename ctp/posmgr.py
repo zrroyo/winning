@@ -64,6 +64,7 @@ class CtpPositionManager:
 			while not self.tdAgent.is_order_success(order_ref):
 				self.cancel_order(instrument, order_ref)
 				price = self.mdlocal.getClose(instrument)
+				#print 'Cancel order %d, new price %d' % (order_ref, price)
 				order_ref = self.tdAgent.close_position(instrument, direction, price, volume)
 				ret = price
 				sleep(self.timeWaitOrder)
@@ -74,10 +75,10 @@ class CtpPositionManager:
 			return None
 		
 	#平多
-	def close_long_position (self, instrument, price, volume):
-		return self.close_position(instrument, ApiStruct.D_Sell, price, volume)
+	def close_long_position (self, instrument, price, volume, cos_flag=ApiStruct.OF_Close):
+		return self.close_position(instrument, ApiStruct.D_Sell, price, volume, cos_flag)
 	
 	#平空
-	def close_short_position (self, instrument, price, volume):
-		return self.close_position(instrument, ApiStruct.D_Buy, price, volume)
+	def close_short_position (self, instrument, price, volume, cos_flag=ApiStruct.OF_Close):
+		return self.close_position(instrument, ApiStruct.D_Buy, price, volume, cos_flag)
 		
