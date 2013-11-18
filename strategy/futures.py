@@ -4,7 +4,6 @@ import sys
 sys.path.append("..")
 
 import strategy as STRT
-import regress.runstat as runstat
 from dataMgr.data import Data, CtpData
 from date import Date
 
