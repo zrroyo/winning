@@ -9,6 +9,7 @@ from ctpapi import CtpMdApi, CtpTraderApi
 from ctpagent import MarketDataAgent, TraderAgent
 from futures import ApiStruct
 from dataMgr.data import CtpData
+from posmgr import CtpPositionManager
 
 class TestVar:
 	happy = 1
@@ -68,7 +69,7 @@ def testTraderApi(price):
 	#traderSpi.Init()
 	
 	#v2
-	agent = TraderAgent(inst, "1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
+	agent = TraderAgent("1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
 	agent.init_init()
 	
 	time.sleep(2)
@@ -77,8 +78,8 @@ def testTraderApi(price):
 	price = int(price)
 	#agent.open_position(ApiStruct.D_Buy, price, 1)
 	#agent.open_position(ApiStruct.D_Buy, price, 1)
-	agent.open_position(ApiStruct.D_Buy, price, 1)
-	agent.open_position(ApiStruct.D_Buy, 3600, 1)
+	agent.open_position(inst, ApiStruct.D_Buy, price, 1)
+	agent.open_position(inst, ApiStruct.D_Buy, 3600, 1)
 		
 	##time.sleep(2)
 	##print price
@@ -102,6 +103,26 @@ def testTraderApi(price):
 	while 1:
 		time.sleep(1)
 	
+def testPosMgr(price):
+	inst=[u'rb1401', u'm1401']
+	
+	mdAgent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
+	mdAgent.init_init()
+	
+	tdAgent = TraderAgent("1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
+	tdAgent.init_init()
+	
+	print inst[1]
+	print '等待连接'
+	time.sleep(5)
+	
+	price = int(price)
+	ctpPosMgr = CtpPositionManager(mdAgent, tdAgent)
+	ctpPosMgr.open_long_position(inst[1], price, 1)
+	print u'准备平仓:'
+	time.sleep(5)
+	ctpPosMgr.close_long_position(inst[1], price, 1)
+	
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		print u'请指定测试功能：md／行情，td／交易'
@@ -111,4 +132,6 @@ if __name__ == '__main__':
 		testMdApi()
 	elif sys.argv[1] == 'td':
 		testTraderApi(sys.argv[2])
-	
+	elif sys.argv[1] == 'pos':
+		testPosMgr(sys.argv[2])
+			
