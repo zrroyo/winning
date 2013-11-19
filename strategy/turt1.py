@@ -48,7 +48,7 @@ class Turt1(turtle.Turtle):
 		days = 0
 		self.emptyPostion()
 		pLastAddPrice = self.data.getClose(date)
-		self.openShortPostion(pLastAddPrice)
+		self.openShortPosition(pLastAddPrice)
 		cutLossMode = False
 		pLimitByM10 = 0
 		time = self.moveToNextTick(dateSet)
@@ -106,7 +106,7 @@ class Turt1(turtle.Turtle):
 			
 			if pLastAddPrice - price >= minPosIntv:
 				if self.curPostion() < self.maxAddPos:
-					if self.openShortPostion(price):
+					if self.openShortPosition(price):
 						self.log("	[Short] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, pLastAddPrice-price))
 						pLastAddPrice = price
 						cutLossMode = False
@@ -120,7 +120,7 @@ class Turt1(turtle.Turtle):
 		days = 0
 		self.emptyPostion()
 		pLastAddPrice = self.data.getClose(date)
-		self.openLongPostion(pLastAddPrice)
+		self.openLongPosition(pLastAddPrice)
 		cutLossMode = False
 		pLimitByM10 = 0
 		time = self.moveToNextTick(dateSet)
@@ -178,7 +178,7 @@ class Turt1(turtle.Turtle):
 				
 			if price - pLastAddPrice >= minPosIntv:
 				if self.curPostion() < self.maxAddPos:
-					if self.openLongPostion(price):
+					if self.openLongPosition(price):
 						self.log("	[Long] [%s] add postion	last add %s,  close %s, intv %d" % (time, pLastAddPrice, price, price-pLastAddPrice))
 						pLastAddPrice = price
 						cutLossMode = False
