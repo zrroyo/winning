@@ -113,14 +113,15 @@ class MarketRunStat(RunStat):
 		self.lock.release()
 		return True	
 	
-	# Decide whether allowed to close a position.
-	def closePosition (self):
+	# Decide whether allowed to close @poses positions.
+	def closePosition (self, poses):
 		self.lock.acquire()
-		if self.curPoses == 0:
+		if self.curPoses < poses:
 			self.lock.release()
+			print u'MarketRunStat: closePosition error'
 			return False
 		
-		self.curPoses -= 1
+		self.curPoses -= poses
 		self.lock.release()
 		return True
 	

@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 import sys
 sys.path.append("..")
@@ -277,5 +277,12 @@ class Turtle(FUT.Futures):
 		# some workable ticks.
 		if self.emuRunCtrl is not None and nextTick is not None:
 			self.emuRunCtrl.setActed()
+			
+		#在CTP模式，如果对过去数据的拟合已经结束，设置dateSet的extra字段
+		#来标识已经进入当前交易日。
+		if self.ctpPos is not None and nextTick is None:
+			nextTick = self.curDay
+			dateSet.extra = True
+				
 		return nextTick
 	

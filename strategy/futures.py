@@ -6,6 +6,7 @@ sys.path.append("..")
 import strategy as STRT
 from dataMgr.data import Data, CtpData
 from date import Date
+from ctp.autopos import CtpAutoPosition
 
 #
 # Futures strategy super class which defines the most common methods 
@@ -37,7 +38,8 @@ class Futures(STRT.Strategy):
 		self.data = Data(database, dataTable)
 		self.dateSet = Date(database, dataTable)
 		
-		self.workDay = None
+		self.workDay = None	#指定当前工作日
+		self.ctpPos = None	#CTP服务器持仓管理接口
 		
 		return
 	
@@ -70,7 +72,7 @@ class Futures(STRT.Strategy):
 		self._pList = []
 		self.profit = 0
 	
-	def openShortPostion (self, price):
+	def openShortPosition (self, price):
 		if self.curPostion() >= self.maxAddPos:
 			return False
 		
@@ -79,11 +81,15 @@ class Futures(STRT.Strategy):
 				self.log("	@-.-@ Market max allowed positions are full!")
 				return False
 		
+		#
+		if self.ctpPos is not None and self.dateSet.extra == True:
+			price = self.ctpPos.open_short_position(self.futName, price, self.minPos)
+		
 		self._pList.append(price)
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
-		return True
+		return price
 		
-	def openLongPostion (self, price):
+	def openLongPosition (self, price):
 		if self.curPostion() >= self.maxAddPos:
 			return False
 		
@@ -92,21 +98,36 @@ class Futures(STRT.Strategy):
 				self.log("	@-.-@ Market max allowed positions are full!")
 				return False
 			
+		#
+		if self.ctpPos is not None and self.dateSet.extra == True:
+			price = self.ctpPos.open_long_position(self.futName, price, self.minPos)
+			
 		self._pList.append(price)
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
-		return True
+		return price
 		
-	def closeShortPostion (self, price):
-		if self.curPostion() == 0:
+	def closeShortPosition (self, price, poses):
+		if self.curPostion() < poses:
+			print 'close short position error'
 			return
 		
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-			if not self.emuRunCtrl.marRunStat.closePosition():
+			if not self.emuRunCtrl.marRunStat.closePosition(poses):
 				return
 			
-		profit = self._pList.pop() - price
-		profit *= self.minPos
-		profit *= self.priceUnit
+		#
+		if self.ctpPos is not None and self.dateSet.extra == True:
+			price = self.ctpPos.close_short_position(self.futName, price, self.minPos * poses)
+			
+		profit = 0
+		while poses > 0:
+			vProfit = self._pList.pop() - price
+			vProfit *= self.minPos
+			vProfit *= self.priceUnit
+			poses -= 1
+			profit += vProfit
+			self.log("		<<-- Close: profit %s, poses %s -->>" % (vProfit, self.curPostion()+1))
+			
 		self.profit += profit
 		self.totalProfit += profit
 		
@@ -117,7 +138,6 @@ class Futures(STRT.Strategy):
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
 			self.emuRunCtrl.marRunStat.update(profit)
 			
-		self.log("		<<-- Close: profit %s, poses %s -->>" % (profit, self.curPostion()+1))
 		if self.curPostion() == 0:
 			self.showProfit()
 			# If need do runtime statistics, update status.
@@ -130,17 +150,28 @@ class Futures(STRT.Strategy):
 		
 		return self.curPostion()
 	
-	def closeLongPostion (self, price):
-		if self.curPostion() == 0:
+	def closeLongPosition (self, price, poses):
+		if self.curPostion() < poses:
+			print 'close long position error'
 			return
 		
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-			if not self.emuRunCtrl.marRunStat.closePosition():
+			if not self.emuRunCtrl.marRunStat.closePosition(poses):
 				return
 		
-		profit = price - self._pList.pop()
-		profit *= self.minPos
-		profit *= self.priceUnit
+		#
+		if self.ctpPos is not None and self.dateSet.extra == True:
+			price = self.ctpPos.close_long_position(self.futName, price, self.minPos * poses)
+			
+		profit = 0
+		while poses > 0:
+			vProfit = self._pList.pop() - price
+			vProfit *= self.minPos
+			vProfit *= self.priceUnit
+			poses -= 1
+			profit += vProfit
+			self.log("		<<-- Close: profit %s, poses %s -->>" % (vProfit, self.curPostion()+1))
+				
 		self.profit += profit
 		self.totalProfit += profit
 		
@@ -151,7 +182,6 @@ class Futures(STRT.Strategy):
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
 			self.emuRunCtrl.marRunStat.update(profit)
 				
-		self.log("		<<-- Close: profit %s, poses %s -->>" % (profit, self.curPostion()+1))
 		if self.curPostion() == 0:
 			self.showProfit()
 			# If need do runtime statistics, update status.
@@ -165,23 +195,20 @@ class Futures(STRT.Strategy):
 		return self.curPostion()
 		
 	def closeAllPostion (self, price, short):
-		while self.curPostion():
-			if short is 'short':
-				self.closeShortPostion(price)
-			else:
-				self.closeLongPostion(price)
-					
+		poses = self.curPostion()
+		if short is 'short':
+			self.closeShortPosition(price, poses)
+		else:
+			self.closeShortPosition(price, poses)
+			
 		return self.curPostion()
 			
 	def closeMultPostion (self, poses, price, short):
-		i = 0
-		while self.curPostion() and i < poses:
-			if short is 'short':
-				self.closeShortPostion(price)
-			else:
-				self.closeLongPostion(price)
-			i = i + 1
-		
+		if short is 'short':
+			self.closeShortPosition(price, poses)
+		else:
+			self.closeShortPosition(price, poses)
+			
 		return self.curPostion()
 		
 	# Export any assistant/helper information to users here.
@@ -205,9 +232,8 @@ class Futures(STRT.Strategy):
 		):
 		self.workDay = workDay
 		self.ctpRunCtrl = runCtrl
-		self.mdAgent = mdAgent
-		self.tdAgent = tdAgent
 		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
+		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent)
 			
 	# Manage storing logs.
 	def log (self, logMsg, *args):
