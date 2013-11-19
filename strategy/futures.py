@@ -121,22 +121,26 @@ class Futures(STRT.Strategy):
 			
 		profit = 0
 		while poses > 0:
-			vProfit = self._pList.pop() - price
-			vProfit *= self.minPos
-			vProfit *= self.priceUnit
+			'''
+			从仓位记录队列中移除，并统计每一单的赢利
+			'''
+			orderProfit = self._pList.pop() - price
+			orderProfit *= self.minPos
+			orderProfit *= self.priceUnit
 			poses -= 1
-			profit += vProfit
-			self.log("		<<-- Close: profit %s, poses %s -->>" % (vProfit, self.curPostion()+1))
+			profit += orderProfit
+			
+			# If need do runtime statistics, update status.
+			if self.runStat is not None:
+				self.runStat.update(orderProfit)
+				
+			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
+				self.emuRunCtrl.marRunStat.update(orderProfit)
+			
+			self.log("		<<-- Close: profit %s, poses %s -->>" % (orderProfit, self.curPostion()+1))
 			
 		self.profit += profit
 		self.totalProfit += profit
-		
-		# If need do runtime statistics, update status.
-		if self.runStat is not None:
-			self.runStat.update(profit)
-			
-		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-			self.emuRunCtrl.marRunStat.update(profit)
 			
 		if self.curPostion() == 0:
 			self.showProfit()
@@ -165,22 +169,26 @@ class Futures(STRT.Strategy):
 			
 		profit = 0
 		while poses > 0:
-			vProfit = self._pList.pop() - price
-			vProfit *= self.minPos
-			vProfit *= self.priceUnit
+			'''
+			从仓位记录队列中移除，并统计每一单的赢利
+			'''
+			orderProfit = price - self._pList.pop()
+			orderProfit *= self.minPos
+			orderProfit *= self.priceUnit
 			poses -= 1
-			profit += vProfit
-			self.log("		<<-- Close: profit %s, poses %s -->>" % (vProfit, self.curPostion()+1))
+			profit += orderProfit
+			
+			# If need do runtime statistics, update status.
+			if self.runStat is not None:
+				self.runStat.update(orderProfit)
+				
+			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
+				self.emuRunCtrl.marRunStat.update(orderProfit)
+			
+			self.log("		<<-- Close: profit %s, poses %s -->>" % (orderProfit, self.curPostion()+1))
 				
 		self.profit += profit
 		self.totalProfit += profit
-		
-		# If need do runtime statistics, update status.
-		if self.runStat is not None:
-			self.runStat.update(profit)
-			
-		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-			self.emuRunCtrl.marRunStat.update(profit)
 				
 		if self.curPostion() == 0:
 			self.showProfit()
@@ -199,7 +207,7 @@ class Futures(STRT.Strategy):
 		if short is 'short':
 			self.closeShortPosition(price, poses)
 		else:
-			self.closeShortPosition(price, poses)
+			self.closeLongPosition(price, poses)
 			
 		return self.curPostion()
 			
@@ -207,7 +215,7 @@ class Futures(STRT.Strategy):
 		if short is 'short':
 			self.closeShortPosition(price, poses)
 		else:
-			self.closeShortPosition(price, poses)
+			self.closeLongPosition(price, poses)
 			
 		return self.curPostion()
 		
