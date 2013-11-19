@@ -195,7 +195,7 @@ class TraderAgent:
 		
 	#返回开某平仓操作（以本地记录号标识）是否成功
 	def is_order_success (self, order_ref):
-		return not self.orderMap.isElementExisted(order_ref)
+		return not self.orderMap.isElementExisted(str(order_ref))
 		
 	#发起撤单申请
 	def cancel_command(self, instrument, order_ref):
@@ -203,7 +203,8 @@ class TraderAgent:
 		self.trader.cancel_command(instrument, order_ref)
 		time.sleep(1)
 		
-		print self.errOrderMap.elemDict
+		#print self.errOrderMap.elemDict
+		
 		#错误报单映射中无记录证明成功撤单
 		if self.errOrderMap.isElementExisted(order):
 			#撤单失败，清除记录
