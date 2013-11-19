@@ -9,7 +9,7 @@ from ctpapi import CtpMdApi, CtpTraderApi
 from ctpagent import MarketDataAgent, TraderAgent
 from futures import ApiStruct
 from dataMgr.data import CtpData
-from posmgr import CtpPositionManager
+from autopos import CtpAutoPosition, OF_CloseToday
 
 class TestVar:
 	happy = 1
@@ -117,11 +117,14 @@ def testPosMgr(price):
 	time.sleep(5)
 	
 	price = int(price)
-	ctpPosMgr = CtpPositionManager(mdAgent, tdAgent)
-	ctpPosMgr.open_long_position(inst[1], price, 1)
-	print u'准备平仓:'
-	time.sleep(5)
-	ctpPosMgr.close_long_position(inst[1], price, 1)
+	ctpAutoPos = CtpAutoPosition(mdAgent, tdAgent)
+	price = ctpAutoPos.open_long_position(inst[1], price, 1)
+	#print u'准备平仓:'
+	#time.sleep(5)
+	ctpAutoPos.close_long_position(inst[1], price+1, 1, OF_CloseToday)
+	print u'操作完成，等待:'
+	while 1:
+		time.sleep(1)
 	
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
