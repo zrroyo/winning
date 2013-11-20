@@ -1,4 +1,5 @@
 #! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 '''
 Emulation subsystem is capable of running a set of regression tests 
@@ -16,6 +17,7 @@ import tick
 from misc.runstat import RunStat
 from misc.runctrl import RunControl, RunCtrlSet
 from misc.logmgr import Log
+from ctp.ctpagent import MarketDataAgent, TraderAgent
 
 
 # Common attributes used for strategy to do regression. 
@@ -46,14 +48,43 @@ def emulationThreadEnd (runCtrl):
 	thread.exit_thread()
 	return
 
+## Entry for an emulation thread.
+#def emulationThreadStart (strategy, futCode, runCtrl):
+	#strt1 = None
+	#runStat = RunStat(futCode)
+	
+	#if strategy == 'turt1':
+		##strt1 = turt1.Turt1 (futCode, '%s_dayk' % futCode, 'dummy', 'history', runStat)
+		#strt1 = turt1.Turt1 (futCode, futCode, 'dummy', 'history', runStat)
+	#else:
+		#print "Bad strategy, only supports 'turt1' right now..."
+		#emulationThreadEnd(runCtrl)
+		#return
+		
+	## Enable storing logs.
+	#logTemp = 'logs/%s.log' % futCode	
+	#futLog = Log(logTemp)
+	##runCtrl.enableStoreLogs(futLog)
+	
+	#strt1.setAttrs(runCtrl.attrs.maxAddPos, runCtrl.attrs.minPos, 
+			#runCtrl.attrs.minPosIntv, runCtrl.attrs.priceUnit)
+			
+	## Enable emulation mode for strategy.	
+	#strt1.enableEmulate(runCtrl)
+	#strt1.run()
+	#if strt1.runStat is not None:
+		#strt1.runStat.showStat()
+		
+	#emulationThreadEnd(runCtrl)
+
 # Entry for an emulation thread.
 def emulationThreadStart (strategy, futCode, runCtrl):
 	strt1 = None
 	runStat = RunStat(futCode)
 	
 	if strategy == 'turt1':
-		#strt1 = turt1.Turt1 (futCode, '%s_dayk' % futCode, 'dummy', 'history', runStat)
-		strt1 = turt1.Turt1 (futCode, futCode, 'dummy', 'history', runStat)
+		strt1 = turt1.Turt1 (futCode, '%s_dayk' % futCode, 'dummy', 'history', runStat)
+		#strt1 = turt1.Turt1 (futCode, futCode, 'dummy', 'history', runStat)
 	else:
 		print "Bad strategy, only supports 'turt1' right now..."
 		emulationThreadEnd(runCtrl)
@@ -67,14 +98,17 @@ def emulationThreadStart (strategy, futCode, runCtrl):
 	strt1.setAttrs(runCtrl.attrs.maxAddPos, runCtrl.attrs.minPos, 
 			runCtrl.attrs.minPosIntv, runCtrl.attrs.priceUnit)
 			
+	curDay = time.strftime('%Y-%m-%d')
+	
 	# Enable emulation mode for strategy.	
-	strt1.enableEmulate(runCtrl)
+	strt1.enableCTP(curDay, runCtrl, mdAgent, tdAgent)
+	
 	strt1.run()
 	if strt1.runStat is not None:
 		strt1.runStat.showStat()
 		
 	emulationThreadEnd(runCtrl)
-
+	
 # Emulation Core.
 class Emulate:
 	def __init__ (self, strategy, ctrlSet, futList):
@@ -155,23 +189,31 @@ class Emulate:
 		
 if __name__ == '__main__':
 	#futList = ['m0401', 'm0501', 'm0601', 'm0701', 'm0801']
-	futList = ['m0401', 'm0409', 'm0501', 'm0509']
+	#futList = ['m0401', 'm0409', 'm0501', 'm0509']
 	#futList = ['m0401', 'm0409', 'm0501']
-	#futList = ['m0401']
-	futList.reverse()
+	futList = ['m1401', 'm1405']
+	#futList.reverse()
 	comAttr = CommonAttrs(4, 1, 40, 10)
-	runCtrl1 = RunControl(False, thread.allocate_lock(), None, comAttr, False)
-	#runCtrl2 = RunControl(False, thread.allocate_lock(), None, comAttr, False)
-	runCtrl2 = RunControl(False, thread.allocate_lock(), None, comAttr, False, '2003-10-15')
+	runCtrl1 = RunControl(False, thread.allocate_lock(), None, comAttr, False, '2013-4-30')
+	runCtrl2 = RunControl(False, thread.allocate_lock(), None, comAttr, False, '2013-8-31')
 	
 	#tickSrc = tick.Tick(2003, 1, 1)
-	tickSrc = tick.Tick(2003, 5, 18)
+	tickSrc = tick.Tick(2013, 4, 15)
 	
 	runCtrlSet = RunCtrlSet(6, tickSrc)
 	runCtrlSet.add(runCtrl1)
 	runCtrlSet.add(runCtrl2)
 	
 	runCtrlSet.enableMarketRunStat()
+	
+	mdAgent = MarketDataAgent(futList, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
+	mdAgent.init_init()
+		
+	tdAgent = TraderAgent("1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
+	tdAgent.init_init()
+	
+	print 'Wait connecting...'
+	time.sleep(5)
 	
 	emu = Emulate('turt1', runCtrlSet, futList)
 	emu.run()
