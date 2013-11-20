@@ -275,14 +275,17 @@ class Turtle(FUT.Futures):
 		# Note, if nextTick is None (the end of emulation), we do not set acted flag because 
 		# it may leave chance for main thread to generate next tick possibly causing missing
 		# some workable ticks.
-		if self.emuRunCtrl is not None and nextTick is not None:
-			self.emuRunCtrl.setActed()
-			
-		#在CTP模式，如果对过去数据的拟合已经结束，设置dateSet的extra字段
-		#来标识已经进入当前交易日。
-		if self.ctpPos is not None and nextTick is None:
-			nextTick = self.curDay
-			dateSet.extra = True
+		if self.emuRunCtrl is not None :
+			#在emulate或CTP模式。
+			if nextTick is not None:
+				#在数据表中的模拟未结束，设置acted标志等待主线程调度
+				self.emuRunCtrl.setActed()
+			elif self.ctpPos is not None:
+				#在CTP模式并已经结束对过去数据的拟合，转入当前交易日进行实盘交易，
+				#设置dateSet的extra字段来标识提示ctpPos开始工作。
+				nextTick = self.workDay
+				dateSet.extra = True
+				#self.log('%d, moving to next tick' % (self.data.getClose(nextTick)))
 				
 		return nextTick
 	
