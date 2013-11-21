@@ -2,7 +2,7 @@
 
 import sys
 sys.path.append("..")
-
+from time import sleep
 import trade
 import date as DATE
 import db.mysqldb as sql
@@ -286,6 +286,7 @@ class Turtle(FUT.Futures):
 				nextTick = self.workDay
 				dateSet.extra = True
 				#self.log('%d, moving to next tick' % (self.data.getClose(nextTick)))
+				sleep(0.5)
 				
 		return nextTick
 	
