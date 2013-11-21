@@ -8,7 +8,6 @@ import thread
 from futures import ApiStruct
 from ctpapi import CtpMdApi, CtpTraderApi
 from misc.elemmap import ElementMap
-from misc.painter import Painter
 from mdtolocal import MarketDataAccess
 
 #行情数据服务器端代理
@@ -75,28 +74,43 @@ class MarketDataAgent:
 				#合约行情数据还不存在于已知映射中
 				self.dataMap.addElement(dp.InstrumentID, dp)
 	
-			#print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+			#print u'[%s]，[价：最新/%g，买/%g，卖/%g], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 		finally:
 			self.logger.debug(u'接收行情数据异常!')
-	
+		
+	#显示／描绘内容池里边的所有内容
+	def __display (self, poll, painter, window, lineStart=1):
+		keys = poll.keys()
+		#print keys
+		
+		i = lineStart
+		for k in keys:
+			try:
+				#print k, poll[k]
+				dp = poll[k]
+				output = '[%7s][Price: N/%g, B/%g, S/%g],[Volume: B/%d, S/%d, T/%d],[H/%d, L/%d],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+				#print output
+				painter.paintLine(window, i, output)
+				i += 1
+			except:
+				print 'Painter Exception'
+				#painter.destroy()
+				#pass
+		
+		#window.refresh()
+			
 	#启动行情监视器
-	def start_monitor (self):
-		mon = Painter(self.dataMap.elemDict, market_data_to_output, True)
+	def start_monitor (self, 
+		painter, 	#终端描绘对象
+		window		#curses窗口
+		):
 		try:
 			while 1:
-				mon.display()
+				self.__display(self.dataMap.elemDict, painter, window)
 				time.sleep(0.5)
 		except:
-			mon.destroy()
+			painter.destroy()
 		
-#将DepthMarketData对象中的数据转化为行情监视器里的输出
-def market_data_to_output (depth_market_data):
-	dp = depth_market_data
-	
-	retStr = '[%s]	[Price: N/%d, B/%d, S/%d],[Volume: B/%d, S/%d, T/%d],[H/%d, L/%d],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
-	
-	return retStr
-	
 #交易服务器端代理
 class TraderAgent:
 	def __init__ (self,
