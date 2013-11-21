@@ -23,7 +23,7 @@ def testMdApi():
 	
 	#inst=[u'm1401', u'p1401']
 	inst=['m1401', 'm1405', 'rb1401', 'p1401']
-	#inst=[u'm1401']
+	#inst=[u'p1401']
 	#mdSpi = CtpMdApi(inst, '1024', '00092', '888888', None)
 	
 	#v1
@@ -47,10 +47,14 @@ def testMdApi():
 	#time.sleep(10)
 	#print agent.dataMap.elemDict
 	
+	##v3
 	##测试CtpData
+	#agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
+	#agent.init_init()	
+	#time.sleep(2)
 	#workDay = time.strftime('%Y-%m-%d')
 	#print workDay
-	#ctpData = CtpData('m1401', 'history', 'm1401_dayk', workDay, agent)
+	#ctpData = CtpData('p1401', 'history', 'p1401_dayk', workDay, agent)
 	#while 1:
 		#time.sleep(1)
 		##print agent.mdlocal.getClose(inst[0]), agent.mdlocal.getVolume(inst[0])
