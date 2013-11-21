@@ -8,48 +8,27 @@ from time import sleep
 
 #终端描绘对象
 class Painter:
-	def __init__ (self, poll, callback, revert=False):
-		self.poll = poll
-		self.callback = callback
-		self.revert = revert
-		self.__newPainter()
+	def __init__ (self):
+		#初始化curses
+		curses.initscr()	#初始化curses
 		
-	#初始化curses
-	def __newPainter (self, border=0):
-		self.screen = curses.initscr()	#初始化curses
-		self.screen.border(border)	#设置边框
-		self.screen.move(1,1)		#设置初始光标位置
-		
+	def newWindow (self, height, width, beginY, beginX, border=0):
+		win = curses.newwin(height, width, beginY, beginX)
+		win.border(border)	#设置边框
+		win.move(1,1)		#设置初始光标位置
+		win.refresh()
+		return win
+			
 	#描绘一行
-	def paintLine (self, 
+	def paintLine (self,
+		window,		#描绘窗口
 		lineNo, 	#所描绘行
 		output		#输出内容
 		):
-		self.screen.clrtoeol()
-		self.screen.addstr(lineNo, 1, str(output))
-		self.screen.refresh()
-			
-	#显示／描绘内容池里边的所有内容
-	def display (self, lineStart=0):
-		keys = self.poll.keys()
-		if self.revert:
-			keys.reverse()
-		
-		#self.screen.clear()
-		#print keys
-		i = lineStart
-		for k in keys:
-			try:
-				#print k, self.poll[k]
-				output = self.callback(self.poll[k])
-				#print output
-				i += 1
-				self.paintLine(i, output)
-			except:
-				print 'Painter Exception'
-				curses.endwin()
-		
-		#self.screen.refresh()
+		window.move(lineNo,1)
+		window.clrtoeol()
+		window.addstr(lineNo, 1, str(output))
+		window.refresh()
 		
 	#使用结束还原原终端
 	def destroy (self):
@@ -58,31 +37,33 @@ class Painter:
 ## 测试 ##
 import sys
 
-def simplePrint(a):
-	return a
-
 def doTest():
 	map = {'a':'hello', 'b':'world'}
-	mon = Painter(map, simplePrint, True)
-	mon.display()
-	sleep(5)
-	mon.destroy()
-	
+	mon = Painter()
+	window = mon.newWindow(20, 100, 0, 1)
+	try:
+		mon.paintLine(window, 1, map['a'])
+		mon.paintLine(window, 2, map['b'])
+		window.getch()
+		mon.destroy()
+	except:
+		mon.destroy()
 		
 def doTestCurses ():
-	#v3
-	myscreen = curses.initscr()
+	##v3
+	#myscreen = curses.initscr()
 	
-	myscreen.border(0)
-	myscreen.addstr(12, 1, "Python curses in action!")
-	myscreen.addstr(13, 1, "What an amazing Curses!")
-	#myscreen.addstr(12, 25, "BADABA")
-	myscreen.refresh()
-	myscreen.getch()
+	#myscreen.border(0)
+	#myscreen.addstr(12, 1, "Python curses in action!")
+	#myscreen.addstr(13, 1, "What an amazing Curses!")
+	##myscreen.addstr(12, 25, "BADABA")
+	#myscreen.refresh()
+	#myscreen.getch()
 	
-	curses.endwin()
+	#curses.endwin()
 	
-	#v1
+	##v1
+	#curses.initscr()
 	#pad = curses.newpad(100, 100)
 	##  These loops fill the pad with letters; this is
 	## explained in the next section
@@ -93,6 +74,7 @@ def doTestCurses ():
 	
 	##  Displays a section of the pad in the middle of the screen
 	#pad.refresh( 0,0, 5,5, 20,75)
+	#curses.endwin()
 	
 	#v2
 	##好耶
@@ -100,6 +82,30 @@ def doTestCurses ():
 		#print "\rHello, Gay! ",  i,
 		#sys.stdout.flush()
 		#sleep(1)
+		
+	#v4
+	screen = curses.initscr()
+	#screen.addstr(0, 1, 'Test Curses')
+	win1 = curses.newwin(20, 100, 0, 1)
+	win1.border(0)
+	for x in range(1, 10):
+		win1.addstr(x, 1, 'hello world')
+	win1.refresh()
+	
+	win2 = curses.newwin(20, 22, 0, 101)
+	win2.border(0)
+	for x in range(1, 10):
+		win2.addstr(x, 1, 'hello world2')
+	win2.refresh()
+		
+	win3 = curses.newwin(12, 100, 20, 1)
+	win3.border(0)
+	for x in range(1, 10):
+		win3.addstr(x, 1, 'hello world3')
+	win3.refresh()
+		
+	win1.getch()
+	curses.endwin()
 		
 	
 if __name__ == '__main__':
