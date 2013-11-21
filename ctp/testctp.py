@@ -10,6 +10,7 @@ from ctpagent import MarketDataAgent, TraderAgent
 from futures import ApiStruct
 from dataMgr.data import CtpData
 from autopos import CtpAutoPosition, OF_CloseToday
+from misc.painter import Painter
 
 class TestVar:
 	happy = 1
@@ -35,7 +36,13 @@ def testMdApi():
 	#v2
 	agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
 	agent.init_init()
-	agent.start_monitor()
+	
+	time.sleep(1)
+	painter = Painter()
+	window1 = painter.newWindow(20, 108, 0, 0)
+	window2 = painter.newWindow(20, 17, 0, 108)
+	window3 = painter.newWindow(14, 125, 20, 0)
+	agent.start_monitor(painter, window1)
 	
 	#time.sleep(10)
 	#print agent.dataMap.elemDict
