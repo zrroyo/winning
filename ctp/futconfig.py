@@ -45,7 +45,7 @@ class FutureConfig(GenConfig):
 		
 		
 if __name__ == '__main__':
-	futCfg = FutureConfig('../config/futures.ini')
+	futCfg = FutureConfig('../config/test.ini')
 	print futCfg.getInstruments('m')
 	print futCfg.getStrategy('m')
 	print futCfg.getAllowedPos('m')
