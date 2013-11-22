@@ -1,4 +1,5 @@
 #! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 '''
 Emulation subsystem is capable of running a set of regression tests 
@@ -11,7 +12,7 @@ import sys
 sys.path.append('..')
 import thread
 import time
-import strategy.turt1 as turt1
+from strategy.turt1 import Turt1
 import tick
 from misc.runstat import RunStat
 from misc.runctrl import RunControl, RunCtrlSet
@@ -47,13 +48,13 @@ def emulationThreadEnd (runCtrl):
 	return
 
 # Entry for an emulation thread.
-def emulationThreadStart (strategy, futCode, runCtrl):
+def emulationThreadStart (strategy, futCode, runCtrl, **extraArgs):
 	strt1 = None
 	runStat = RunStat(futCode)
 	
 	if strategy == 'turt1':
-		#strt1 = turt1.Turt1 (futCode, '%s_dayk' % futCode, 'dummy', 'history', runStat)
-		strt1 = turt1.Turt1 (futCode, futCode, 'dummy', 'history', runStat)
+		#strt1 = Turt1 (futCode, '%s_dayk' % futCode, 'dummy', 'history', runStat)
+		strt1 = Turt1 (futCode, futCode, 'dummy', 'history', runStat)
 	else:
 		print "Bad strategy, only supports 'turt1' right now..."
 		emulationThreadEnd(runCtrl)
@@ -77,10 +78,18 @@ def emulationThreadStart (strategy, futCode, runCtrl):
 
 # Emulation Core.
 class Emulate:
-	def __init__ (self, strategy, ctrlSet, futList):
+	def __init__ (self, 
+		strategy, 	#交易策略
+		ctrlSet, 	#运行时控制集
+		futList, 	#合约列表
+		threadStart,	#模拟线程入口
+		**extraArgs	#模拟线程自定义参数
+		):
 		self.strategy = strategy
 		self.ctrlSet = ctrlSet
 		self.futList = futList
+		self.threadStart = threadStart
+		self.extraArgs = extraArgs
 		return
 	
 	def __exit__ (self):
@@ -127,8 +136,9 @@ class Emulate:
 						self.ctrlSet.releaseLock(i)
 						
 						print 'Thread %d:' % i
-						thread.start_new_thread(emulationThreadStart, 
-								(self.strategy, futCode, self.ctrlSet.getRunCtrl(i)))
+						thread.start_new_thread(self.threadStart, 
+								(self.strategy, futCode, self.ctrlSet.getRunCtrl(i)),
+								self.extraArgs)
 					else:
 						self.ctrlSet.releaseLock(i)
 					i += 1
@@ -173,7 +183,7 @@ if __name__ == '__main__':
 	
 	runCtrlSet.enableMarketRunStat()
 	
-	emu = Emulate('turt1', runCtrlSet, futList)
+	emu = Emulate('turt1', runCtrlSet, futList, emulationThreadStart, md='a', td='b')
 	emu.run()
 	
 	
