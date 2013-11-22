@@ -281,10 +281,12 @@ class Turtle(FUT.Futures):
 				#在数据表中的模拟未结束，设置acted标志等待主线程调度
 				self.emuRunCtrl.setActed()
 			elif self.ctpPos is not None:
-				#在CTP模式并已经结束对过去数据的拟合，转入当前交易日进行实盘交易，
-				#设置dateSet的extra字段来标识提示ctpPos开始工作。
+				'''
+				在CTP模式，已经结束对过去数据的拟合并转入当前交易日，应进行实盘交易，
+				所以打开CTP启动开关指示持仓管理接口可以工作。
+				'''
+				self.ctpOn = True
 				nextTick = self.workDay
-				dateSet.extra = True
 				#self.log('%d, moving to next tick' % (self.data.getClose(nextTick)))
 				sleep(0.5)
 				

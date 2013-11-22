@@ -40,6 +40,7 @@ class Futures(STRT.Strategy):
 		
 		self.workDay = None	#指定当前工作日
 		self.ctpPos = None	#CTP服务器持仓管理接口
+		self.ctpOn = False	#CTP启动开关，True则可进行开平仓操作
 		
 		return
 	
@@ -81,8 +82,8 @@ class Futures(STRT.Strategy):
 				self.log("	@-.-@ Market max allowed positions are full!")
 				return False
 		
-		#
-		if self.ctpPos is not None and self.dateSet.extra == True:
+		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
+		if self.ctpOn == True:
 			price = self.ctpPos.open_short_position(self.futName, price, self.minPos)
 		
 		self._pList.append(price)
@@ -98,8 +99,8 @@ class Futures(STRT.Strategy):
 				self.log("	@-.-@ Market max allowed positions are full!")
 				return False
 			
-		#
-		if self.ctpPos is not None and self.dateSet.extra == True:
+		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
+		if self.ctpOn == True:
 			price = self.ctpPos.open_long_position(self.futName, price, self.minPos)
 			
 		self._pList.append(price)
@@ -115,8 +116,8 @@ class Futures(STRT.Strategy):
 			if not self.emuRunCtrl.marRunStat.closePosition(poses):
 				return
 			
-		#
-		if self.ctpPos is not None and self.dateSet.extra == True:
+		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
+		if self.ctpOn == True:
 			price = self.ctpPos.close_short_position(self.futName, price, self.minPos * poses)
 			
 		profit = 0
@@ -163,8 +164,8 @@ class Futures(STRT.Strategy):
 			if not self.emuRunCtrl.marRunStat.closePosition(poses):
 				return
 		
-		#
-		if self.ctpPos is not None and self.dateSet.extra == True:
+		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
+		if self.ctpOn == True:
 			price = self.ctpPos.close_long_position(self.futName, price, self.minPos * poses)
 			
 		profit = 0
@@ -238,8 +239,13 @@ class Futures(STRT.Strategy):
 		mdAgent, 	#行情数据代理
 		tdAgent		#交易服务器端代理
 		):
-		self.workDay = workDay
+		'''
+		在CTP实盘交易之前，需要确定到当前阶段的持仓情况。最简便的方法就是
+		直接启动历史模拟来自动确定，从而确保最大化的遵循交易策略。
+		注：目前暂不支持行情保存和重置。
+		'''
 		self.emuRunCtrl = runCtrl
+		self.workDay = workDay
 		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
 		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent)
 			
