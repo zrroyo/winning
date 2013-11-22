@@ -1,4 +1,5 @@
 #! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 '''
 This is the core framework to run regression tests.
@@ -16,8 +17,13 @@ import thread
 
 # Regression Filter omits all tests which do not match @filter in @regSet.
 def regressionFilter (regSet, filter):
-	filters = filter.split('*')
-	
+	'''
+	支持'*'和'!'两种过滤方式。
+	‘*’表示任意多个字符，'!'表示不包含。
+	'''
+	filter1 = filter.split('!')[0]
+	filters = filter1.split('*')
+		
 	for f in filters:
 		if f is not None:
 			regSet = [test for test in regSet if test.find(f) != -1]
@@ -25,6 +31,15 @@ def regressionFilter (regSet, filter):
 	if filter[0] != '*':
 		regSet = [test for test in regSet if test[0] == filter[0]]
 		
+	revert = filter.split('!')[1:]
+	if len(revert) == 0:
+		return regSet
+		
+	for f in revert:
+		if f != '':
+			regSet = [test for test in regSet if test.find(f) == -1]
+		
+	#print regSet
 	return regSet
 	
 # List all possible regression tests in database.
