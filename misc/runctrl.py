@@ -61,7 +61,7 @@ class RunControl:
 			self.lock.release()
 			return 'True'
 		else:
-			print "Thread TimeTick '%s' is lag behind tick '%s', synchronising..." % (timeTick, self.tick)
+			#print "Thread TimeTick '%s' is lag behind tick '%s', synchronising..." % (timeTick, self.tick)
 			self.lock.release()
 			return 'SyncTick'
 	
