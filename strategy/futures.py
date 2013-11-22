@@ -75,12 +75,12 @@ class Futures(STRT.Strategy):
 	
 	def openShortPosition (self, price):
 		if self.curPostion() >= self.maxAddPos:
-			return False
+			return None
 		
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
 			if not self.emuRunCtrl.marRunStat.openPosition():
 				self.log("	@-.-@ Market max allowed positions are full!")
-				return False
+				return None
 		
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
 		if self.ctpOn == True:
@@ -92,12 +92,12 @@ class Futures(STRT.Strategy):
 		
 	def openLongPosition (self, price):
 		if self.curPostion() >= self.maxAddPos:
-			return False
+			return None
 		
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
 			if not self.emuRunCtrl.marRunStat.openPosition():
 				self.log("	@-.-@ Market max allowed positions are full!")
-				return False
+				return None
 			
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
 		if self.ctpOn == True:
