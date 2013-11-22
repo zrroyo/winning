@@ -10,11 +10,11 @@ from optparse import OptionParser
 import string
 import db.mysqldb as sql
 import futcom
-from misc.runstat import RunStat
-from misc.runctrl import RunControl, RunCtrlSet
-import emulate
 import tick
 import thread
+from misc.runstat import RunStat
+from misc.runctrl import RunControl, RunCtrlSet
+from regress.emulate import CommonAttrs, emulationThreadStart, Emulate
 
 # Regression Filter omits all tests which do not match @filter in @regSet.
 def regressionFilter (regSet, filter):
@@ -195,7 +195,7 @@ def doEmulation(options, database):
 	startTick2 = extra[6]
 			
 	# Initialise run-time control blocks.
-	comAttr = emulate.CommonAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
+	comAttr = CommonAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 	runCtrl1 = RunControl(False, thread.allocate_lock(), None, comAttr, False)
 	runCtrl2 = RunControl(False, thread.allocate_lock(), None, comAttr, False, startTick2)
 	
@@ -209,7 +209,7 @@ def doEmulation(options, database):
 	
 	runCtrlSet.enableMarketRunStat()
 	
-	emu = emulate.Emulate(options.strategy, runCtrlSet, emuSet)
+	emu = Emulate(options.strategy, runCtrlSet, emuSet, emulationThreadStart)
 	emu.run()
 		
 # Regression subsystem option handler transfering options to actions.
