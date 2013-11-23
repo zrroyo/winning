@@ -1,11 +1,13 @@
 #! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 import sys
 from optparse import OptionParser
 
-import dataMgr.importerParser as importerParser
-import dataMgr.dataParser as dataParser
-import regress.regression as regression
+from dataMgr.importerParser import importerOptionsParser
+from dataMgr.dataParser import dataOptionsParser
+from regress.regression import regressionOptionsParser
+from ctp.ctpParser import ctpOptionsParser
 
 parser = OptionParser()
 
@@ -13,13 +15,15 @@ def parseArgs ():
 	#print sys.argv[0], sys.argv[1]
 	arg1 = sys.argv[1]
 	if arg1 == 'importer':
-		importerParser.importerOptionsParser(parser)
+		importerOptionsParser(parser)
 	elif arg1 == 'data':
-		dataParser.dataOptionsParser(parser)
+		dataOptionsParser(parser)
 	elif arg1 == 'regress':
-		regression.regressionOptionsParser(parser)
+		regressionOptionsParser(parser)
+	elif arg1 == 'ctp':
+		ctpOptionsParser(parser)
 	else:
-		print "\nUnknown subsystem '%s'. \n" % arg1
+		print "\n未知子系统'%s'，请指定正确子系统名称. \n" % arg1
 	
 	return
 
