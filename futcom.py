@@ -1,9 +1,11 @@
 #! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 '''
 This module defines commonly used functions to do futures trading.
 '''
 
+import time
 import db.mysqldb as sql
 
 # Transfer a futCode to a data table.
@@ -31,3 +33,8 @@ def futureTalbeExists (futCode, database):
 	db.close()
 	
 	return ret
+	
+#生成临时名称后缀
+def tempNameSuffix():
+	tempFileName = time.strftime('%Y%m%d%H%M%S')
+	return tempFileName
