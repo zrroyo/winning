@@ -16,10 +16,18 @@ class Tick:
 		self.month = month
 		self.day = day
 		return
-	
-	def __exit__ (self):
-		return
-	
+		
+	# Reinitialize using the @date string.
+	def reinit(self, date):
+		dateList = date.split('-')
+		if len(dateList) < 3:
+			print 'Tick reinit error'
+			return 
+		
+		self.year = int(dateList[0])
+		self.month = int(dateList[1])
+		self.day = int(dateList[2])
+		
 	# Return the max day in month.
 	def _maxDayInMonth (self, month, Year):
 		if month == 1:
@@ -118,6 +126,7 @@ class Tick:
 		
 #if __name__ == '__main__':
 	#tick = Tick(2013, 1, 1)
+	#tick.reinit('2013-11-23')
 	#while tick.curTick() < '2014-1-1':
 		#print tick.tickNext()
 	
