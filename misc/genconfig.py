@@ -26,9 +26,8 @@ class GenConfig:
 	def getSecOption (self, section, option):
 		try:
 			optVal = self.config.get(section, option)
+			return optVal
 		except:
-			print "Bad option!"
+			#print "Bad option!"
 			return None
 		
-		return optVal
-
