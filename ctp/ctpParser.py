@@ -1,6 +1,10 @@
 #! /usr/bin/python
 #-*- coding:utf-8 -*-
 
+'''
+CTP子系统命令行选项解析、启动CTP服务
+'''
+
 import sys
 sys.path.append('..')
 import thread
@@ -12,23 +16,30 @@ from misc.runctrl import RunControl, RunCtrlSet
 from ctp.ctpagent import MarketDataAgent, TraderAgent
 from regress.emulate import CommonAttrs, emulationThreadEnd, Emulate
 from regress.tick import Tick
+from futconfig import TradingConfig, CtpConfig
+from misc.painter import Painter
+from futcom import tempNameSuffix
 
+#CTP交易（模拟）线程入口
 def ctpThreadStart (strategy, futCode, runCtrl, **extraArgs):
 	strt1 = None
 	runStat = RunStat(futCode)
 	
 	if strategy == 'turt1':
 		strt1 = Turt1 (futCode, '%s_dayk' % futCode, 'dummy', 'history', runStat)
-		#strt1 = Turt1 (futCode, futCode, 'dummy', 'history', runStat)
 	else:
 		print "Bad strategy, only supports 'turt1' right now..."
 		emulationThreadEnd(runCtrl)
 		return
 		
-	# Enable storing logs.
-	logTemp = 'logs/%s.log' % futCode	
-	futLog = Log(logTemp)
-	#runCtrl.enableStoreLogs(futLog)
+	logNameSuffix = extraArgs['log']
+	if logNameSuffix is not None:
+		'''
+		如果所传入的后缀名称不为空，则需要打开日志文件并记录。
+		'''
+		logTemp = 'logs/%s-%s.log' % (futCode, logNameSuffix)
+		futLog = Log(logTemp)
+		runCtrl.enableStoreLogs(futLog)		#启动日志记录
 	
 	strt1.setAttrs(runCtrl.attrs.maxAddPos, runCtrl.attrs.minPos, 
 			runCtrl.attrs.minPosIntv, runCtrl.attrs.priceUnit)
@@ -37,7 +48,8 @@ def ctpThreadStart (strategy, futCode, runCtrl, **extraArgs):
 	
 	mdAgent = extraArgs['md']
 	tdAgent = extraArgs['td']
-	# Enable emulation mode for strategy.	
+	
+	#打开策略的CTP模式
 	strt1.enableCTP(curDay, runCtrl, mdAgent, tdAgent)
 	
 	strt1.run()
@@ -46,52 +58,194 @@ def ctpThreadStart (strategy, futCode, runCtrl, **extraArgs):
 		
 	emulationThreadEnd(runCtrl)
 		
-#def startCtp(options, args):
-def startCtp():
-	#futList = ['m0401', 'm0501', 'm0601', 'm0701', 'm0801']
-	#futList = ['m0401', 'm0409', 'm0501', 'm0509']
-	#futList = ['m0401', 'm0409', 'm0501']
-	futList = ['p1401', 'p1405']
-	#futList.reverse()
-	comAttr = CommonAttrs(4, 1, 40, 10)
-	runCtrl1 = RunControl(False, thread.allocate_lock(), None, comAttr, False, '2013-4-30')
-	runCtrl2 = RunControl(False, thread.allocate_lock(), None, comAttr, False, '2013-8-31')
+#行情显示线程入口
+def marketDataThreadStart (painter, mdAgent):
+	window1 = painter.newWindow(20, 108, 0, 0)
+	mdAgent.start_monitor(painter, window1)
 	
-	tickSrc = Tick(2013, 4, 15)
+#检查是否是有效的交易策略
+def isValidStrategy(strategy):
+	return True
+		
+#从交易配置文件中读取参数并启动CTP交易
+def startCtp(trade, tradeConfig, mdAgent, tdAgent):
+	#得到所需交易合约列表，并倒序，因为Emulate会从最后一个合约开始倒序执行
+	instruments = tradeConfig.getInstruments(trade).split(',')
+	instruments.reverse()
 	
-	runCtrlSet = RunCtrlSet(6, tickSrc)
+	#填充通用交易属性
+	comAttr = CommonAttrs(
+		maxAddPos = int(tradeConfig.getMaxAddPos(trade)),
+		minPos = int(tradeConfig.getMinPos(trade)),
+		minPosIntv = int(tradeConfig.getMinPosIntv(trade)),
+		priceUnit = int(tradeConfig.getPriceUnit(trade)),
+		)
+		
+	#初始化运行控制单元
+	startDate = tradeConfig.getStartDate(trade).split(',')
+	
+	runCtrl1 = RunControl(False, thread.allocate_lock(), 
+			None, comAttr, False, 
+			startDate[0]
+			)
+	runCtrl2 = RunControl(False, thread.allocate_lock(), 
+			None, comAttr, False, 
+			startDate[1]
+			)
+	
+	#初始化Tick源
+	tickSrc = Tick()
+	tickSrc.reinit(startDate[0])
+	
+	#初始化运行控制单元集
+	runCtrlSet = RunCtrlSet(
+		maxAllowedPos = int(tradeConfig.getAllowedPos(trade)),
+		tickSrc = tickSrc
+		)
 	runCtrlSet.add(runCtrl1)
 	runCtrlSet.add(runCtrl2)
 	
+	#开启运行时统计信息
 	runCtrlSet.enableMarketRunStat()
 	
-	mdAgent = MarketDataAgent(futList, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
-	mdAgent.init_init()
+	strategy = tradeConfig.getStrategy(trade)
+	if isValidStrategy(strategy) == False:
+		print u'检测到不合法的交易策略，不能启动执行，退出'
+		return
 		
-	tdAgent = TraderAgent("1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
-	tdAgent.init_init()
+	#生成日志文件名后缀	
+	logNameSuffix = tempNameSuffix()
 	
-	print 'Wait connecting...'
-	time.sleep(2)
-	
-	emu = Emulate('turt1', runCtrlSet, futList, ctpThreadStart, md=mdAgent, td=tdAgent)
+	#启动CTP
+	emu = Emulate(strategy, runCtrlSet, instruments, ctpThreadStart, 
+			md=mdAgent, td=tdAgent, 
+			log=logNameSuffix	#记录log到文件
+			)
 	emu.run()
 		
+#CTP子系统命令行选项解析主函数
 def ctpOptionsHandler(options, args):
-	pass
+	if options.config is None:
+		print "\n请用'-c'指定CTP全局配置文件.\n"
+		return
 	
+	if options.trading is None:
+		print "\n请用'-t'指定交易配置文件.\n"
+		return
+	
+	#检查CTP配置信息
+	try:
+		ctpConfig = CtpConfig(options.config)
+		mdServer = ctpConfig.getServer('MarketData')
+		mdPasswd = ctpConfig.getPasswd('MarketData')
+		mdInvestor = ctpConfig.getInvestor('MarketData')
+		mdBrokerid = ctpConfig.getBrokerid('MarketData')
+		tdServer = ctpConfig.getServer('Trade')
+		tdPasswd = ctpConfig.getPasswd('Trade')
+		tdInvestor = ctpConfig.getInvestor('Trade')
+		tdBrokerid = ctpConfig.getBrokerid('Trade')
+	except:
+		print u'获取CTP配置信息错误，退出'
+		return
+	
+	tradeConfig = TradingConfig(options.trading)
+
+	#如果select选项生效，则只执行指定交易
+	if options.select:
+		sectionList = options.select.split(',')
+	else:
+		sectionList = tradeConfig.sectionList
+		
+	#如果reverse选项生效，则滤除指定交易
+	if options.reverse:
+		secList = []
+		reverse = options.reverse.split(',')
+		#print reverse
+		for trade in sectionList:
+			if not trade in reverse:
+				secList.append(trade)
+			
+		sectionList = secList
+		
+	try:
+		'''
+		检查指定交易的执行标志是否打开，并生成合约列表
+		'''
+		tradings = []
+		notAllowed = []
+		for section in sectionList:
+			if tradeConfig.getEnabled(section) == 'yes':
+				tradings.append(section)
+			else:
+				notAllowed.append(section)
+				
+		if len(notAllowed) != 0:
+			print u'策略未开启：%s' % notAllowed
+		
+		instruments = []
+		for trade in tradings:
+			instr = tradeConfig.getInstruments(trade).split(',')
+			instruments += instr
+			
+		if len(instruments) != 0:
+			print u'确定执行合约列表：%s' % instruments
+		else:
+			print u'没有可执行合约，退出'
+			return
+	except:
+		print u'获取交易（策略）配置错误，退出'
+		return
+	
+	#初始化并启动行情数据服务代理
+	mdAgent = MarketDataAgent(instruments, mdBrokerid, mdInvestor, mdPasswd, mdServer)
+	mdAgent.init_init()
+	
+	if options.mode == 'mar' or options.mode == 'com':
+		'''
+		如果在market或complex模式下运行，则打开行情显示。
+		'''
+		time.sleep(2)	#等待行情代理初始化完毕
+		#初始化启动终端描绘窗口，并启动行情显示线程
+		painter = Painter()
+		thread.start_new_thread(marketDataThreadStart, (painter, mdAgent))
+		
+	if options.mode == 'mar':
+		'''
+		行情数据模式，并不提供交易服务
+		'''
+		try:
+			while 1:
+				time.sleep(1)
+		except:
+			painter.destroy()
+			return
+		
+	#初始化并启动交易服务器端代理
+	tdAgent = TraderAgent(tdBrokerid, tdInvestor, tdPasswd, tdServer)
+	tdAgent.init_init()
+	time.sleep(2)
+
+		
+	#依次启动CTP交易
+	for trade in tradings:
+		startCtp(trade, tradeConfig, mdAgent, tdAgent)
+		
+		
+#CTP子系统命令行选项解析入口
 def ctpOptionsParser (parser):
 	parser.add_option('-c', '--config', dest='config', 
-			help='The detailed configuration file.')
+			help='The ctp global configuration file.')
+	parser.add_option('-t', '--trading', dest='trading', 
+			help='The trading configuration file.')
 	parser.add_option('-s', '--select', dest='select', 
-			help='Select.')
-	parser.add_option('-f', '--filter', dest='filter', 
-			help='Filter.')
+			help='Select a set of tradings to run.')
+	parser.add_option('-r', '--reverse', dest='reverse', 
+			help='Run the tradings which is reverse to this list.')
+	parser.add_option('-m', '--mode', dest='mode', 
+			help='Execution mode, such as, mar[ket](default), trade, com[plex].',
+			default='mar')
 			
 	(options, args) = parser.parse_args()
 
 	ctpOptionsHandler(options, args)
-	
-if __name__ == '__main__':
-	startCtp()
 		
