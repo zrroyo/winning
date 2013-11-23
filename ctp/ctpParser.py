@@ -20,8 +20,8 @@ from futconfig import TradingConfig, CtpConfig
 from misc.painter import Painter
 from futcom import tempNameSuffix
 
-#CTP交易（模拟）线程入口
-def ctpThreadStart (strategy, futCode, runCtrl, **extraArgs):
+#CTP交易（模拟）执行线程入口
+def ctpExecutionThreadStart (strategy, futCode, runCtrl, **extraArgs):
 	strt1 = None
 	runStat = RunStat(futCode)
 	
@@ -64,11 +64,11 @@ def marketDataThreadStart (painter, mdAgent):
 	mdAgent.start_monitor(painter, window1)
 	
 #检查是否是有效的交易策略
-def isValidStrategy(strategy):
+def isValidStrategy (strategy):
 	return True
 		
-#从交易配置文件中读取参数并启动CTP交易
-def startCtp(trade, tradeConfig, mdAgent, tdAgent):
+#CTP交易核心线程入口。从交易配置文件中读取参数并启动CTP交易。
+def ctpTradeCoreThreadStart (trade, tradeConfig, mdAgent, tdAgent):
 	#得到所需交易合约列表，并倒序，因为Emulate会从最后一个合约开始倒序执行
 	instruments = tradeConfig.getInstruments(trade).split(',')
 	instruments.reverse()
@@ -117,14 +117,14 @@ def startCtp(trade, tradeConfig, mdAgent, tdAgent):
 	logNameSuffix = tempNameSuffix()
 	
 	#启动CTP
-	emu = Emulate(strategy, runCtrlSet, instruments, ctpThreadStart, 
+	emu = Emulate(strategy, runCtrlSet, instruments, ctpExecutionThreadStart, 
 			md=mdAgent, td=tdAgent, 
 			log=logNameSuffix	#记录log到文件
 			)
 	emu.run()
 		
 #CTP子系统命令行选项解析主函数
-def ctpOptionsHandler(options, args):
+def ctpOptionsHandler (options, args):
 	if options.config is None:
 		print "\n请用'-c'指定CTP全局配置文件.\n"
 		return
@@ -200,6 +200,7 @@ def ctpOptionsHandler(options, args):
 	mdAgent = MarketDataAgent(instruments, mdBrokerid, mdInvestor, mdPasswd, mdServer)
 	mdAgent.init_init()
 	
+	painter = None
 	if options.mode == 'mar' or options.mode == 'com':
 		'''
 		如果在market或complex模式下运行，则打开行情显示。
@@ -225,11 +226,23 @@ def ctpOptionsHandler(options, args):
 	tdAgent.init_init()
 	time.sleep(2)
 
-		
+	#print tradings
+	
 	#依次启动CTP交易
 	for trade in tradings:
-		startCtp(trade, tradeConfig, mdAgent, tdAgent)
+		thread.start_new_thread(ctpTradeCoreThreadStart, 
+				(trade, tradeConfig, mdAgent, tdAgent))
+		time.sleep(0.1)
 		
+	try:
+		#等待结束
+		while 1:
+			time.sleep(1)
+	except:
+		if painter is not None:
+			painter.destroy()
+		print u'\n执行被中断，退出'
+		exit()
 		
 #CTP子系统命令行选项解析入口
 def ctpOptionsParser (parser):
