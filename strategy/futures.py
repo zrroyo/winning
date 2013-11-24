@@ -41,7 +41,9 @@ class Futures(STRT.Strategy):
 		self.workDay = None	#指定当前工作日
 		self.ctpPos = None	#CTP服务器持仓管理接口
 		self.ctpOn = False	#CTP启动开关，True则可进行开平仓操作
-		self.logMgr = None	#日志管理接口
+		self.logMgr = None	#通用日志管理接口
+		self.ctpLogMgr = None	#CTP日志管理接口
+		self.ctpLogPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
 		
 		return
 	
@@ -238,7 +240,9 @@ class Futures(STRT.Strategy):
 		workDay,	#交易日
 		runCtrl, 	#CTP运行时控制模块
 		mdAgent, 	#行情数据代理
-		tdAgent		#交易服务器端代理
+		tdAgent,	#交易服务器端代理
+		ctpLogMgr=None,	#CTP日志管理接口
+		ctpLogPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
 		):
 		'''
 		在CTP实盘交易之前，需要确定到当前阶段的持仓情况。最简便的方法就是
@@ -249,21 +253,31 @@ class Futures(STRT.Strategy):
 		self.workDay = workDay
 		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
 		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent)
-			
+		self.ctpLogMgr = ctpLogMgr
+		self.ctpLogPainterLine = ctpLogPainterLine
+		
 	#开启日志记录.
 	def enableStoreLogs(self, logMgr):
 		self.logMgr = logMgr
 		
-	# Manage storing logs.
+	#日志（输出）统一接口
 	def log (self, logMsg, *args):
 		logs = logMsg % (args)
-		#logs = '%s>| %s' % (self.futName, logs)
 		if self.emuRunCtrl:
 			logs = '<%s> | %s' % (self.futName, logs)
+			
+			#如果日志记录服务已启动，则需要写入日志文件。
 			if self.logMgr is not None:
 				self.logMgr.append(logs)
 			else:
 				print logs
+				
+			#如果CTP模式已启动并且需要显示动态跟踪行情，则将日志写至指定窗口中。
+			if self.ctpOn == True and self.ctpLogMgr is not None:
+				logs = logMsg % (args)
+				logs = '<%7s> | %s' % (self.futName, logs)
+				self.ctpLogMgr.paintLine(self.ctpLogPainterLine, logs)
+				
 		else:
 			print logs
 		
