@@ -287,7 +287,7 @@ class Turtle(FUT.Futures):
 				'''
 				self.ctpOn = True
 				nextTick = self.workDay
-				#self.log('%d, moving to next tick' % (self.data.getClose(nextTick)))
+				self.log('%d, tracing, move to next tick...' % (self.data.getClose(nextTick)))
 				sleep(0.5)
 				
 		return nextTick
