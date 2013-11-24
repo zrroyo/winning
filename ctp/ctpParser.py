@@ -10,7 +10,7 @@ sys.path.append('..')
 import thread
 import time
 from strategy.turt1 import Turt1
-from misc.logmgr import Log
+from misc.logmgr import Log, LogPainter
 from misc.runstat import RunStat
 from misc.runctrl import RunControl, RunCtrlSet
 from ctp.ctpagent import MarketDataAgent, TraderAgent
@@ -21,7 +21,13 @@ from misc.painter import Painter
 from futcom import tempNameSuffix
 
 #CTP交易（模拟）执行线程入口
-def ctpExecutionThreadStart (strategy, futCode, runCtrl, **extraArgs):
+def ctpExecutionThreadStart (
+	strategy,	#交易策略
+	futCode,	#交易合约
+	runCtrl,	#运行时控制单元
+	**extraArgs	#其它参数
+	):
+	
 	strt1 = None
 	runStat = RunStat(futCode)
 	
@@ -48,27 +54,41 @@ def ctpExecutionThreadStart (strategy, futCode, runCtrl, **extraArgs):
 	
 	mdAgent = extraArgs['md']
 	tdAgent = extraArgs['td']
+	ctpLogMgr = extraArgs['ctpLogMgr']
 	
 	#打开策略的CTP模式
-	strt1.enableCTP(curDay, runCtrl, mdAgent, tdAgent)
+	strt1.enableCTP(curDay, runCtrl, mdAgent, tdAgent,
+			ctpLogMgr, 
+			ctpLogMgr.allocateLine()
+			)
 	
 	strt1.run()
 	#if strt1.runStat is not None:
 		#strt1.runStat.showStat()
 		
-	emulationThreadEnd(runCtrl)
+	emulationThreadEnd(runCtrl, strt1)
 		
 #行情显示线程入口
-def marketDataThreadStart (painter, mdAgent):
-	window1 = painter.newWindow(20, 108, 0, 0)
-	mdAgent.start_monitor(painter, window1)
+def marketDataThreadStart (
+	painter,	#Painter描绘对象
+	window,		#描绘(子)窗口
+	mdAgent,	#行情数据代理接口
+	):
+	mdAgent.start_monitor(painter, window)
 	
 #检查是否是有效的交易策略
 def isValidStrategy (strategy):
 	return True
 		
 #CTP交易核心线程入口。从交易配置文件中读取参数并启动CTP交易。
-def ctpTradeCoreThreadStart (trade, tradeConfig, mdAgent, tdAgent):
+def ctpTradeCoreThreadStart (
+	trade,		#交易配置文件中的section名称
+	tradeConfig,	#交易配置文件读取接口
+	mdAgent,	#行情数据代理接口
+	tdAgent,	#交易服务器端代理
+	ctpLogMgr	#CTP日志管理接口
+	):
+	
 	#得到所需交易合约列表，并倒序，因为Emulate会从最后一个合约开始倒序执行
 	instruments = tradeConfig.getInstruments(trade).split(',')
 	instruments.reverse()
@@ -119,7 +139,8 @@ def ctpTradeCoreThreadStart (trade, tradeConfig, mdAgent, tdAgent):
 	#启动CTP
 	emu = Emulate(strategy, runCtrlSet, instruments, ctpExecutionThreadStart, 
 			md=mdAgent, td=tdAgent, 
-			log=logNameSuffix	#记录log到文件
+			log=logNameSuffix,	#记录日志到文件
+			ctpLogMgr = ctpLogMgr
 			)
 	emu.run()
 		
@@ -199,16 +220,17 @@ def ctpOptionsHandler (options, args):
 	#初始化并启动行情数据服务代理
 	mdAgent = MarketDataAgent(instruments, mdBrokerid, mdInvestor, mdPasswd, mdServer)
 	mdAgent.init_init()
+	time.sleep(2)	#等待行情代理初始化完毕
 	
-	painter = None
+	#初始化终端描绘窗口
+	painter = Painter()
+	
 	if options.mode == 'mar' or options.mode == 'com':
 		'''
 		如果在market或complex模式下运行，则打开行情显示。
 		'''
-		time.sleep(2)	#等待行情代理初始化完毕
-		#初始化启动终端描绘窗口，并启动行情显示线程
-		painter = Painter()
-		thread.start_new_thread(marketDataThreadStart, (painter, mdAgent))
+		window1 = painter.newWindow(20, 125, 0, 0)
+		thread.start_new_thread(marketDataThreadStart, (painter, window1, mdAgent))
 		
 	if options.mode == 'mar':
 		'''
@@ -221,26 +243,29 @@ def ctpOptionsHandler (options, args):
 			painter.destroy()
 			return
 		
-	#初始化并启动交易服务器端代理
-	tdAgent = TraderAgent(tdBrokerid, tdInvestor, tdPasswd, tdServer)
-	tdAgent.init_init()
-	time.sleep(2)
-
-	#print tradings
-	
-	#依次启动CTP交易
-	for trade in tradings:
-		thread.start_new_thread(ctpTradeCoreThreadStart, 
-				(trade, tradeConfig, mdAgent, tdAgent))
-		time.sleep(0.1)
-		
+	#启动交易部分
 	try:
+		#初始化并启动交易服务器端代理
+		tdAgent = TraderAgent(tdBrokerid, tdInvestor, tdPasswd, tdServer)
+		tdAgent.init_init()
+		time.sleep(2)
+	
+		#print tradings
+		
+		window2 = painter.newWindow(20, 125, 20, 0)
+		ctpLogMgr = LogPainter(painter, window2, 20)
+		
+		#依次启动CTP交易
+		for trade in tradings:
+			thread.start_new_thread(ctpTradeCoreThreadStart, 
+					(trade, tradeConfig, mdAgent, tdAgent, ctpLogMgr))
+			time.sleep(0.1)
+		
 		#等待结束
 		while 1:
 			time.sleep(1)
 	except:
-		if painter is not None:
-			painter.destroy()
+		painter.destroy()
 		print u'\n执行被中断，退出'
 		exit()
 		
