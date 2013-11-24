@@ -5,6 +5,9 @@
 	Ruan Zhengwang (ruan.zhengwang@gmail.com)
 '''
 
+import thread
+from painter import Painter
+
 #日志管理接口
 class Log:
 	def __init__ (self, 
@@ -41,3 +44,36 @@ class Log:
 	#关闭日志文件
 	def close (self):
 		self.logObj.close()
+	
+	
+#窗口日志(Painter)管理接口
+class LogPainter:
+	def __init__ (self, 
+		painter,	#Painter描绘对象
+		window, 	#描绘窗口
+		lines		#窗口总行数
+		):
+		self.painter = painter
+		self.window = window
+		self.lines = lines
+		self.lock = thread.allocate_lock()
+		self.__line = 1		#分配起始行
+		
+	#描绘一行
+	def paintLine (self, lineNo, logMsg):
+		self.painter.paintLine(self.window, lineNo, logMsg)
+		
+	#分配显示行
+	def allocateLine (self):
+		self.lock.acquire()
+		if self.__line < self.lines:
+			line = self.__line
+			self.__line += 1
+			#print u'已分配%d行' % line
+			self.lock.release()
+			return line
+		else:	
+			print u'LogPainter: 窗口没有显示行可用，已分配完'
+			self.lock.release()
+			return None
+		
