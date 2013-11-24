@@ -29,7 +29,7 @@ class CommonAttrs:
 		return
 		
 # End call for an emulation thread.
-def emulationThreadEnd (runCtrl):
+def emulationThreadEnd (runCtrl, strategy):
 	runCtrl.lock.acquire()
 	runCtrl.applied = False
 	
@@ -41,8 +41,9 @@ def emulationThreadEnd (runCtrl):
 	#runCtrl.acted = True
 	runCtrl.lock.release()
 	
-	if runCtrl.log:
-		runCtrl.log.close()
+	#如果策略中启用了日志记录，则在线程结束时应关闭。
+	if strategy is not None and strategy.logMgr is not None:
+		strategy.logMgr.close()
 		
 	thread.exit_thread()
 	return
@@ -74,7 +75,7 @@ def emulationThreadStart (strategy, futCode, runCtrl, **extraArgs):
 	if strt1.runStat is not None:
 		strt1.runStat.showStat()
 		
-	emulationThreadEnd(runCtrl)
+	emulationThreadEnd(runCtrl, strt1)
 
 # Emulation Core.
 class Emulate:
