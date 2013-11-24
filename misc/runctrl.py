@@ -19,7 +19,6 @@ class RunControl:
 		self.startTick = startTick	# The tick to start emulation thread.
 		self.attrs = attrs		# Common attributes used for strategy to do regression.
 		self.applied = applied		# 'True' means this control block is occupied by a thread.
-		self.log = None			# Log object if not None, which helps manage logs in regression.
 		self.marRunStat = None		# The whole market run statistics block.
 		return
 	
@@ -70,10 +69,6 @@ class RunControl:
 		self.lock.acquire()
 		self.acted = True
 		self.lock.release()
-		
-	# Enable storing logs.
-	def enableStoreLogs(self, logObj):
-		self.log = logObj
 		
 		
 # Run Time Control Block Set containing a set of Run Control blocks, 
