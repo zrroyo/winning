@@ -38,7 +38,7 @@ def ctpExecutionThreadStart (strategy, futCode, runCtrl, **extraArgs):
 		如果所传入的后缀名称不为空，则需要打开日志文件并记录。
 		'''
 		logTemp = 'logs/%s-%s.log' % (futCode, logNameSuffix)
-		futLog = Log(logTemp)
+		futLog = Log(logTemp, True)
 		runCtrl.enableStoreLogs(futLog)		#启动日志记录
 	
 	strt1.setAttrs(runCtrl.attrs.maxAddPos, runCtrl.attrs.minPos, 
@@ -53,8 +53,8 @@ def ctpExecutionThreadStart (strategy, futCode, runCtrl, **extraArgs):
 	strt1.enableCTP(curDay, runCtrl, mdAgent, tdAgent)
 	
 	strt1.run()
-	if strt1.runStat is not None:
-		strt1.runStat.showStat()
+	#if strt1.runStat is not None:
+		#strt1.runStat.showStat()
 		
 	emulationThreadEnd(runCtrl)
 		
@@ -106,7 +106,7 @@ def ctpTradeCoreThreadStart (trade, tradeConfig, mdAgent, tdAgent):
 	runCtrlSet.add(runCtrl2)
 	
 	#开启运行时统计信息
-	runCtrlSet.enableMarketRunStat()
+	#runCtrlSet.enableMarketRunStat()
 	
 	strategy = tradeConfig.getStrategy(trade)
 	if isValidStrategy(strategy) == False:
