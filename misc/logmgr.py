@@ -1,15 +1,19 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 '''
-Log management.
-
-Ruan Zhengwang (ruan.zhengwang@gmail.com)
+轻量日志管理接口
+	Ruan Zhengwang (ruan.zhengwang@gmail.com)
 '''
 
-# Log management.
+#日志管理接口
 class Log:
-	def __init__ (self, logName):
+	def __init__ (self, 
+		logName, 		#日志文件名
+		quickFlush=False	#快速刷新模式
+		):
 		self.logName = logName
+		self.quickFlush = quickFlush
+		
 		try:
 			self.logObj = open(logName, 'w')
 		except:
@@ -21,14 +25,19 @@ class Log:
 		self.logObj.close()
 		return
 	
-	# Append a log at the end of log file.
+	#追加日志
 	def append (self, logs):
 		try:
 			self.logObj.write('%s\n' % logs)
+			'''
+			如果工作在快速刷新模式，则在每次写入后都应立即刷新到文件中。
+			'''
+			if self.quickFlush:
+				self.logObj.flush()
 		except:
 			print "Writing log to '%s' failed!" % self.logName
 			return
 		
-	# Close the log file.
+	#关闭日志文件
 	def close (self):
 		self.logObj.close()
