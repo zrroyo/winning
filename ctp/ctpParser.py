@@ -39,7 +39,7 @@ def ctpExecutionThreadStart (strategy, futCode, runCtrl, **extraArgs):
 		'''
 		logTemp = 'logs/%s-%s.log' % (futCode, logNameSuffix)
 		futLog = Log(logTemp, True)
-		runCtrl.enableStoreLogs(futLog)		#启动日志记录
+		strt1.enableStoreLogs(futLog)	#启动日志记录
 	
 	strt1.setAttrs(runCtrl.attrs.maxAddPos, runCtrl.attrs.minPos, 
 			runCtrl.attrs.minPosIntv, runCtrl.attrs.priceUnit)
