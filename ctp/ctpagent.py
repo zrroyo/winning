@@ -163,11 +163,11 @@ class TraderAgent:
 	def initialize (self):
 		while self.isSettlementInfoConfirmed == False:
 			time.sleep(1)
-		print u'代理初始化完成'
+		#print u'代理初始化完成'
 		pass
 		
 	def login_success (self,frontID, sessionID, max_order_ref):
-		print u'FrondId %s, SessionID %s, OrderRef %s' % (frontID, sessionID, max_order_ref)
+		#print u'FrondId %s, SessionID %s, OrderRef %s' % (frontID, sessionID, max_order_ref)
 		self.front_id = frontID
 		self.session_id = sessionID
 		self.order_ref = int(max_order_ref)

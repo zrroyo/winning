@@ -89,7 +89,7 @@ class CtpTraderApi(TraderApi):
 		'''
 		当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
 		'''
-		print u'前端已连接'
+		#print u'交易服务器前端已连接'
 		self.logger.info(u'TD:trader front connected')
 		self.login()
 	
@@ -112,7 +112,7 @@ class CtpTraderApi(TraderApi):
 			self.is_logged = False
 			return
 		
-		print u'前端已登录'
+		#print u'交易服务器前端已登录'
 		self.is_logged = True
 		self.logger.info(u'TD:trader login success')
 		self.agent.login_success(pRspUserLogin.FrontID, pRspUserLogin.SessionID, pRspUserLogin.MaxOrderRef)
@@ -167,7 +167,7 @@ class CtpTraderApi(TraderApi):
 	
 	def OnRspQrySettlementInfo(self, pSettlementInfo, pRspInfo, nRequestID, bIsLast):
 		'''请求查询投资者结算信息响应'''
-		print u'Rsp 结算单查询'
+		#print u'Rsp 结算单查询'
 		if(self.resp_common(pRspInfo,bIsLast,u'结算单查询')>0):
 			self.logger.info(u'结算单查询完成,准备确认')
 			try:
@@ -198,7 +198,7 @@ class CtpTraderApi(TraderApi):
 				self.query_settlement_info()
 			else:
 				self.agent.isSettlementInfoConfirmed = True
-				print u'TD:最新结算单已确认，不需再次确认,最后确认时间=%s,scur_day:%s' % (pSettlementInfoConfirm.ConfirmDate,self.agent.scur_day)
+				#print u'TD:最新结算单已确认，不需再次确认,最后确认时间=%s,scur_day:%s' % (pSettlementInfoConfirm.ConfirmDate,self.agent.scur_day)
 				self.logger.info(u'TD:最新结算单已确认，不需再次确认,最后确认时间=%s,scur_day:%s' % (pSettlementInfoConfirm.ConfirmDate,self.agent.scur_day))
 				self.agent.initialize()
 		
@@ -236,7 +236,7 @@ class CtpTraderApi(TraderApi):
 		'''
 		请求查询资金账户响应
 		'''
-		print u'查询资金账户响应'
+		#print u'查询资金账户响应'
 		self.logger.info(u'TD:资金账户响应:%s' % pTradingAccount)
 		if bIsLast and self.isRspSuccess(pRspInfo):
 			self.agent.rsp_qry_trading_account(pTradingAccount)
@@ -289,8 +289,8 @@ class CtpTraderApi(TraderApi):
 		报单未通过参数校验,被CTP拒绝
 		正常情况后不应该出现
 		'''
-		print u'报单被拒绝, RID %d' % nRequestID
-		print 'ErrID %s, ErrMsg %s' % (pRspInfo.ErrorID, pRspInfo.ErrorMsg)
+		#print u'报单被拒绝, RID %d' % nRequestID
+		#print 'ErrID %s, ErrMsg %s' % (pRspInfo.ErrorID, pRspInfo.ErrorMsg)
 		self.logger.warning(u'TD:CTP报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.logger.warning(u'报单校验错误,ErrorID=%s,ErrorMsg=%s,pRspInfo=%s,bIsLast=%s' % (pRspInfo.ErrorID,pRspInfo.ErrorMsg,str(pRspInfo),bIsLast))
 		#self.agent.rsp_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
@@ -302,7 +302,7 @@ class CtpTraderApi(TraderApi):
 		正常情况后不应该出现
 		这个回报因为没有request_id,所以没办法对应
 		'''
-		print u'ERROR Order Insert'
+		#print u'ERROR Order Insert'
 		self.logger.warning(u'TD:交易所报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 	
@@ -311,7 +311,7 @@ class CtpTraderApi(TraderApi):
 		CTP、交易所接受报单
 		Agent中不区分，所得信息只用于撤单
 		'''
-		print u'接受报单,状态 %s' % pOrder.OrderStatus
+		#print u'接受报单,状态 %s' % pOrder.OrderStatus
 		self.logger.info(u'报单响应,OrderStatus=%s' % str(pOrder.OrderStatus))
 		if pOrder.OrderStatus == 'a':
 			#CTP接受，但未发到交易所
@@ -326,7 +326,7 @@ class CtpTraderApi(TraderApi):
 	
 	def OnRtnTrade(self, pTrade):
 		'''成交通知'''
-		print u'报单成交, TradeID %s' % pTrade.TradeID
+		#print u'报单成交, TradeID %s' % pTrade.TradeID
 		self.logger.info(u'TD:成交通知,BrokerID=%s,BrokerOrderSeq = %s,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' %(pTrade.BrokerID,pTrade.BrokerOrderSeq,pTrade.ExchangeID,pTrade.OrderSysID,pTrade.TraderID,pTrade.OrderLocalID))
 		self.logger.info(u'TD:成交回报,Trade=%s' % repr(pTrade))
 		self.agent.rtn_trade(pTrade)
@@ -335,7 +335,7 @@ class CtpTraderApi(TraderApi):
 		'''
 		ctp撤单校验错误
 		'''
-		print u'撤单校验错误'
+		#print u'撤单校验错误'
 		self.logger.warning(u'TD:CTP撤单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		self.agent.err_order_action(pInputOrderAction)
 		
@@ -381,7 +381,7 @@ class CtpTraderApi(TraderApi):
 			)
 		#print req
 		self.logger.info(u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price))
-		print u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price)
+		#print u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price)
 		r = self.ReqOrderInsert(req, self.inc_request_id())
 		
 	#平仓
@@ -426,7 +426,7 @@ class CtpTraderApi(TraderApi):
 			TimeCondition = ApiStruct.TC_GFD,
 		)
 		self.logger.info(u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price))
-		print u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price)	
+		#print u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price)	
 		r = self.ReqOrderInsert(req, self.inc_request_id())
 			
 	#撤单
