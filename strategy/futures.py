@@ -39,11 +39,13 @@ class Futures(STRT.Strategy):
 		self.dateSet = Date(database, dataTable)
 		
 		self.workDay = None	#指定当前工作日
+		self.startTime = None	#交易启动时间
 		self.ctpPos = None	#CTP服务器持仓管理接口
 		self.ctpOn = False	#CTP启动开关，True则可进行开平仓操作
 		self.logMgr = None	#通用日志管理接口
 		self.ctpLogMgr = None	#CTP日志管理接口
 		self.ctpLogPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
+		self.paintLogOn = False	#向终端窗口显示log
 		
 		return
 	
@@ -238,6 +240,7 @@ class Futures(STRT.Strategy):
 	#打开CTP模式
 	def enableCTP (self, 
 		workDay,	#交易日
+		startTime,	#交易启动时间
 		runCtrl, 	#CTP运行时控制模块
 		mdAgent, 	#行情数据代理
 		tdAgent,	#交易服务器端代理
@@ -251,6 +254,7 @@ class Futures(STRT.Strategy):
 		'''
 		self.emuRunCtrl = runCtrl
 		self.workDay = workDay
+		self.startTime = startTime
 		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
 		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent)
 		self.ctpLogMgr = ctpLogMgr
@@ -273,7 +277,7 @@ class Futures(STRT.Strategy):
 				print logs
 				
 			#如果CTP模式已启动并且需要显示动态跟踪行情，则将日志写至指定窗口中。
-			if self.ctpOn == True and self.ctpLogMgr is not None:
+			if self.paintLogOn == True and self.ctpLogMgr is not None:
 				logs = logMsg % (args)
 				logs = '<%7s> | %s' % (self.futName, logs)
 				self.ctpLogMgr.paintLine(self.ctpLogPainterLine, logs)
