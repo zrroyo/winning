@@ -212,45 +212,50 @@ class Turtle(FUT.Futures):
 		#lcDateSet = self.dateSet
 		time = lcDateSet.firstDate()
 		
-		days = 0
-		mode = None
-		
-		while time is not None:
-			if self.emuRunCtrl is not None:
-				tickReady = self.emuRunCtrl.tickIsReady(time)
-				#print tickReady
-				if tickReady == 'False':
-					continue
-				elif tickReady == 'SyncTick':
-					time = lcDateSet.getSetNextDate()
-					continue
-			else:
-				days += 1
-				if days <= 10:
-					time = self.moveToNextTick(lcDateSet)
-					continue
+		try:
+			days = 0
+			mode = None
 			
-			price = self.data.getClose(time)
-			
-			if self.hitShortSignal(time, price):
-				mode = 'short'
-				time = self.doShort(lcDateSet, time);
-				# It also possibly hits the Long signal after quit short 
-				# mode in same day.
-				continue
-			elif self.hitLongSignal(time, price):
-				mode = 'long'
-				time = self.doLong(lcDateSet, time);
-				# It also possibly hits the Short signal after quit long 
-				# mode in same day.
-				continue
-			else:
-				mode = None
-
-			time = self.moveToNextTick(lcDateSet)
-			
-		if mode is not None:
-			self.endRun(mode)
+			while time is not None:
+				if self.emuRunCtrl is not None:
+					tickReady = self.emuRunCtrl.tickIsReady(time)
+					#print tickReady
+					if tickReady == 'False':
+						continue
+					elif tickReady == 'SyncTick':
+						time = lcDateSet.getSetNextDate()
+						continue
+				else:
+					days += 1
+					if days <= 10:
+						time = self.moveToNextTick(lcDateSet)
+						continue
+				
+				price = self.data.getClose(time)
+				
+				if self.hitShortSignal(time, price):
+					mode = 'short'
+					time = self.doShort(lcDateSet, time);
+					# It also possibly hits the Long signal after quit short 
+					# mode in same day.
+					continue
+				elif self.hitLongSignal(time, price):
+					mode = 'long'
+					time = self.doLong(lcDateSet, time);
+					# It also possibly hits the Short signal after quit long 
+					# mode in same day.
+					continue
+				else:
+					mode = None
+	
+				time = self.moveToNextTick(lcDateSet)
+				
+			if mode is not None:
+				self.endRun(mode)
+		except:
+			self.log('Exception on trading! Please check connection if working in CTP.')
+			#self.log('交易执行异常，请检查远端服务器链接')
+			return
 	
 	# Get the lowest value for a field within recent $days excluding $date.
 	def lowestBeforeDate (self, date, days, field='Close'):
