@@ -90,7 +90,8 @@ class MarketDataAgent:
 			try:
 				#print k, poll[k]
 				dp = poll[k]
-				output = '[%7s][Price: N/%g, B/%g, S/%g],[Volume: B/%d, S/%d, T/%d],[H/%d, L/%d],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+				output = '[%7s][Price: N/%g, B/%g, S/%g],[Vol: B/%d, S/%d, T/%d],[H/%d, L/%d],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+				#output = '[%7s][价：新/%g，买/%g，卖/%g],[量：买/%g，卖/%g，总/%g],[高/%g，低/%g],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 				#print output
 				painter.paintLine(window, i, output)
 				i += 1
@@ -133,9 +134,7 @@ class TraderAgent:
 		self.initialized = False
 		self.front_id = None
 		self.session_id = None
-		self.trading_day = 20110101
 		self.scur_day = int(time.strftime('%Y%m%d'))
-		#self.logger = logging.getLogger('ctp.agent.%s' % self.instruments)
 		self.trader = None
 		self.isSettlementInfoConfirmed = False  #结算单未确认
 			
