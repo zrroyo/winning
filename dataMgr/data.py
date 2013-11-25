@@ -272,3 +272,7 @@ class CtpData(Data):
 			
 		return max(highest, value)
 			
+	#得到最新更新时间
+	def getUpdateTime (self):
+		return self.mdlocal.getUpdateTime(self.instrument)
+			
