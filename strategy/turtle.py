@@ -299,7 +299,7 @@ class Turtle(FUT.Futures):
 				updateTime = strptime(self.data.getUpdateTime(), '%H:%M:%S')
 				startTime = strptime(self.startTime, '%H:%M:%S')
 				if updateTime >= startTime:
-					self.ctpOn = True	#实盘开平仓
+					self.ctpPosOn = True	#实盘开平仓
 					self.log('%d, tracing, move to next tick...' % (self.data.getClose(nextTick)))
 				else:
 					self.log('wait utill start time %s' % (self.startTime))

@@ -41,7 +41,7 @@ class Futures(STRT.Strategy):
 		self.workDay = None	#指定当前工作日
 		self.startTime = None	#交易启动时间
 		self.ctpPos = None	#CTP服务器持仓管理接口
-		self.ctpOn = False	#CTP启动开关，True则可进行开平仓操作
+		self.ctpPosOn = False	#CTP启动开关，True则可进行开平仓操作
 		self.logMgr = None	#通用日志管理接口
 		self.ctpLogMgr = None	#CTP日志管理接口
 		self.ctpLogPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
@@ -88,7 +88,7 @@ class Futures(STRT.Strategy):
 				return None
 		
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
-		if self.ctpOn == True:
+		if self.ctpPosOn == True:
 			price = self.ctpPos.open_short_position(self.futName, price, self.minPos)
 		
 		self._pList.append(price)
@@ -105,7 +105,7 @@ class Futures(STRT.Strategy):
 				return None
 			
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
-		if self.ctpOn == True:
+		if self.ctpPosOn == True:
 			price = self.ctpPos.open_long_position(self.futName, price, self.minPos)
 			
 		self._pList.append(price)
@@ -122,7 +122,7 @@ class Futures(STRT.Strategy):
 				return
 			
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
-		if self.ctpOn == True:
+		if self.ctpPosOn == True:
 			price = self.ctpPos.close_short_position(self.futName, price, self.minPos * poses)
 			
 		profit = 0
@@ -170,7 +170,7 @@ class Futures(STRT.Strategy):
 				return
 		
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
-		if self.ctpOn == True:
+		if self.ctpPosOn == True:
 			price = self.ctpPos.close_long_position(self.futName, price, self.minPos * poses)
 			
 		profit = 0
