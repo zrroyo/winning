@@ -3,8 +3,8 @@
 
 import curses
 from time import sleep
-#import locale
-#locale.setlocale(locale.LC_ALL,"en_US.zh_CN")
+import locale
+locale.setlocale(locale.LC_ALL,"")
 
 #终端描绘对象
 class Painter:
