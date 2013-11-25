@@ -9,7 +9,12 @@ from futures import ApiStruct
 from ctpapi import CtpMdApi, CtpTraderApi
 from misc.elemmap import ElementMap
 from mdtolocal import MarketDataAccess
+from futcom import tempNameSuffix
 
+#初始化日志管理
+logName = 'ctp%s.log' % tempNameSuffix()
+logging.basicConfig(filename=logName,level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
+		
 #行情数据服务器端代理
 class MarketDataAgent:
 	def __init__ (self,
@@ -33,9 +38,6 @@ class MarketDataAgent:
 		
 	# 在开始行情服务前必须被调用	
 	def init_init (self):
-		#初始化日志管理
-		logName = 'ctpMd_%s.log' % int(time.strftime('%Y%m%d'))
-		logging.basicConfig(filename=logName,level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
 		self.logger = logging.getLogger('Md')
 			
 		#初始化CTP行情接口
@@ -147,9 +149,6 @@ class TraderAgent:
 		
 	#init中的init,用于子类的处理
 	def init_init (self):
-		#初始化日志管理
-		logName = 'ctpTd_%s.log' % (int(time.strftime('%Y%m%d')))
-		logging.basicConfig(filename=logName,level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
 		self.logger = logging.getLogger('Td')
 		
 		#初始化CTP交易接口
