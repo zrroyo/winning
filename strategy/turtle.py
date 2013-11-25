@@ -2,7 +2,7 @@
 
 import sys
 sys.path.append("..")
-from time import sleep
+from time import sleep, strptime
 import trade
 import date as DATE
 import db.mysqldb as sql
@@ -287,12 +287,23 @@ class Turtle(FUT.Futures):
 				self.emuRunCtrl.setActed()
 			elif self.ctpPos is not None:
 				'''
-				在CTP模式，已经结束对过去数据的拟合并转入当前交易日，应进行实盘交易，
-				所以打开CTP启动开关指示持仓管理接口可以工作。
+				在CTP模式，已经结束对过去数据的拟合并转入当前交易日，应进行实盘交易。
+				设置下一tick为当前，避免执行结束。
 				'''
-				self.ctpOn = True
-				nextTick = self.workDay
-				self.log('%d, tracing, move to next tick...' % (self.data.getClose(nextTick)))
+				nextTick = self.workDay	
+				self.paintLogOn = True	#开始用终端窗口显示log
+				
+				'''
+				如果行情服务器时间已大于启动时间则启动持仓管理接口开始工作，否则一直等待。
+				'''
+				updateTime = strptime(self.data.getUpdateTime(), '%H:%M:%S')
+				startTime = strptime(self.startTime, '%H:%M:%S')
+				if updateTime >= startTime:
+					self.ctpOn = True	#实盘开平仓
+					self.log('%d, tracing, move to next tick...' % (self.data.getClose(nextTick)))
+				else:
+					self.log('wait utill start time %s' % (self.startTime))
+				
 				sleep(0.5)
 				
 		return nextTick
