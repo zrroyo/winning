@@ -33,34 +33,34 @@ def testMdApi():
 	#mdSpi.RegisterFront('tcp://180.166.30.117:41213')
 	#mdSpi.Init()
 
-	#v2
-	agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
-	agent.init_init()
+	##v2
+	#agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
+	#agent.init_init()
 	
-	time.sleep(1)
-	painter = Painter()
-	window1 = painter.newWindow(20, 108, 0, 0)
-	window2 = painter.newWindow(20, 17, 0, 108)
-	window3 = painter.newWindow(14, 125, 20, 0)
-	agent.start_monitor(painter, window1)
+	#time.sleep(1)
+	#painter = Painter()
+	#window1 = painter.newWindow(20, 108, 0, 0)
+	#window2 = painter.newWindow(20, 17, 0, 108)
+	#window3 = painter.newWindow(14, 125, 20, 0)
+	#agent.start_monitor(painter, window1)
 	
 	#time.sleep(10)
 	#print agent.dataMap.elemDict
 	
-	##v3
-	##测试CtpData
-	#agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
-	#agent.init_init()	
-	#time.sleep(2)
-	#workDay = time.strftime('%Y-%m-%d')
-	#print workDay
-	#ctpData = CtpData('p1401', 'history', 'p1401_dayk', workDay, agent)
-	#while 1:
-		#time.sleep(1)
-		##print agent.mdlocal.getClose(inst[0]), agent.mdlocal.getVolume(inst[0])
-		##print agent.mdlocal.getClose(inst[1]), agent.mdlocal.getVolume(inst[1])
-		##print agent.mdlocal.getClose(inst[2]), agent.mdlocal.getVolume(inst[2])
-		#print ctpData.getClose(workDay), ctpData.getOpen(workDay), ctpData.M10(workDay), ctpData.lowestBeforeDate(workDay, 5), ctpData.lowestUpToDate(workDay, 5), ctpData.highestBeforeDate(workDay, 5), ctpData.highestUpToDate(workDay, 5)
+	#v3
+	#测试CtpData
+	agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
+	agent.init_init()	
+	time.sleep(2)
+	workDay = time.strftime('%Y-%m-%d')
+	print workDay
+	ctpData = CtpData('p1401', 'history', 'p1401_dayk', workDay, agent)
+	while 1:
+		time.sleep(1)
+		#print agent.mdlocal.getClose(inst[0]), agent.mdlocal.getVolume(inst[0])
+		#print agent.mdlocal.getClose(inst[1]), agent.mdlocal.getVolume(inst[1])
+		#print agent.mdlocal.getClose(inst[2]), agent.mdlocal.getVolume(inst[2])
+		print ctpData.getClose(workDay), ctpData.getOpen(workDay), ctpData.M10(workDay), ctpData.lowestBeforeDate(workDay, 5), ctpData.lowestUpToDate(workDay, 5), ctpData.highestBeforeDate(workDay, 5), ctpData.highestUpToDate(workDay, 5), ctpData.getUpdateTime()
 		
 
 def testTraderApi(price):
