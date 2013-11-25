@@ -55,9 +55,11 @@ def ctpExecutionThreadStart (
 	mdAgent = extraArgs['md']
 	tdAgent = extraArgs['td']
 	ctpLogMgr = extraArgs['ctpLogMgr']
+	startTime = extraArgs['startTime']
 	
 	#打开策略的CTP模式
-	strt1.enableCTP(curDay, runCtrl, mdAgent, tdAgent,
+	strt1.enableCTP(curDay, startTime, runCtrl, 
+			mdAgent, tdAgent,
 			ctpLogMgr, 
 			ctpLogMgr.allocateLine()
 			)
@@ -135,12 +137,16 @@ def ctpTradeCoreThreadStart (
 		
 	#生成日志文件名后缀	
 	logNameSuffix = tempNameSuffix()
+		
+	#得到交易启动时间	
+	startTime = tradeConfig.getTimeCtpOn(trade)
 	
 	#启动CTP
 	emu = Emulate(strategy, runCtrlSet, instruments, ctpExecutionThreadStart, 
 			md=mdAgent, td=tdAgent, 
 			log=logNameSuffix,	#记录日志到文件
-			ctpLogMgr = ctpLogMgr
+			ctpLogMgr = ctpLogMgr,	#显示log的接口
+			startTime = startTime	#交易启动时间
 			)
 	emu.run()
 		
