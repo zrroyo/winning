@@ -53,9 +53,11 @@ def emulationThreadStart (strategy, futCode, runCtrl, **extraArgs):
 	strt1 = None
 	runStat = RunStat(futCode)
 	
+	database = extraArgs['database']
+	
 	if strategy == 'turt1':
 		#strt1 = Turt1 (futCode, '%s_dayk' % futCode, 'dummy', 'history', runStat)
-		strt1 = Turt1 (futCode, futCode, 'dummy', 'history', runStat)
+		strt1 = Turt1 (futCode, futCode, 'dummy', database, runStat)
 	else:
 		print "Bad strategy, only supports 'turt1' right now..."
 		emulationThreadEnd(runCtrl)

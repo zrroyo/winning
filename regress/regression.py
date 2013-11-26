@@ -209,7 +209,10 @@ def doEmulation(options, database):
 	
 	runCtrlSet.enableMarketRunStat()
 	
-	emu = Emulate(options.strategy, runCtrlSet, emuSet, emulationThreadStart)
+	emu = Emulate(options.strategy, runCtrlSet, emuSet, 
+			emulationThreadStart,	#模拟线程入口地址
+			database=database	#存放模拟数据的数据库
+			)
 	emu.run()
 		
 # Regression subsystem option handler transfering options to actions.
