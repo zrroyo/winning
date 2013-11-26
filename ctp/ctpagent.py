@@ -90,7 +90,7 @@ class MarketDataAgent:
 			try:
 				#print k, poll[k]
 				dp = poll[k]
-				output = '[%7s][Price: N/%g, B/%g, S/%g],[Vol: B/%d, S/%d, T/%d],[H/%d, L/%d],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+				output = '[%7s][Price: N/%g, B/%g, S/%g],[Vol: B/%d, S/%d, T/%d],[H/%g, L/%g],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 				#output = '[%7s][价：新/%g，买/%g，卖/%g],[量：买/%g，卖/%g，总/%g],[高/%g，低/%g],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 				#print output
 				painter.paintLine(window, i, output)
