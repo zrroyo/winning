@@ -277,33 +277,48 @@ class Turtle(FUT.Futures):
 	# noticing main thread actions have been taken for this tick.
 	def moveToNextTick (self, dateSet):
 		nextTick = dateSet.getSetNextDate()
-		# Note, if nextTick is None (the end of emulation), we do not set acted flag because 
-		# it may leave chance for main thread to generate next tick possibly causing missing
-		# some workable ticks.
+		'''
+		nextTick为None说明模拟已经结束，无论是Emulation或CTP模式，都不能直接设置acted
+		标志，因为这会让主调度进程认为此线程已经完全结束，并立即产生下一个tick，且将运行控
+		制块(RunCtrl)分配个下一个等待执行线程。在该等待线程开始执行的时候有可能一部分tick
+		已经过去了。这会造成模拟误差。Emulate的run（）方法会进行统一处理。
+		'''
 		if self.emuRunCtrl is not None :
 			#在emulate或CTP模式。
 			if nextTick is not None:
-				#在数据表中的模拟未结束，设置acted标志等待主线程调度
+				#对历史数据的模拟未结束，设置acted标志等待主线程调度
 				self.emuRunCtrl.setActed()
 			elif self.ctpPos is not None:
 				'''
-				在CTP模式，已经结束对过去数据的拟合并转入当前交易日，应进行实盘交易。
-				设置下一tick为当前，避免执行结束。
+				从dataSet返回的下一tick为None说明模拟阶段已经结束，转入实盘阶段。
 				'''
-				nextTick = self.workDay	
-				self.paintLogOn = True	#开始用终端窗口显示log
+				#至此打开窗口终端显示，任何行情相关信息应立即显示。
+				self.paintLogOn = True
+				
+				firstTime = True
+				#实盘开关未开启说明交易启动时间未到
+				while self.ctpPosOn == False:
+					if firstTime == True:
+						self.log('Waiting till start time %s' % (self.startTime))
+						firstTime = False
+					'''
+					如果行情服务器时间已大于启动时间则启动持仓管理接口，开始工作，
+					否则一直等待。
+					'''
+					updateTime = strptime(self.data.getUpdateTime(), '%H:%M:%S')
+					startTime = strptime(self.startTime, '%H:%M:%S')
+					if updateTime >= startTime:
+						self.ctpPosOn = True	#实盘开平仓
+						self.log('Tracing signals...')
+					
+					sleep(1)	#每过1秒检查一次启动时间
 				
 				'''
-				如果行情服务器时间已大于启动时间则启动持仓管理接口开始工作，否则一直等待。
+				1，启动时间到，开始工作。
+				2，设置下一tick为当前，避免执行结束。
+				3，并每过0.5秒重新察看一次交易信号。
 				'''
-				updateTime = strptime(self.data.getUpdateTime(), '%H:%M:%S')
-				startTime = strptime(self.startTime, '%H:%M:%S')
-				if updateTime >= startTime:
-					self.ctpPosOn = True	#实盘开平仓
-					self.log('%d, tracing, move to next tick...' % (self.data.getClose(nextTick)))
-				else:
-					self.log('wait utill start time %s' % (self.startTime))
-				
+				nextTick = self.workDay
 				sleep(0.5)
 				
 		return nextTick
