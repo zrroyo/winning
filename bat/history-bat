@@ -6,7 +6,7 @@
 #./win.py data -b history -c -t pta1309
 #./win.py data -b history -c -t sr1309
 #./win.py data -b history -c -t m1309
-#./win.py data -b history -c -t P1309
+#./win.py data -b history -c -t p1309
 #./win.py data -b history -c -t fg1309
 #./win.py data -b history -c -t rm1309
 # 01 
@@ -14,13 +14,13 @@
 ./win.py data -b history -c -t sr1401
 ./win.py data -b history -c -t pta1401
 ./win.py data -b history -c -t m1401
-./win.py data -b history -c -t P1401
+./win.py data -b history -c -t p1401
 ./win.py data -b history -c -t rb1401
 ./win.py data -b history -c -t rm1401
 # 05 
 ./win.py data -b history -c -t rb1405
 ./win.py data -b history -c -t m1405
-./win.py data -b history -c -t P1405
+./win.py data -b history -c -t p1405
 ./win.py data -b history -c -t sr1405
 ./win.py data -b history -c -t pta1405
 ./win.py data -b history -c -t fg1405
