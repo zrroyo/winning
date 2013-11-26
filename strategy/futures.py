@@ -256,7 +256,7 @@ class Futures(STRT.Strategy):
 		self.workDay = workDay
 		self.startTime = startTime
 		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
-		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent)
+		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent, self)
 		self.ctpLogMgr = ctpLogMgr
 		self.ctpLogPainterLine = ctpLogPainterLine
 		
