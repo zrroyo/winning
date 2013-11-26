@@ -31,8 +31,10 @@ def ctpExecutionThreadStart (
 	strt1 = None
 	runStat = RunStat(futCode)
 	
+	database = extraArgs['database']
+
 	if strategy == 'turt1':
-		strt1 = Turt1 (futCode, '%s_dayk' % futCode, 'dummy', 'history', runStat)
+		strt1 = Turt1 (futCode, '%s_dayk' % futCode, 'dummy', database, runStat)
 	else:
 		print "Bad strategy, only supports 'turt1' right now..."
 		emulationThreadEnd(runCtrl)
@@ -135,18 +137,22 @@ def ctpTradeCoreThreadStart (
 		print u'检测到不合法的交易策略，不能启动执行，退出'
 		return
 		
-	#生成日志文件名后缀	
+	#生成日志文件名后缀
 	logNameSuffix = tempNameSuffix()
 		
-	#得到交易启动时间	
+	#得到交易启动时间
 	startTime = tradeConfig.getTimeCtpOn(trade)
-	
+		
+	#获取数据据表所在的数据库
+	database = tradeConfig.getDatabase(trade)
+		
 	#启动CTP
 	emu = Emulate(strategy, runCtrlSet, instruments, ctpExecutionThreadStart, 
 			md=mdAgent, td=tdAgent, 
 			log=logNameSuffix,	#记录日志到文件
 			ctpLogMgr = ctpLogMgr,	#显示log的接口
-			startTime = startTime	#交易启动时间
+			startTime = startTime,	#交易启动时间
+			database = database	#数据表
 			)
 	emu.run()
 		
