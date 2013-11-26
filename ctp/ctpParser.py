@@ -56,14 +56,14 @@ def ctpExecutionThreadStart (
 	
 	mdAgent = extraArgs['md']
 	tdAgent = extraArgs['td']
-	ctpLogMgr = extraArgs['ctpLogMgr']
+	logPainter = extraArgs['logPainter']
 	startTime = extraArgs['startTime']
 	
 	#打开策略的CTP模式
 	strt1.enableCTP(curDay, startTime, runCtrl, 
 			mdAgent, tdAgent,
-			ctpLogMgr, 
-			ctpLogMgr.allocateLine()
+			logPainter, 
+			logPainter.allocateLine()
 			)
 	
 	strt1.run()
@@ -90,7 +90,7 @@ def ctpTradeCoreThreadStart (
 	tradeConfig,	#交易配置文件读取接口
 	mdAgent,	#行情数据代理接口
 	tdAgent,	#交易服务器端代理
-	ctpLogMgr	#CTP日志管理接口
+	logPainter	#CTP日志管理接口
 	):
 	
 	#得到所需交易合约列表，并倒序，因为Emulate会从最后一个合约开始倒序执行
@@ -150,7 +150,7 @@ def ctpTradeCoreThreadStart (
 	emu = Emulate(strategy, runCtrlSet, instruments, ctpExecutionThreadStart, 
 			md=mdAgent, td=tdAgent, 
 			log=logNameSuffix,	#记录日志到文件
-			ctpLogMgr = ctpLogMgr,	#显示log的接口
+			logPainter = logPainter,	#显示log的接口
 			startTime = startTime,	#交易启动时间
 			database = database	#数据表
 			)
@@ -265,12 +265,12 @@ def ctpOptionsHandler (options, args):
 		#print tradings
 		
 		window2 = painter.newWindow(20, 125, 20, 0)
-		ctpLogMgr = LogPainter(painter, window2, 20)
+		logPainter = LogPainter(painter, window2, 20)
 		
 		#依次启动CTP交易
 		for trade in tradings:
 			thread.start_new_thread(ctpTradeCoreThreadStart, 
-					(trade, tradeConfig, mdAgent, tdAgent, ctpLogMgr))
+					(trade, tradeConfig, mdAgent, tdAgent, logPainter))
 			time.sleep(0.1)
 		
 		#等待结束

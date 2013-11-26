@@ -43,8 +43,8 @@ class Futures(STRT.Strategy):
 		self.ctpPos = None	#CTP服务器持仓管理接口
 		self.ctpPosOn = False	#CTP启动开关，True则可进行开平仓操作
 		self.logMgr = None	#通用日志管理接口
-		self.ctpLogMgr = None	#CTP日志管理接口
-		self.ctpLogPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
+		self.logPainter = None	#CTP日志管理接口
+		self.logPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
 		self.paintLogOn = False	#向终端窗口显示log
 		
 		return
@@ -244,8 +244,8 @@ class Futures(STRT.Strategy):
 		runCtrl, 	#CTP运行时控制模块
 		mdAgent, 	#行情数据代理
 		tdAgent,	#交易服务器端代理
-		ctpLogMgr=None,	#CTP日志管理接口
-		ctpLogPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
+		logPainter=None,	#CTP日志管理接口
+		logPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
 		):
 		'''
 		在CTP实盘交易之前，需要确定到当前阶段的持仓情况。最简便的方法就是
@@ -257,8 +257,8 @@ class Futures(STRT.Strategy):
 		self.startTime = startTime
 		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
 		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent, self)
-		self.ctpLogMgr = ctpLogMgr
-		self.ctpLogPainterLine = ctpLogPainterLine
+		self.logPainter = logPainter
+		self.logPainterLine = logPainterLine
 		
 	#开启日志记录.
 	def enableStoreLogs(self, logMgr):
@@ -277,10 +277,10 @@ class Futures(STRT.Strategy):
 				print logs
 				
 			#如果CTP模式已启动并且需要显示动态跟踪行情，则将日志写至指定窗口中。
-			if self.paintLogOn == True and self.ctpLogMgr is not None:
+			if self.paintLogOn == True and self.logPainter is not None:
 				logs = logMsg % (args)
 				logs = '<%7s> | %s' % (self.futName, logs)
-				self.ctpLogMgr.paintLine(self.ctpLogPainterLine, logs)
+				self.logPainter.paintLine(self.logPainterLine, logs)
 				
 		else:
 			print logs
