@@ -213,7 +213,7 @@ def ctpOptionsHandler (options, args):
 				notAllowed.append(section)
 				
 		if len(notAllowed) != 0:
-			print u'策略未开启：%s' % notAllowed
+			print u'未开启策略：%s' % notAllowed
 		
 		instruments = []
 		for trade in tradings:
@@ -229,6 +229,15 @@ def ctpOptionsHandler (options, args):
 		print u'获取交易（策略）配置错误，退出'
 		return
 	
+	windowSize = options.window.split(',')
+	if len(windowSize) < 3:
+		print '所设窗口尺寸错误，退出'
+		return
+		
+	height1 = int(windowSize[0])
+	height2 = int(windowSize[1])
+	width = int(windowSize[2])
+	
 	#初始化并启动行情数据服务代理
 	mdAgent = MarketDataAgent(instruments, mdBrokerid, mdInvestor, mdPasswd, mdServer)
 	mdAgent.init_init()
@@ -241,7 +250,7 @@ def ctpOptionsHandler (options, args):
 		'''
 		如果在market或complex模式下运行，则打开行情显示。
 		'''
-		window1 = painter.newWindow(20, 125, 0, 0)
+		window1 = painter.newWindow(height1, width, 0, 0)
 		thread.start_new_thread(marketDataThreadStart, (painter, window1, mdAgent))
 		
 	if options.mode == 'mar':
@@ -264,8 +273,8 @@ def ctpOptionsHandler (options, args):
 	
 		#print tradings
 		
-		window2 = painter.newWindow(20, 125, 20, 0)
-		logPainter = LogPainter(painter, window2, 20)
+		window2 = painter.newWindow(height2, width, height1, 0)
+		logPainter = LogPainter(painter, window2, height2)
 		
 		#依次启动CTP交易
 		for trade in tradings:
@@ -294,6 +303,9 @@ def ctpOptionsParser (parser):
 	parser.add_option('-m', '--mode', dest='mode', 
 			help='Execution mode, such as, mar[ket](default), trade, com[plex].',
 			default='mar')
+	parser.add_option('-w', '--window', dest='window', 
+			help='Window size, set using the format as h1,h2,width.',
+			default='16,16,125')
 			
 	(options, args) = parser.parse_args()
 
