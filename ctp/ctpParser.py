@@ -7,6 +7,7 @@ CTP子系统命令行选项解析、启动CTP服务
 
 import sys
 sys.path.append('..')
+import os
 import thread
 import time
 from strategy.turt1 import Turt1
@@ -39,13 +40,16 @@ def ctpExecutionThreadStart (
 		print "Bad strategy, only supports 'turt1' right now..."
 		emulationThreadEnd(runCtrl)
 		return
-		
+			
+	#生成日志文件名后缀
 	logNameSuffix = extraArgs['log']
+	logDir = extraArgs['logDir']
+	
 	if logNameSuffix is not None:
 		'''
 		如果所传入的后缀名称不为空，则需要打开日志文件并记录。
 		'''
-		logTemp = 'logs/%s-%s.log' % (futCode, logNameSuffix)
+		logTemp = '%s/%s-%s.log' % (logDir, futCode, logNameSuffix)
 		futLog = Log(logTemp, True)
 		strt1.enableStoreLogs(futLog)	#启动日志记录
 	
@@ -90,7 +94,8 @@ def ctpTradeCoreThreadStart (
 	tradeConfig,	#交易配置文件读取接口
 	mdAgent,	#行情数据代理接口
 	tdAgent,	#交易服务器端代理
-	logPainter	#CTP日志管理接口
+	logPainter,	#CTP日志管理接口
+	logDir		#存储log的指定目录
 	):
 	
 	#得到所需交易合约列表，并倒序，因为Emulate会从最后一个合约开始倒序执行
@@ -149,8 +154,9 @@ def ctpTradeCoreThreadStart (
 	#启动CTP
 	emu = Emulate(strategy, runCtrlSet, instruments, ctpExecutionThreadStart, 
 			md=mdAgent, td=tdAgent, 
-			log=logNameSuffix,	#记录日志到文件
-			logPainter = logPainter,	#显示log的接口
+			log = logNameSuffix,	#log名称后缀
+			logDir = logDir,	#存储log的指定目录
+			logPainter = logPainter,#终端显示log的接口
 			startTime = startTime,	#交易启动时间
 			database = database	#数据表
 			)
@@ -228,7 +234,8 @@ def ctpOptionsHandler (options, args):
 	except:
 		print u'获取交易（策略）配置错误，退出'
 		return
-	
+			
+	#获取指定的终端窗口大小
 	windowSize = options.window.split(',')
 	if len(windowSize) < 3:
 		print '所设窗口尺寸错误，退出'
@@ -264,6 +271,10 @@ def ctpOptionsHandler (options, args):
 			painter.destroy()
 			return
 		
+	#创建存储日志的目录
+	cmdStr = 'mkdir -p %s' % options.logdir
+	os.system(cmdStr)
+	
 	#启动交易部分
 	try:
 		#初始化并启动交易服务器端代理
@@ -279,7 +290,7 @@ def ctpOptionsHandler (options, args):
 		#依次启动CTP交易
 		for trade in tradings:
 			thread.start_new_thread(ctpTradeCoreThreadStart, 
-					(trade, tradeConfig, mdAgent, tdAgent, logPainter))
+					(trade, tradeConfig, mdAgent, tdAgent, logPainter, options.logdir))
 			time.sleep(0.1)
 		
 		#等待结束
@@ -299,13 +310,16 @@ def ctpOptionsParser (parser):
 	parser.add_option('-s', '--select', dest='select', 
 			help='Select a set of tradings to run.')
 	parser.add_option('-r', '--reverse', dest='reverse', 
-			help='Run the tradings which is reverse to this list.')
+			help='Run the tradings which are reverse against this list.')
 	parser.add_option('-m', '--mode', dest='mode', 
 			help='Execution mode, such as, mar[ket](default), trade, com[plex].',
 			default='mar')
 	parser.add_option('-w', '--window', dest='window', 
-			help='Window size, set using the format as h1,h2,width.',
+			help="Window size, set using the format as h1,h2,width, the default is '16,16,125'",
 			default='16,16,125')
+	parser.add_option('-l', '--logdir', dest='logdir', 
+			help="The directory to store logs, the default is 'logs'",
+			default='logs')
 			
 	(options, args) = parser.parse_args()
 
