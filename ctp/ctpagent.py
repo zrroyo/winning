@@ -83,6 +83,7 @@ class MarketDataAgent:
 	#显示／描绘内容池里边的所有内容
 	def __display (self, poll, painter, window, lineStart=1):
 		keys = poll.keys()
+		keys.sort()	#排序后输出
 		#print keys
 		
 		i = lineStart
