@@ -12,10 +12,16 @@ class Painter:
 		#初始化curses
 		curses.initscr()	#初始化curses
 		
-	def newWindow (self, height, width, beginY, beginX, border=0):
-		win = curses.newwin(height, width, beginY, beginX)
-		win.border(border)	#设置边框
-		win.move(1,1)		#设置初始光标位置
+	def newWindow (self, title, height, width, beginY, beginX, border=0):
+		#设置边框和抬头
+		winBorder = curses.newwin(height+2, width+2, beginY, beginX)
+		winBorder.border(border)	
+		winBorder.addstr(0, 2, title)
+		winBorder.refresh()
+		
+		#创建显示窗口
+		win = curses.newwin(height, width, beginY+1, beginX+1)
+		win.move(0,1)	#设置初始光标位置
 		win.refresh()
 		return win
 			
@@ -25,10 +31,14 @@ class Painter:
 		lineNo, 	#所描绘行
 		output		#输出内容
 		):
-		window.move(lineNo,1)
-		window.clrtoeol()
-		window.addstr(lineNo, 1, str(output))
-		window.refresh()
+		
+		try:
+			window.move(lineNo,1)
+			window.clrtoeol()
+			window.addstr(lineNo, 1, str(output))
+			window.refresh()
+		except:
+			return
 		
 	#使用结束还原原终端
 	def destroy (self):
