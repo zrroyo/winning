@@ -279,7 +279,7 @@ class Futures(STRT.Strategy):
 			#如果CTP模式已启动并且需要显示动态跟踪行情，则将日志写至指定窗口中。
 			if self.paintLogOn == True and self.logPainter is not None:
 				logs = logMsg % (args)
-				logs = '<%7s> | %s' % (self.futName, logs)
+				logs = '<%6s>| %s' % (self.futName, logs)
 				self.logPainter.paintLine(self.logPainterLine, logs)
 				
 		else:
