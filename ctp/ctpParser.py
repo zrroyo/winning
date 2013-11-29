@@ -10,6 +10,7 @@ sys.path.append('..')
 import os
 import thread
 import time
+from datetime import datetime
 from strategy.turt1 import Turt1
 from misc.logmgr import Log, LogPainter
 from misc.runstat import RunStat
@@ -172,6 +173,19 @@ def ctpOptionsHandler (options, args):
 		print "\n请用'-t'指定交易配置文件.\n"
 		return
 	
+	#如果指定了结束时间，则需要解析时间格式并设置
+	if options.endTime is not None:
+		etList = options.endTime.split(':')
+		if len(etList) == 3:
+			timeFormat = '%H:%M:%S'
+		elif len(etList) == 6:
+			timeFormat = '%Y:%m:%d:%H:%M:%S'
+		else:
+			print "\n指定的交易结束时间错误，退出.\n"
+			return
+		
+		endTime = datetime.strptime(options.endTime, timeFormat)
+		
 	#检查CTP配置信息
 	try:
 		ctpConfig = CtpConfig(options.config)
@@ -295,7 +309,20 @@ def ctpOptionsHandler (options, args):
 		
 		#等待结束
 		while 1:
-			time.sleep(1)
+			if options.endTime is not None:
+				strTimeNow = datetime.now().strftime(timeFormat)
+				timeNow = datetime.strptime(strTimeNow, timeFormat)
+				if timeNow >= endTime:
+					try:
+						painter.destroy()
+						print "\n交易时间到 '%s'，退出" % options.endTime
+						exit()
+					except:
+						exit()
+				else:
+					time.sleep(60)
+			else:
+				time.sleep(60)
 	except:
 		painter.destroy()
 		print u'\n执行被中断，退出'
@@ -320,6 +347,8 @@ def ctpOptionsParser (parser):
 	parser.add_option('-l', '--logdir', dest='logdir', 
 			help="The directory to store logs, the default is 'logs'",
 			default='logs')
+	parser.add_option('-e', '--endTime', dest='endTime', 
+			help="Time to end ctp trading and exit.")
 			
 	(options, args) = parser.parse_args()
 
