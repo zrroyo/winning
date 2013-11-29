@@ -81,7 +81,7 @@ class MarketDataAgent:
 			self.logger.debug(u'接收行情数据异常!')
 		
 	#显示／描绘内容池里边的所有内容
-	def __display (self, poll, painter, window, lineStart=1):
+	def __display (self, poll, painter, window, lineStart=0):
 		keys = poll.keys()
 		keys.sort()	#排序后输出
 		#print keys
