@@ -257,7 +257,7 @@ def ctpOptionsHandler (options, args):
 		'''
 		如果在market或complex模式下运行，则打开行情显示。
 		'''
-		window1 = painter.newWindow(height1, width, 0, 0)
+		window1 = painter.newWindow('行情数据', height1, width, 0, 0)
 		thread.start_new_thread(marketDataThreadStart, (painter, window1, mdAgent))
 		
 	if options.mode == 'mar':
@@ -284,7 +284,7 @@ def ctpOptionsHandler (options, args):
 	
 		#print tradings
 		
-		window2 = painter.newWindow(height2, width, height1, 0)
+		window2 = painter.newWindow('交易跟踪', height2, width, height1+2, 0)
 		logPainter = LogPainter(painter, window2, height2)
 		
 		#依次启动CTP交易
@@ -316,7 +316,7 @@ def ctpOptionsParser (parser):
 			default='mar')
 	parser.add_option('-w', '--window', dest='window', 
 			help="Window size, set using the format as h1,h2,width, the default is '16,16,125'",
-			default='16,16,125')
+			default='14,14,123')
 	parser.add_option('-l', '--logdir', dest='logdir', 
 			help="The directory to store logs, the default is 'logs'",
 			default='logs')
