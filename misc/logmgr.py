@@ -57,7 +57,7 @@ class LogPainter:
 		self.window = window
 		self.lines = lines
 		self.lock = thread.allocate_lock()
-		self.__line = 1		#分配起始行
+		self.__line = 0		#分配起始行
 		
 	#描绘一行
 	def paintLine (self, lineNo, logMsg):
