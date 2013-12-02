@@ -30,7 +30,8 @@ class CtpAutoPosition:
 	def __init__ (self, 
 		mdAgent,	#行情数据代理
 		tdAgent,	#交易服务器端代理
-		strategy=None	#交易策略对象（实例）
+		strategy=None,	#交易策略对象（实例）
+		optPriceLimit=2	#决定合理价时的次数阈值
 		):
 		self.mdAgent = mdAgent
 		self.tdAgent = tdAgent
@@ -39,6 +40,7 @@ class CtpAutoPosition:
 		有的时候需要访问在被调用策略里的一些接口、变量。
 		'''
 		self.strategy = strategy
+		self.optPriceLimit = optPriceLimit
 		
 	#撤消下单
 	def cancel_order (self, instrument, order_ref):
@@ -47,71 +49,123 @@ class CtpAutoPosition:
 		except:	
 			self.log('CtpPosition: cancel_order error')
 			
-	#开仓
-	def open_position (self, instrument, direction, price, volume):
-		#print u'open_position'
-		try:
-			order_ref = self.tdAgent.open_position(instrument, direction, price, volume)
-			sleep(self.timeWaitOrder)
+	#得到合理的买入价
+	def __getReasonableBuyPrice (self, instrument, count):
+		if count < self.optPriceLimit:
+			return self.mdlocal.getBidPrice1(instrument)
+		elif count < self.optPriceLimit*2:
+			return self.mdlocal.getClose(instrument)
+		else:
+			return self.mdlocal.getAskPrice1(instrument)
+		
+	#得到合理的卖出价
+	def __getReasonableSellPrice (self, instrument, count):
+		if count < self.optPriceLimit:
+			return self.mdlocal.getAskPrice1(instrument)
+		elif count < self.optPriceLimit*2:
+			return self.mdlocal.getClose(instrument)
+		else:
+			return self.mdlocal.getBidPrice1(instrument)
 			
-			#print order_ref, self.tdAgent.is_order_success(order_ref)
-			#print self.tdAgent.orderMap.elemDict
-			ret = price
-			while not self.tdAgent.is_order_success(order_ref):
-				#如果开仓不成功，刚重新获取市场价并报单重开
-				self.cancel_order(instrument, order_ref)
-				price = self.mdlocal.getClose(instrument)
-				self.log('Cancel order %d, new price %d' % (order_ref, price))
-				order_ref = self.tdAgent.open_position(instrument, direction, price, volume)
-				ret = price
-				sleep(self.timeWaitOrder)
-				
-			return price
-		except:
-			self.log('CtpPosition: open_position error')
-			return None
-		
-		
 	#开多
-	def open_long_position (self, instrument, price, volume):
-		self.log('Opening [long] position  %g, %d' % (price, volume))
-		return self.open_position(instrument, D_Buy, price, volume)
-	
-	#开空
-	def open_short_position (self, instrument, price, volume):
-		self.log('Opening [short] position  %g, %d' % (price, volume))
-		return self.open_position(instrument, D_Sell, price, volume)
+	def open_long_position (self, instrument, buyPrice, volume):
+		count = 0
+		price = self.__getReasonableBuyPrice(instrument, count)
+		self.log('Opening [long] position, trigger %g, buy %g, %d' % (buyPrice, price, volume))
 		
-	#平仓
-	def close_position (self, instrument, direction, price, volume, cos_flag=OF_Close):
 		try:
-			order_ref = self.tdAgent.close_position(instrument, direction, price, volume, cos_flag)
-			sleep(self.timeWaitOrder)
-			
-			ret = price
-			while not self.tdAgent.is_order_success(order_ref):
-				#如果平仓不成功，刚重新获取市场价并报单重平
-				self.cancel_order(instrument, order_ref)
-				price = self.mdlocal.getClose(instrument)
-				self.log('Cancel order %d, new price %d' % (order_ref, price))
-				order_ref = self.tdAgent.close_position(instrument, direction, price, volume, cos_flag)
-				ret = price
+			while 1:
+				count += 1
+				order_ref = self.tdAgent.open_position(instrument, D_Buy, price, volume)
 				sleep(self.timeWaitOrder)
 				
+				if self.tdAgent.is_order_success(order_ref):
+					break
+				
+				#如果开仓不成功，刚重新获取合理价并报单重开
+				self.cancel_order(instrument, order_ref)
+				price = self.__getReasonableBuyPrice(instrument, count)
+				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
+					
 			return price
 		except:
-			self.log('CtpPosition: close_position error')
+			self.log('CtpPosition: open_long_position error')
+			return None
+			
+	#开空
+	def open_short_position (self, instrument, sellPrice, volume):
+		count = 0
+		price = self.__getReasonableSellPrice(instrument, count)
+		self.log('Opening [short] position, trigger %g, sell %g, %d' % (sellPrice, price, volume))
+		
+		try:
+			while 1:
+				count += 1
+				order_ref = self.tdAgent.open_position(instrument, D_Sell, price, volume)
+				sleep(self.timeWaitOrder)
+				
+				if self.tdAgent.is_order_success(order_ref):
+					break
+					
+				#如果开仓不成功，刚重新获取合理价并报单重开
+				self.cancel_order(instrument, order_ref)
+				price = self.__getReasonableSellPrice(instrument, count)
+				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
+					
+			return price
+		except:
+			self.log('CtpPosition: open_short_position error')
+			return None
+			
+	#平多
+	def close_long_position (self, instrument, sellPrice, volume, cos_flag=OF_Close):
+		count = 0
+		price = self.__getReasonableSellPrice(instrument, count)
+		self.log('Closing [long] position, trigger %g, sell %g, %d' % (sellPrice, price, volume))
+		
+		try:
+			while 1:
+				count += 1
+				order_ref = self.close_position(instrument, D_Sell, price, volume, cos_flag)
+				sleep(self.timeWaitOrder)
+				
+				if self.tdAgent.is_order_success(order_ref):
+					break
+					
+				#如果开仓不成功，刚重新获取合理价并报单重开
+				self.cancel_order(instrument, order_ref)
+				price = self.__getReasonableSellPrice(instrument, count)
+				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
+					
+			return price
+		except:
+			self.log('CtpPosition: close_long_position error')
 			return None
 		
-	#平多
-	def close_long_position (self, instrument, price, volume, cos_flag=OF_Close):
-		self.log('Closing [long] position %g, %d' % (price, volume))
-		return self.close_position(instrument, D_Sell, price, volume, cos_flag)
-	
 	#平空
-	def close_short_position (self, instrument, price, volume, cos_flag=OF_Close):
-		self.log('Closing [short] position  %g, %d' % (price, volume))
-		return self.close_position(instrument, D_Buy, price, volume, cos_flag)
+	def close_short_position (self, instrument, buyPrice, volume, cos_flag=OF_Close):
+		count = 0
+		price = self.__getReasonableBuyPrice(instrument, count)
+		self.log('Closing [short] position, trigger %g, sell %g, %d' % (buyPrice, price, volume))
+		
+		try:
+			while 1:
+				count += 1
+				order_ref = self.close_position(instrument, D_Buy, price, volume, cos_flag)
+				sleep(self.timeWaitOrder)
+				
+				if self.tdAgent.is_order_success(order_ref):
+					break
+					
+				#如果开仓不成功，刚重新获取合理价并报单重开
+				self.cancel_order(instrument, order_ref)
+				price = self.__getReasonableBuyPrice(instrument, count)
+				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
+					
+			return price
+		except:
+			self.log('CtpPosition: close_short_position error')
+			return None
 		
 	#日志（输出）统一接口
 	def log (self, logMsg, *args):
