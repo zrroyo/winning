@@ -342,7 +342,7 @@ def ctpOptionsParser (parser):
 			help='Execution mode, such as, mar[ket](default), trade, com[plex].',
 			default='mar')
 	parser.add_option('-w', '--window', dest='window', 
-			help="Window size, set using the format as h1,h2,width, the default is '16,16,125'",
+			help="Window size, set using the format as h1,h2,width, the default is '14,14,123'",
 			default='14,14,123')
 	parser.add_option('-l', '--logdir', dest='logdir', 
 			help="The directory to store logs, the default is 'logs'",
