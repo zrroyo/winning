@@ -5,7 +5,7 @@ sys.path.append("..")
 
 import date as DATE
 import turtle
-import futcom
+#import futcom
 import db.mysqldb as sql
 
 class Turt1(turtle.Turtle):

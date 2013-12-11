@@ -11,7 +11,7 @@ from optparse import OptionParser
 
 import data
 import db.mysqldb as sql
-import futcom
+from misc.futcom import futureTalbeExists, futcodeToDataTable
 
 # Format and print values.
 def formatPrint (date, comment, value):
@@ -128,9 +128,9 @@ def dataOptionsHandler (options, args):
 		return
 	
 	# Try to find the passed table in database, otherwise it may cause run error.
-	if futcom.futureTalbeExists(table, database) == False:
-		table = futcom.futcodeToDataTable(table)
-		if futcom.futureTalbeExists(table, database) == False:
+	if futureTalbeExists(table, database) == False:
+		table = futcodeToDataTable(table)
+		if futureTalbeExists(table, database) == False:
 			print "\nCan not find any table matching '%s', exit...\n" % options.dataTable
 			exit()
 	#print table

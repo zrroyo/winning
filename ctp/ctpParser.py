@@ -20,7 +20,7 @@ from regress.emulate import CommonAttrs, emulationThreadEnd, Emulate
 from regress.tick import Tick
 from futconfig import TradingConfig, CtpConfig
 from misc.painter import Painter
-from futcom import tempNameSuffix
+from misc.futcom import tempNameSuffix
 
 #CTP交易（模拟）执行线程入口
 def ctpExecutionThreadStart (

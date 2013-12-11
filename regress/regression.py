@@ -14,7 +14,7 @@ import thread
 from misc.runstat import RunStat
 from misc.runctrl import RunControl, RunCtrlSet
 from regress.emulate import CommonAttrs, emulationThreadStart, Emulate
-from futcom import futcodeSetToDataTables, futcodeToDataTable, filtering
+from misc.futcom import futcodeSetToDataTables, futcodeToDataTable, filtering
 
 # List all possible regression tests in database.
 def listFutureTables (database, filter):
