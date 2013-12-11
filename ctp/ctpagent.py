@@ -9,7 +9,7 @@ from futures import ApiStruct
 from ctpapi import CtpMdApi, CtpTraderApi
 from misc.elemmap import ElementMap
 from mdtolocal import MarketDataAccess
-from futcom import tempNameSuffix
+from misc.futcom import tempNameSuffix
 
 #初始化日志管理
 logName = 'ctp%s.log' % tempNameSuffix()
