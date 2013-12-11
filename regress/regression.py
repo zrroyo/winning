@@ -9,45 +9,18 @@ import sys
 from optparse import OptionParser
 import string
 import db.mysqldb as sql
-import futcom
 import tick
 import thread
 from misc.runstat import RunStat
 from misc.runctrl import RunControl, RunCtrlSet
 from regress.emulate import CommonAttrs, emulationThreadStart, Emulate
+from futcom import futcodeSetToDataTables, futcodeToDataTable, filtering
 
-# Regression Filter omits all tests which do not match @filter in @regSet.
-def regressionFilter (regSet, filter):
-	'''
-	支持'*'和'!'两种过滤方式。
-	‘*’表示任意多个字符，'!'表示不包含。
-	'''
-	filter1 = filter.split('!')[0]
-	filters = filter1.split('*')
-		
-	for f in filters:
-		if f is not None:
-			regSet = [test for test in regSet if test.find(f) != -1]
-			
-	if filter[0] != '*':
-		regSet = [test for test in regSet if test[0] == filter[0]]
-		
-	revert = filter.split('!')[1:]
-	if len(revert) == 0:
-		return regSet
-		
-	for f in revert:
-		if f != '':
-			regSet = [test for test in regSet if test.find(f) == -1]
-		
-	#print regSet
-	return regSet
-	
 # List all possible regression tests in database.
 def listFutureTables (database, filter):
 	regSet = possibleRegressionTests(database)
 	if filter is not None:
-		regSet = regressionFilter(regSet, filter)
+		regSet = filtering(regSet, filter)
 	print "\nAll possible regression test tables in '%s:'\n" % database
 	for test in regSet:
 		print test
@@ -122,12 +95,12 @@ def doRegression (options, database, test, strategy):
 def doAllRegressions (options, database):
 	regSet = []
 	if options.tables:
-		regSet = futcom.futcodeSetToDataTables(options.tables.split(','))
+		regSet = futcodeSetToDataTables(options.tables.split(','))
 	else:
 		regSet = possibleRegressionTests(database)
 		
 	if options.filter:
-		regSet = regressionFilter(regSet, options.filter)
+		regSet = filtering(regSet, options.filter)
 		
 	#print regSet
 	for test in regSet:
@@ -140,7 +113,7 @@ def strategyAssistant (options, database):
 		exit()
 			
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
-	table = futcom.futcodeToDataTable(options.tables)
+	table = futcodeToDataTable(options.tables)
 	strategy = options.strategy
 	
 	if strategy == 'turtle':
@@ -168,12 +141,12 @@ def doEmulation(options, database):
 	# Prepare emulation tables set.
 	emuSet = []
 	if options.tables:
-		emuSet = futcom.futcodeSetToDataTables(options.tables.split(','))
+		emuSet = futcodeSetToDataTables(options.tables.split(','))
 	else:
 		emuSet = possibleRegressionTests(database)
 		
 	if options.filter:
-		emuSet = regressionFilter(emuSet, options.filter)
+		emuSet = filtering(emuSet, options.filter)
 			
 	# Do emulation in a reverse order for tables set.
 	emuSet.reverse()
