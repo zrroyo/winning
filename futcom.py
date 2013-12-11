@@ -38,3 +38,31 @@ def futureTalbeExists (futCode, database):
 def tempNameSuffix():
 	tempFileName = time.strftime('%Y%m%d%H%M%S')
 	return tempFileName
+
+#将todoList列表的内容按filter参数的指定规则进行过滤。
+def filtering (todoList, filter):
+	'''
+	支持'*'和'!'两种过滤方式。
+	‘*’表示任意多个字符，'!'表示不包含。
+	'''
+	filter1 = filter.split('!')[0]
+	filters = filter1.split('*')
+		
+	for f in filters:
+		if f is not None:
+			todoList = [test for test in todoList if test.find(f) != -1]
+			
+	if filter[0] != '*':
+		todoList = [test for test in todoList if test[0] == filter[0]]
+		
+	revert = filter.split('!')[1:]
+	if len(revert) == 0:
+		return todoList
+		
+	for f in revert:
+		if f != '':
+			todoList = [test for test in todoList if test.find(f) == -1]
+		
+	#print todoList
+	return todoList
+	
