@@ -118,7 +118,7 @@ class CtpAutoPosition:
 			return None
 			
 	#平多
-	def close_long_position (self, instrument, sellPrice, volume, cos_flag=OF_Close):
+	def close_long_position (self, instrument, sellPrice, volume, cos_flag=OF_CloseYesterday):
 		count = 0
 		price = self.__getReasonableSellPrice(instrument, count)
 		self.log('Closing [long] position, trigger %g, sell %g, %d' % (sellPrice, price, volume))
@@ -143,7 +143,7 @@ class CtpAutoPosition:
 			return None
 		
 	#平空
-	def close_short_position (self, instrument, buyPrice, volume, cos_flag=OF_Close):
+	def close_short_position (self, instrument, buyPrice, volume, cos_flag=OF_CloseYesterday):
 		count = 0
 		price = self.__getReasonableBuyPrice(instrument, count)
 		self.log('Closing [short] position, trigger %g, sell %g, %d' % (buyPrice, price, volume))
