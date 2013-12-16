@@ -126,7 +126,7 @@ class CtpAutoPosition:
 		try:
 			while 1:
 				count += 1
-				order_ref = self.close_position(instrument, D_Sell, price, volume, cos_flag)
+				order_ref = self.tdAgent.close_position(instrument, D_Sell, price, volume, cos_flag)
 				sleep(self.timeWaitOrder)
 				
 				if self.tdAgent.is_order_success(order_ref):
@@ -151,7 +151,7 @@ class CtpAutoPosition:
 		try:
 			while 1:
 				count += 1
-				order_ref = self.close_position(instrument, D_Buy, price, volume, cos_flag)
+				order_ref = self.tdAgent.close_position(instrument, D_Buy, price, volume, cos_flag)
 				sleep(self.timeWaitOrder)
 				
 				if self.tdAgent.is_order_success(order_ref):
