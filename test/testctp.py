@@ -5,11 +5,11 @@ import sys
 sys.path.append('..')
 import time
 #from ctpapi import MdSpiDelegate, TraderSpiDelegate
-from ctpapi import CtpMdApi, CtpTraderApi
-from ctpagent import MarketDataAgent, TraderAgent
-from futures import ApiStruct
+from ctp.ctpapi import CtpMdApi, CtpTraderApi
+from ctp.ctpagent import MarketDataAgent, TraderAgent
+from ctp.futures import ApiStruct
 from dataMgr.data import CtpData
-from autopos import CtpAutoPosition, OF_CloseToday
+from ctp.autopos import CtpAutoPosition, OF_CloseToday
 from misc.painter import Painter
 
 class TestVar:
