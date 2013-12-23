@@ -16,6 +16,7 @@ from misc.logmgr import Log, LogPainter
 from misc.runstat import RunStat
 from misc.runctrl import RunControl, RunCtrlSet
 from ctp.ctpagent import MarketDataAgent, TraderAgent
+from ctp.autopos import CtpAutoPosition, OF_CloseToday
 from regress.emulate import CommonAttrs, emulationThreadEnd, Emulate
 from regress.tick import Tick
 from futconfig import TradingConfig, CtpConfig
@@ -163,10 +164,97 @@ def ctpTradeCoreThreadStart (
 			)
 	emu.run()
 		
+#下单处理
+def processOrder(
+	details, 	#下单明细
+	mdBrokerid, mdInvestor, mdPasswd, mdServer,
+	tdBrokerid, tdInvestor, tdPasswd, tdServer
+	):
+		
+	orderDetails = details.split(',')
+	if len(orderDetails) != 4:
+		print u'下单明细格式错误，正确格式例如：c,b,1,SR405'
+		return
+			
+	orderType = orderDetails[0]
+	direction = orderDetails[1]
+	poses = int(orderDetails[2])
+	instrument = orderDetails[3]
+	
+	print u'登录行情服务器...'
+	
+	#初始化并启动行情数据服务代理
+	mdAgent = MarketDataAgent([instrument], mdBrokerid, mdInvestor, mdPasswd, mdServer)
+	mdAgent.init_init()
+	time.sleep(2)	#等待行情代理初始化完毕
+		
+	print u'登录交易服务器...'
+	
+	#初始化并启动交易服务器端代理
+	tdAgent = TraderAgent(tdBrokerid, tdInvestor, tdPasswd, tdServer)
+	tdAgent.init_init()
+	time.sleep(1)	
+		
+	print u'开始下单...'
+	
+	autoPosMgr = CtpAutoPosition(mdAgent, tdAgent)
+	
+	#while 1:
+		#print mdAgent.mdlocal.getClose(instrument)
+		#time.sleep(0.5)
+
+	try:
+		
+		if orderType == 'o' and direction == 'b':
+			price = autoPosMgr.open_long_position(instrument, 
+					mdAgent.mdlocal.getClose(instrument), poses)
+			print u'开多成功，价格 %d' % price
+		elif orderType == 'o' and direction == 's':
+			price = autoPosMgr.open_short_position(instrument, 
+					mdAgent.mdlocal.getClose(instrument), poses)
+			print u'开空成功，价格 %d' % price
+		elif orderType == 'c' and direction == 'b':
+			price = autoPosMgr.close_long_position(instrument, 
+					mdAgent.mdlocal.getClose(instrument), poses)
+			print u'平多成功，价格 %d' % price
+		elif orderType == 'c' and direction == 's':
+			price = autoPosMgr.close_short_position(instrument, 
+					mdAgent.mdlocal.getClose(instrument), poses)
+			print u'平空成功，价格 %d' % price
+	except:
+		print "\n下单错误，退出"
+		
 #CTP子系统命令行选项解析主函数
 def ctpOptionsHandler (options, args):
 	if options.config is None:
 		print "\n请用'-c'指定CTP全局配置文件.\n"
+		return
+		
+	#检查CTP配置信息
+	try:
+		ctpConfig = CtpConfig(options.config)
+		mdServer = ctpConfig.getServer('MarketData')
+		mdPasswd = ctpConfig.getPasswd('MarketData')
+		mdInvestor = ctpConfig.getInvestor('MarketData')
+		mdBrokerid = ctpConfig.getBrokerid('MarketData')
+		tdServer = ctpConfig.getServer('Trade')
+		tdPasswd = ctpConfig.getPasswd('Trade')
+		tdInvestor = ctpConfig.getInvestor('Trade')
+		tdBrokerid = ctpConfig.getBrokerid('Trade')
+	except:
+		print u'获取CTP配置信息错误，退出'
+		return
+			
+	#如要指定了下单模式则仅做下单操作
+	if options.mode == 'order':
+		if options.details is None:
+			print u'order模式需要指定下单明细，退出'
+			return
+		
+		processOrder(options.details,
+			mdBrokerid, mdInvestor, mdPasswd, mdServer,
+			tdBrokerid, tdInvestor, tdPasswd, tdServer
+			)
 		return
 	
 	if options.trading is None:
@@ -185,21 +273,8 @@ def ctpOptionsHandler (options, args):
 			return
 		
 		endTime = datetime.strptime(options.endTime, timeFormat)
-		
-	#检查CTP配置信息
-	try:
-		ctpConfig = CtpConfig(options.config)
-		mdServer = ctpConfig.getServer('MarketData')
-		mdPasswd = ctpConfig.getPasswd('MarketData')
-		mdInvestor = ctpConfig.getInvestor('MarketData')
-		mdBrokerid = ctpConfig.getBrokerid('MarketData')
-		tdServer = ctpConfig.getServer('Trade')
-		tdPasswd = ctpConfig.getPasswd('Trade')
-		tdInvestor = ctpConfig.getInvestor('Trade')
-		tdBrokerid = ctpConfig.getBrokerid('Trade')
-	except:
-		print u'获取CTP配置信息错误，退出'
-		return
+			
+	#确定可执行合约列表
 	
 	tradeConfig = TradingConfig(options.trading)
 
@@ -339,7 +414,7 @@ def ctpOptionsParser (parser):
 	parser.add_option('-r', '--reverse', dest='reverse', 
 			help='Run the tradings which are reverse against this list.')
 	parser.add_option('-m', '--mode', dest='mode', 
-			help='Execution mode, such as, mar[ket](default), trade, com[plex].',
+			help='Execution mode, such as, mar[ket](default), trade, com[plex], order.',
 			default='mar')
 	parser.add_option('-w', '--window', dest='window', 
 			help="Window size, set using the format as h1,h2,width, the default is '14,14,123'",
@@ -349,6 +424,8 @@ def ctpOptionsParser (parser):
 			default='logs')
 	parser.add_option('-e', '--endTime', dest='endTime', 
 			help="Time to end ctp trading and exit.")
+	parser.add_option('-d', '--details', dest='details', 
+			help="Details used according to each mode.")
 			
 	(options, args) = parser.parse_args()
 
