@@ -186,6 +186,7 @@ class CtpTraderApi(TraderApi):
 		self.logger.debug(u"TD:结算单确认信息查询响应:rspInfo=%s,结算单确认=%s" % (pRspInfo,pSettlementInfoConfirm))
 		#self.query_settlement_info()
 		if(self.resp_common(pRspInfo,bIsLast,u'结算单确认情况查询')>0):
+			#print pSettlementInfoConfirm
 			if(pSettlementInfoConfirm == None or int(pSettlementInfoConfirm.ConfirmDate) < self.agent.scur_day):
 				#其实这个判断是不对的，如果周日对周五的结果进行了确认，那么周一实际上已经不需要再次确认了
 				if(pSettlementInfoConfirm != None):
@@ -195,6 +196,7 @@ class CtpTraderApi(TraderApi):
 				self.query_settlement_info()
 			else:
 				self.agent.isSettlementInfoConfirmed = True
+				print u'TD:最新结算单已确认，不需再次确认,最后确认时间=%s,scur_day:%s' % (pSettlementInfoConfirm.ConfirmDate,self.agent.scur_day)
 				self.logger.info(u'TD:最新结算单已确认，不需再次确认,最后确认时间=%s,scur_day:%s' % (pSettlementInfoConfirm.ConfirmDate,self.agent.scur_day))
 				self.agent.initialize()
 		
@@ -286,10 +288,11 @@ class CtpTraderApi(TraderApi):
 		正常情况后不应该出现
 		'''
 		print u'报单被拒绝, RID %d' % nRequestID
+		print 'ErrID %s, ErrMsg %s' % (pRspInfo.ErrorID, pRspInfo.ErrorMsg)
 		self.logger.warning(u'TD:CTP报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.logger.warning(u'报单校验错误,ErrorID=%s,ErrorMsg=%s,pRspInfo=%s,bIsLast=%s' % (pRspInfo.ErrorID,pRspInfo.ErrorMsg,str(pRspInfo),bIsLast))
 		#self.agent.rsp_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
-		self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
+		#self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 	
 	def OnErrRtnOrderInsert(self, pInputOrder, pRspInfo):
 		'''
@@ -306,8 +309,8 @@ class CtpTraderApi(TraderApi):
 		CTP、交易所接受报单
 		Agent中不区分，所得信息只用于撤单
 		'''
-		print u'接受报单'
-		self.logger.info(u'报单响应,Order=%s' % str(pOrder))
+		print u'接受报单,状态 %s' % pOrder.OrderStatus
+		self.logger.info(u'报单响应,OrderStatus=%s' % str(pOrder.OrderStatus))
 		if pOrder.OrderStatus == 'a':
 			#CTP接受，但未发到交易所
 			#print u'CTP接受Order，但未发到交易所, BrokerID=%s,BrokerOrderSeq = %s,TraderID=%s, OrderLocalID=%s' % (pOrder.BrokerID,pOrder.BrokerOrderSeq,pOrder.TraderID,pOrder.OrderLocalID)
@@ -321,7 +324,7 @@ class CtpTraderApi(TraderApi):
 	
 	def OnRtnTrade(self, pTrade):
 		'''成交通知'''
-		print u'报单成交'
+		print u'报单成交, TradeID %s' % pTrade.TradeID
 		self.logger.info(u'TD:成交通知,BrokerID=%s,BrokerOrderSeq = %s,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' %(pTrade.BrokerID,pTrade.BrokerOrderSeq,pTrade.ExchangeID,pTrade.OrderSysID,pTrade.TraderID,pTrade.OrderLocalID))
 		self.logger.info(u'TD:成交回报,Trade=%s' % repr(pTrade))
 		self.agent.rtn_trade(pTrade)
@@ -373,5 +376,49 @@ class CtpTraderApi(TraderApi):
 			TimeCondition = ApiStruct.TC_GFD
 			)
 		self.logger.info(u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price))
+		print u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price)
 		r = self.ReqOrderInsert(req,self.inc_request_id())
 		
+	#def close_position(self, order, CombOffsetFlag = ApiStruct.OF_CloseToday):
+	def close_position(self, 
+			instrument, 	#所开合约代号
+			direction,	#所开方向
+			order_ref,	#
+			price,		#所开价格
+			volume,		#所开仓位
+			cos_flag	#
+			):	
+		''' 
+		发出平仓指令. 默认平今仓
+		是平今还是平昨，可以通过order的mytime解决
+		'''
+		#sorder = self.ref2order[order.order_ref].source_order
+		#sday = sorder.mytime/1000000    #MMDD
+		#cday = self.scur_day % 10000    #MMDD
+		#logging.info(u'平仓: sday=%s,cday=%s' % (sday,cday))
+		#cos_flag = ApiStruct.OF_CloseToday if sday >= cday else ApiStruct.OF_Close    #sday>cday只会在模拟中出现，否则就是穿越了
+	
+		req = ApiStruct.InputOrder(
+			InstrumentID = instrument,
+			Direction = direction,
+			OrderRef = str(order_ref),
+			LimitPrice = price,
+			VolumeTotalOriginal = volume,
+			#CombOffsetFlag = CombOffsetFlag,
+			CombOffsetFlag = cos_flag,
+			OrderPriceType = ApiStruct.OPT_LimitPrice,
+			
+			BrokerID = self.broker_id,
+			InvestorID = self.investor_id,
+			CombHedgeFlag = ApiStruct.HF_Speculation,   #投机 5位字符,但是只用到第0位
+	
+			VolumeCondition = ApiStruct.VC_AV,
+			MinVolume = 1,  #TODO:这个有点不确定. 需要测试确认
+			ForceCloseReason = ApiStruct.FCC_NotForceClose,
+			IsAutoSuspend = 1,
+			UserForceClose = 0,
+			TimeCondition = ApiStruct.TC_GFD,
+		)
+		print u'平仓: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'空' if direction == ApiStruct.D_Sell else u'多', volume, price)		
+		r = self.ReqOrderInsert(req, self.inc_request_id())
+			
