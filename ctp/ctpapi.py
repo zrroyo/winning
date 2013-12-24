@@ -1,6 +1,7 @@
 #-*- coding:utf-8 -*-
 
 import logging
+import time
 from futures import ApiStruct, MdApi, TraderApi
 import ctpagent
 
@@ -56,7 +57,7 @@ class CtpMdApi(MdApi):
 		else:
 			self.agent.OnRtnDepthMarketData(depth_market_data)
 			
-# CTP交易接口
+# 基本CTP交易接口
 class CtpTraderApi(TraderApi):
 	logger = logging.getLogger('ctp.CtpTraderApi')
 	
@@ -65,7 +66,7 @@ class CtpTraderApi(TraderApi):
 		broker_id,   	#期货公司ID
 		investor_id, 	#投资者ID
 		passwd, 	#口令
-		agent = None  	#实际操作对象
+		agent		#实际操作对象
 		):        
 		self.instruments = instruments
 		self.broker_id =broker_id
@@ -73,8 +74,7 @@ class CtpTraderApi(TraderApi):
 		self.passwd = passwd
 		self.agent = agent
 		self.is_logged = False
-		self.request_id = 0
-	
+		
 	def isRspSuccess(self, RspInfo):
 		return RspInfo == None or RspInfo.ErrorID == 0
 	
@@ -87,16 +87,19 @@ class CtpTraderApi(TraderApi):
 		'''
 		当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
 		'''
+		print u'前端已连接'
 		self.logger.info(u'TD:trader front connected')
 		self.login()
 	
 	def OnFrontDisconnected(self, nReason):
 		self.logger.info(u'TD:trader front disconnected,reason=%s' % (nReason,))
 	
+	def inc_request_id (self):
+		return self.agent.inc_request_id()
+		
 	def user_login(self, broker_id, investor_id, passwd):
 		req = ApiStruct.ReqUserLogin(BrokerID=broker_id, UserID=investor_id, Password=passwd)
-		#r=self.ReqUserLogin(req,self.agent.inc_request_id())
-		r=self.ReqUserLogin(req, self.request_id)
+		r=self.ReqUserLogin(req, self.inc_request_id())
 	
 	def OnRspUserLogin(self, pRspUserLogin, pRspInfo, nRequestID, bIsLast):
 		self.logger.info(u'TD:trader login')
@@ -107,9 +110,10 @@ class CtpTraderApi(TraderApi):
 			self.is_logged = False
 			return
 		
+		print u'前端已登录'
 		self.is_logged = True
 		self.logger.info(u'TD:trader login success')
-		#self.agent.login_success(pRspUserLogin.FrontID,pRspUserLogin.SessionID,pRspUserLogin.MaxOrderRef)
+		self.agent.login_success(pRspUserLogin.FrontID, pRspUserLogin.SessionID, pRspUserLogin.MaxOrderRef)
 		#self.settlementInfoConfirm()
 		#self.agent.set_trading_day(self.GetTradingDay())
 		#self.query_settlement_info()
@@ -144,7 +148,7 @@ class CtpTraderApi(TraderApi):
 		并且妥善处理空指针之后,仍然有问题,在其中查询结算单无动静
 		'''
 		req = ApiStruct.QrySettlementInfoConfirm(BrokerID=self.broker_id,InvestorID=self.investor_id)
-		self.ReqQrySettlementInfoConfirm(req,self.agent.inc_request_id())
+		self.ReqQrySettlementInfoConfirm(req, self.inc_request_id())
 		
 	def query_settlement_info(self):
 		#不填日期表示取上一天结算单,并在响应函数中确认
@@ -152,12 +156,12 @@ class CtpTraderApi(TraderApi):
 		req = ApiStruct.QrySettlementInfo(BrokerID=self.broker_id,InvestorID=self.investor_id,TradingDay=u'')
 		#print req.BrokerID,req.InvestorID,req.TradingDay
 		time.sleep(1)
-		self.ReqQrySettlementInfo(req,self.agent.inc_request_id())
+		self.ReqQrySettlementInfo(req, self.inc_request_id())
 	
 	def confirm_settlement_info(self):
 		self.logger.info(u'TD-CSI:准备确认结算单')
 		req = ApiStruct.SettlementInfoConfirm(BrokerID=self.broker_id,InvestorID=self.investor_id)
-		self.ReqSettlementInfoConfirm(req,self.agent.inc_request_id())
+		self.ReqSettlementInfoConfirm(req, self.inc_request_id())
 	
 	def OnRspQrySettlementInfo(self, pSettlementInfo, pRspInfo, nRequestID, bIsLast):
 		'''请求查询投资者结算信息响应'''
@@ -281,7 +285,7 @@ class CtpTraderApi(TraderApi):
 		报单未通过参数校验,被CTP拒绝
 		正常情况后不应该出现
 		'''
-		print pRspInfo,nRequestID
+		print u'报单被拒绝, RID %d' % nRequestID
 		self.logger.warning(u'TD:CTP报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.logger.warning(u'报单校验错误,ErrorID=%s,ErrorMsg=%s,pRspInfo=%s,bIsLast=%s' % (pRspInfo.ErrorID,pRspInfo.ErrorMsg,str(pRspInfo),bIsLast))
 		#self.agent.rsp_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
@@ -302,7 +306,7 @@ class CtpTraderApi(TraderApi):
 		CTP、交易所接受报单
 		Agent中不区分，所得信息只用于撤单
 		'''
-		#print repr(pOrder)
+		print u'接受报单'
 		self.logger.info(u'报单响应,Order=%s' % str(pOrder))
 		if pOrder.OrderStatus == 'a':
 			#CTP接受，但未发到交易所
@@ -317,6 +321,7 @@ class CtpTraderApi(TraderApi):
 	
 	def OnRtnTrade(self, pTrade):
 		'''成交通知'''
+		print u'报单成交'
 		self.logger.info(u'TD:成交通知,BrokerID=%s,BrokerOrderSeq = %s,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' %(pTrade.BrokerID,pTrade.BrokerOrderSeq,pTrade.ExchangeID,pTrade.OrderSysID,pTrade.TraderID,pTrade.OrderLocalID))
 		self.logger.info(u'TD:成交回报,Trade=%s' % repr(pTrade))
 		self.agent.rtn_trade(pTrade)
@@ -325,6 +330,7 @@ class CtpTraderApi(TraderApi):
 		'''
 		ctp撤单校验错误
 		'''
+		print u'撤单校验错误'
 		self.logger.warning(u'TD:CTP撤单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.agent.rsp_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 		self.agent.err_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
@@ -337,4 +343,35 @@ class CtpTraderApi(TraderApi):
 		self.logger.warning(u'TD:交易所撤单录入错误回报, 可能已经成交,rspInfo=%s'%(str(pRspInfo),))
 		self.agent.err_order_action(pOrderAction.OrderRef,pOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 			
+	#下单
+	def open_position (self, 
+			instrument, 	#所开合约代号
+			direction,	#所开方向
+			order_ref,	#
+			price,		#所开价格
+			volume,		#所开仓位
+			):
+
+		req = ApiStruct.InputOrder(
+			InstrumentID = instrument,
+			Direction = direction,
+			OrderRef = str(order_ref),
+			LimitPrice = price,   #有个疑问，double类型如何保证舍入舍出，在服务器端取整?
+			VolumeTotalOriginal = volume,
+			OrderPriceType = ApiStruct.OPT_LimitPrice,
+			
+			BrokerID = self.broker_id,
+			InvestorID = self.investor_id,
+			CombOffsetFlag = ApiStruct.OF_Open,         #开仓 5位字符,但是只用到第0位
+			CombHedgeFlag = ApiStruct.HF_Speculation,   #投机 5位字符,但是只用到第0位
+	
+			VolumeCondition = ApiStruct.VC_AV,
+			MinVolume = 1,  #这个作用有点不确定,有的文档设成0了
+			ForceCloseReason = ApiStruct.FCC_NotForceClose,
+			IsAutoSuspend = 1,
+			UserForceClose = 0,
+			TimeCondition = ApiStruct.TC_GFD
+			)
+		self.logger.info(u'下单: instrument=%s,方向=%s,数量=%s,价格=%s' % (instrument,u'多' if direction == ApiStruct.D_Buy else u'空', volume, price))
+		r = self.ReqOrderInsert(req,self.inc_request_id())
 		
