@@ -2,7 +2,6 @@
 
 import logging
 from futures import ApiStruct
-#import ctpapi
 import mdmap
 
 class MarketDataAgent:
@@ -11,13 +10,14 @@ class MarketDataAgent:
 		pass
 		
 	# 在开始行情服务前必须被调用	
-	def initAgent (self, instList, logger):
+	def initAgent (self, logger, instList):
 		self.logger = logger
 		self.instruments = instList
 		pass
 		
+	# CtpMdApi对象OnRtnDepthMarketData成员方法的真实回调函数	
 	def OnRtnDepthMarketData (self, depth_market_data):
-		print "Agent:OnRtnDepthMarketData"
+		#print "Agent:OnRtnDepthMarketData"
 		dp = depth_market_data
 		try:
 			if dp.LastPrice > 999999 or dp.LastPrice < 10:
@@ -26,17 +26,21 @@ class MarketDataAgent:
 				self.logger.warning(u'MD:收到未订阅的行情:%s' %(dp.InstrumentID,))
 				return
 			
-			#self.logger.debug(u'MD:收到行情，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.last_map[dp.InstrumentID]))
+			if self.dataMap.isMdDataExisted(dp.InstrumentID):
+				#已接受过该合约行情，如果行情发生改变则更新映射
+				#print dp.Volume, self.dataMap.getMdData(dp.InstrumentID).Volume
+				if dp.Volume <= self.dataMap.getMdData(dp.InstrumentID).Volume:
+					#行情未变化
+					#self.logger.debug(u'MD:行情无变化，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.dataMap.getMdData(dp.InstrumentID).Volume))
+					return 
 			
-			if dp.Volume <= self.dataMap[dp.InstrumentID].Volume:
-				#行情未变化
-				self.logger.debug(u'MD:行情无变化，inst=%s,time=%s，volume=%s,last_volume=%s' % (dp.InstrumentID,dp.UpdateTime,dp.Volume,self.last_map[dp.InstrumentID]))
-				return  
-			
-			#行情发生变化，记录到行情数据映射中.
-			self.dataMap.addMdData(dp.InstrumentID, dp)
-
-			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+				#行情发生变化，记录到行情数据映射中.
+				self.dataMap.updateMdData(dp.InstrumentID, dp)
+			else:	
+				#合约行情数据还不存在于已知映射中
+				self.dataMap.addMdData(dp.InstrumentID, dp)
+	
+			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 		finally:
 			self.logger.debug(u'接收行情数据异常!')
 			
