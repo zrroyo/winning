@@ -38,7 +38,8 @@ def testTraderApi(price):
 	#inst=[u'm1401', u'p1401']
 	#inst=[u'rb1401', u'm1401']
 	#inst=[u'm1401']
-	inst=u'm1401'
+	#inst=u'm1401'
+	inst='m1401'
 	
 	# v1
 	#agent = TraderAgent(inst)
@@ -51,8 +52,17 @@ def testTraderApi(price):
 	agent = TraderAgent(inst, "1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
 	agent.init_init()
 	
+	time.sleep(2)
+	print 'Waiting.'
+
 	price = int(price)
 	agent.open_position(ApiStruct.D_Buy, price, 1)
+	#time.sleep(2)
+	#print price
+	#agent.close_position(ApiStruct.D_Sell, price, 1, ApiStruct.OF_CloseToday)
+	time.sleep(10)
+	print u'撤单:'
+	agent.cancel_command(inst, agent.order_ref)
 
 	while 1:
 		time.sleep(1)
