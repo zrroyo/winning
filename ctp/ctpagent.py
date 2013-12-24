@@ -122,6 +122,11 @@ class TraderAgent:
 		
 		pass
 		
+	def cancel_command(self, instrument, order_ref):
+		self.trader.cancel_command(instrument, order_ref)
+		
+		pass
+	
 	def rtn_order (self, porder):
 		pass
 	
@@ -129,5 +134,8 @@ class TraderAgent:
 		pass
 		 
 	#def err_order_insert (self, ptrader):
+		#pass
+			
+	#def err_order_action (self, ptrader):
 		#pass
 			
