@@ -112,6 +112,7 @@ class Futures(STRT.Strategy):
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
 		return price
 		
+	#平空头仓位
 	def closeShortPosition (self, price, poses):
 		if self.curPostion() < poses:
 			print 'close short position error'
@@ -158,8 +159,9 @@ class Futures(STRT.Strategy):
 				self.emuRunCtrl.marRunStat.updateBusinessProfit(self.profit)
 				self.emuRunCtrl.marRunStat.showMarRunStat()
 		
-		return self.curPostion()
+		return price
 	
+	#平多头仓位
 	def closeLongPosition (self, price, poses):
 		if self.curPostion() < poses:
 			print 'close long position error'
@@ -206,25 +208,23 @@ class Futures(STRT.Strategy):
 				self.emuRunCtrl.marRunStat.updateBusinessProfit(self.profit)
 				self.emuRunCtrl.marRunStat.showMarRunStat()
 				
-		return self.curPostion()
+		return price
 		
+	#平掉所有仓位	
 	def closeAllPostion (self, price, short):
 		poses = self.curPostion()
 		if short is 'short':
-			self.closeShortPosition(price, poses)
+			return self.closeShortPosition(price, poses)
 		else:
-			self.closeLongPosition(price, poses)
+			return self.closeLongPosition(price, poses)
 			
-		return self.curPostion()
-			
+	#平掉多个仓位	
 	def closeMultPostion (self, poses, price, short):
 		if short is 'short':
-			self.closeShortPosition(price, poses)
+			return self.closeShortPosition(price, poses)
 		else:
-			self.closeLongPosition(price, poses)
+			return self.closeLongPosition(price, poses)
 			
-		return self.curPostion()
-		
 	# Export any assistant/helper information to users here.
 	def assistant (self, extra):
 		print '\nNo assistant found!\n'
