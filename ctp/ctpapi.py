@@ -5,7 +5,7 @@ import time
 from futures import ApiStruct, MdApi, TraderApi
 import ctpagent
 
-logging.basicConfig(filename="ctp_api.log",level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
+#logging.basicConfig(filename="ctp_api.log",level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
 
 # CTP行情数据接口
 class CtpMdApi(MdApi):
@@ -61,7 +61,7 @@ class CtpMdApi(MdApi):
 			
 # 基本CTP交易接口
 class CtpTraderApi(TraderApi):
-	logger = logging.getLogger('ctp.CtpTraderApi')
+	#logger = logging.getLogger('ctp.CtpTraderApi')
 	
 	def __init__(self,
 		instruments, 	#合约映射 name ==>c_instrument 
@@ -76,6 +76,7 @@ class CtpTraderApi(TraderApi):
 		self.passwd = passwd
 		self.agent = agent
 		self.is_logged = False
+		self.logger = agent.logger
 		
 	## 交易服务器端操作接口部分 ##
 	
@@ -339,9 +340,8 @@ class CtpTraderApi(TraderApi):
 		'''
 		print u'撤单校验错误'
 		self.logger.warning(u'TD:CTP撤单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
-		#self.agent.rsp_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
-		#self.agent.err_order_action(pInputOrderAction.OrderRef,pInputOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
-	
+		self.agent.err_order_action(pInputOrderAction)
+		
 	def OnErrRtnOrderAction(self, pOrderAction, pRspInfo):
 		''' 
 		交易所撤单操作错误回报
@@ -441,7 +441,7 @@ class CtpTraderApi(TraderApi):
 		发出撤单指令
 		'''
 		#print 'in cancel command'
-		self.logger.info(u'A_CC:取消命令: %s, OrderRef %d' % (instrument, order_ref))
+		self.logger.info(u'A_CC:撤消报单: %s, OrderRef %d' % (instrument, order_ref))
 		req = ApiStruct.InputOrderAction(
 			InstrumentID = instrument,
 			OrderRef = str(order_ref),
@@ -466,7 +466,7 @@ class CtpTraderApi(TraderApi):
 			InstrumentID = instrument,
 			OrderSysID = str(order_sys_id),
 		)
-		print req
+		#print req
 		self.logger.info(u'查询下单: %s, OrderRef %s' % (instrument, order_sys_id))
 		r = self.ReqQryOrder(req, self.inc_request_id())
 	
