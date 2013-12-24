@@ -69,7 +69,7 @@ class Turt1(turtle.Turtle):
 			price = self.data.getClose(time)
 			#if price > self.data.M20(time):
 			if price > self.highestBeforeDate(time, 10):
-				self.closeAllPostion(price, 'short')
+				price = self.closeAllPostion(price, 'short')
 				self.log("	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
@@ -90,7 +90,7 @@ class Turt1(turtle.Turtle):
 				if mult == 0:
 					mult = 1
 					
-				self.closeMultPostion(mult, price, 'short')
+				price = self.closeMultPostion(mult, price, 'short')
 				
 				self.log("	[Short] [%s] M10 BT lasted %d days:	open %s,  close %s, M10 %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, self.data.M10(time), mult, pLimitByM10))
 				
@@ -141,7 +141,7 @@ class Turt1(turtle.Turtle):
 			price = self.data.getClose(time)
 			#if price < self.data.M20(time):
 			if price < self.lowestBeforeDate(time, 10):
-				self.closeAllPostion(price, 'long')
+				price = self.closeAllPostion(price, 'long')
 				self.log("	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
@@ -162,7 +162,7 @@ class Turt1(turtle.Turtle):
 				if mult == 0:
 					mult = 1
 					
-				self.closeMultPostion(mult, price, 'long')
+				price = self.closeMultPostion(mult, price, 'long')
 				
 				self.log("	[Long] [%s] M10 BT lasted %d days:	open %s,  close %s, M10 %s, mult %d, pLimitByM10 %d" % (time, days, pLastAddPrice, price, self.data.M10(time), mult, pLimitByM10))
 				

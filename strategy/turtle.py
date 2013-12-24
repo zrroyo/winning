@@ -190,7 +190,7 @@ class Turtle(FUT.Futures):
 		if self.curPostion():
 			time = self.dateSet.lastDate()
 			price = self.data.getClose(time)
-			self.closeAllPostion(price, mode)
+			price = self.closeAllPostion(price, mode)
 			self.log("	[%s] [%s] Clear all! close %s" % (mode, time, price))
 			
 		return
