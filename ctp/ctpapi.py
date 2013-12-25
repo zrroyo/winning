@@ -63,13 +63,11 @@ class CtpMdApi(MdApi):
 # 基本CTP交易接口
 class CtpTraderApi(TraderApi):
 	def __init__(self,
-		instruments, 	#合约
 		broker_id,   	#期货公司ID
 		investor_id, 	#投资者ID
 		passwd, 	#口令
 		agent		#实际操作对象
 		):
-		self.instruments = instruments
 		self.broker_id =broker_id
 		self.investor_id = investor_id
 		self.passwd = passwd
