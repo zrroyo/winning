@@ -1,11 +1,15 @@
 #-*- coding:utf-8 -*-
 
+import sys
+sys.path.append('..')
 import logging
 import time
 from futures import ApiStruct
 from ctpapi import CtpMdApi, CtpTraderApi
 from elemmap import ElementMap
+from misc.painter import Painter
 
+#行情数据服务器端代理
 class MarketDataAgent:
 	def __init__ (self,
 		instruments, 	#合约 
@@ -68,11 +72,29 @@ class MarketDataAgent:
 				#合约行情数据还不存在于已知映射中
 				self.dataMap.addElement(dp.InstrumentID, dp)
 	
-			print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+			#print u'[%s]，[价：最新/%d，买/%d，卖/%d], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
 		finally:
 			self.logger.debug(u'接收行情数据异常!')
-			
-
+	
+	#启动行情监视器
+	def start_monitor (self):
+		mon = Painter(self.dataMap.elemDict, market_data_to_output, True)
+		try:
+			while 1:
+				mon.display()
+				time.sleep(0.5)
+		except:
+			mon.destroy()
+		
+#将DepthMarketData对象中的数据转化为行情监视器里的输出
+def market_data_to_output (depth_market_data):
+	dp = depth_market_data
+	
+	retStr = '[%s]	[Price: N/%d, B/%d, S/%d],[Volume: B/%d, S/%d, T/%d],[H/%d, L/%d],[%s]' % (dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1, dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime)
+	
+	return retStr
+	
+#交易服务器端代理
 class TraderAgent:
 	def __init__ (self,
 		instruments, 	#合约 
@@ -136,27 +158,30 @@ class TraderAgent:
 		self.request_id += 1
 		return self.request_id
 	
+	#本地报单引用（数）维护
 	def inc_order_ref(self):
 		self.order_ref += 1
 		return self.order_ref
 		
+	#开仓	
 	def open_position (self, direction, price, volume):
 		self.trader.open_position(self.instruments, direction, self.inc_order_ref(), price, volume)
 		
+	#平仓	
 	def close_position (self, direction, price, volume, cos_flag=ApiStruct.OF_Close):
 		self.trader.close_position(self.instruments, direction, self.inc_order_ref(), price, volume, cos_flag)
 		
-	#回调函数响应：CTP报单通知
+	#报单(状态)响应：CTP报单通知
 	def rtn_order (self, order):
 		#接收报单状态，并更新在报单映射中
 		self.orderMap.addElement(order.OrderRef, order)
 		
-	#回调函数响应：CTP成交通知
+	#成交响应：CTP成交通知
 	def rtn_trade (self, trader):
 		#报单成交，从报单映射中删除
 		self.orderMap.delElement(trader.OrderRef)
 		
-	#提出撤单申请
+	#发起撤单申请
 	def cancel_command(self, instrument, order_ref):
 		order = str(order_ref)
 		self.trader.cancel_command(instrument, order_ref)
@@ -178,6 +203,7 @@ class TraderAgent:
 	def err_order_action (self, pInputOrderAction):
 		self.errOrderMap.addElement(pInputOrderAction.OrderRef, pInputOrderAction)
 			
+	#查询报单
 	def query_order (self, instrument, order_sys_id):
 		self.trader.query_order(instrument, order_sys_id)
 		
