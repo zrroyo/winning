@@ -1,8 +1,7 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 '''
-General Config Super Class.
-	
+配置文件(通用)读取接口
 	zhengwang.ruan@gmail.com
 '''
 
