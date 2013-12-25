@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 '''
 RunStat: runtime statistics.
@@ -89,7 +89,10 @@ class RunStat:
 	
 # Market Run-time Statistics Block. Used for a whole market.
 class MarketRunStat(RunStat):
-	def __init__ (self, maxAllowedPos):
+	def __init__ (self, 
+		maxAllowedPos,	#最大允许的仓位(单位)
+		mute=False	#是否输出统计信息
+		):
 		RunStat.__init__(self)
 		self.curFutCode = None			# The future code (name).
 		self.maxAllowedPos = maxAllowedPos	# The max allowed actions to add positions in a market.
@@ -97,6 +100,7 @@ class MarketRunStat(RunStat):
 		self.lock = thread.allocate_lock()	# The lock to protect the varibles in object.
 		self.busProfit = 0			# The total profit earned in a bussiness for a market (if
 							# self.curPoses decreases to 0).
+		self.mute = mute
 		return
 	
 	def __exit__ (self):
@@ -156,6 +160,9 @@ class MarketRunStat(RunStat):
 		
 	# Show all market run statistics.
 	def showMarRunStat (self):
+		if self.mute == True:
+			return
+		
 		self.lock.acquire()
 		if self.curPoses != 0:
 			self.lock.release()
