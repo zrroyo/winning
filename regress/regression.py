@@ -10,7 +10,8 @@ from optparse import OptionParser
 import string
 import db.mysqldb as sql
 import futcom
-import regress.runstat as runstat
+from misc.runstat import RunStat
+from misc.runctrl import RunControl, RunCtrlSet
 import emulate
 import tick
 import thread
@@ -104,7 +105,7 @@ def doRegression (options, database, test, strategy):
 				exit()
 			
 		import strategy.turt1 as turt1	
-		runStat = runstat.RunStat(test)
+		runStat = RunStat(test)
 		strategy = turt1.Turt1(test, test, tradeRec, database, runStat)
 		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 	else:
@@ -195,14 +196,14 @@ def doEmulation(options, database):
 			
 	# Initialise run-time control blocks.
 	comAttr = emulate.CommonAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
-	runCtrl1 = emulate.RunControl(False, thread.allocate_lock(), None, comAttr, False)
-	runCtrl2 = emulate.RunControl(False, thread.allocate_lock(), None, comAttr, False, startTick2)
+	runCtrl1 = RunControl(False, thread.allocate_lock(), None, comAttr, False)
+	runCtrl2 = RunControl(False, thread.allocate_lock(), None, comAttr, False, startTick2)
 	
 	# Initialise tick source.
 	tickSrc = tick.Tick()
 	tickSrc.setCurTick(startTick1)
 	
-	runCtrlSet = emulate.RunCtrlSet(maxAllowedPos, tickSrc)
+	runCtrlSet = RunCtrlSet(maxAllowedPos, tickSrc)
 	runCtrlSet.add(runCtrl1)
 	runCtrlSet.add(runCtrl2)
 	
