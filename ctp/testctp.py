@@ -32,12 +32,13 @@ def testMdApi():
 	#v2
 	agent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
 	agent.init_init()
+	agent.start_monitor()
 	
 	#time.sleep(10)
 	#print agent.dataMap.elemDict
 	
-	while 1:
-		time.sleep(1)
+	#while 1:
+		#time.sleep(1)
 
 def testTraderApi(price):
 	''' Test TraderApi '''
