@@ -136,8 +136,8 @@ def ctpTradeCoreThreadStart (
 	runCtrlSet.add(runCtrl1)
 	runCtrlSet.add(runCtrl2)
 	
-	#开启运行时统计信息
-	#runCtrlSet.enableMarketRunStat()
+	#开启运行时统计，但不打印统计信息
+	runCtrlSet.enableMarketRunStat(mute=True)
 	
 	strategy = tradeConfig.getStrategy(trade)
 	if isValidStrategy(strategy) == False:
