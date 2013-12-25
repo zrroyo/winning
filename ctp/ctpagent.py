@@ -4,6 +4,7 @@ import sys
 sys.path.append('..')
 import logging
 import time
+import thread
 from futures import ApiStruct
 from ctpapi import CtpMdApi, CtpTraderApi
 from misc.elemmap import ElementMap
@@ -99,7 +100,6 @@ def market_data_to_output (depth_market_data):
 #交易服务器端代理
 class TraderAgent:
 	def __init__ (self,
-		instruments, 	#合约 
 		broker_id,   	#期货公司ID
 		investor_id, 	#投资者ID
 		passwd,	 	#口令
@@ -109,12 +109,14 @@ class TraderAgent:
 		trader为交易对象
 		tday为当前日,为0则为当日
 		'''
-		self.instruments = instruments
 		self.request_id = 1
+		self.request_lock = thread.allocate_lock()	#request_id保护锁
+		self.order_ref = 1
+		self.order_lock = thread.allocate_lock()	#order_ref保护锁
+		
 		self.initialized = False
 		self.front_id = None
 		self.session_id = None
-		self.order_ref = 1
 		self.trading_day = 20110101
 		self.scur_day = int(time.strftime('%Y%m%d'))
 		#self.logger = logging.getLogger('ctp.agent.%s' % self.instruments)
@@ -132,12 +134,12 @@ class TraderAgent:
 	#init中的init,用于子类的处理
 	def init_init (self):
 		#初始化日志管理
-		logName = 'ctpTd_%s_%s.log' % (self.instruments, int(time.strftime('%Y%m%d')))
+		logName = 'ctpTd_%s.log' % (int(time.strftime('%Y%m%d')))
 		logging.basicConfig(filename=logName,level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
 		self.logger = logging.getLogger('Td')
 		
 		#初始化CTP交易接口
-		traderSpi = CtpTraderApi(self.instruments, self.broker_id, self.investor_id, self.passwd, self)
+		traderSpi = CtpTraderApi(self.broker_id, self.investor_id, self.passwd, self)
 		traderSpi.Create("TraderAgent")
 		traderSpi.RegisterFront(self.server_port)
 		traderSpi.Init()
@@ -157,22 +159,30 @@ class TraderAgent:
 		self.order_ref = int(max_order_ref)
 	
 	def inc_request_id (self):
+		self.request_lock.acquire()
 		self.request_id += 1
+		self.request_lock.release()
 		return self.request_id
 	
 	#本地报单引用（数）维护
 	def inc_order_ref(self):
+		self.order_lock.acquire()
 		self.order_ref += 1
+		self.order_lock.release()
 		return self.order_ref
 		
 	#开仓	
-	def open_position (self, direction, price, volume):
-		self.trader.open_position(self.instruments, direction, self.inc_order_ref(), price, volume)
+	def open_position (self, instrument, direction, price, volume):
+		order_ref = self.inc_order_ref()
+		self.trader.open_position(instrument, direction, order_ref, price, volume)
+		return order_ref
 		
 	#平仓	
-	def close_position (self, direction, price, volume, cos_flag=ApiStruct.OF_Close):
-		self.trader.close_position(self.instruments, direction, self.inc_order_ref(), price, volume, cos_flag)
-		
+	def close_position (self, instrument, direction, price, volume, cos_flag=ApiStruct.OF_Close):
+		order_ref = self.inc_order_ref()
+		self.trader.close_position(instrument, direction, order_ref, price, volume, cos_flag)
+		return order_ref
+	
 	#报单(状态)响应：CTP报单通知
 	def rtn_order (self, order):
 		#接收报单状态，并更新在报单映射中
@@ -182,6 +192,10 @@ class TraderAgent:
 	def rtn_trade (self, trader):
 		#报单成交，从报单映射中删除
 		self.orderMap.delElement(trader.OrderRef)
+		
+	#返回开某平仓操作（以本地记录号标识）是否成功
+	def is_order_success (self, order_ref):
+		return not self.orderMap.isElementExisted(order_ref)
 		
 	#发起撤单申请
 	def cancel_command(self, instrument, order_ref):
