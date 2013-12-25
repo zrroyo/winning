@@ -239,7 +239,7 @@ class Futures(STRT.Strategy):
 		tdAgent		#交易服务器端代理
 		):
 		self.workDay = workDay
-		self.ctpRunCtrl = runCtrl
+		self.emuRunCtrl = runCtrl
 		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
 		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent)
 			
