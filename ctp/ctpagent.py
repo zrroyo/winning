@@ -3,22 +3,48 @@
 import logging
 import time
 from futures import ApiStruct
-import ctpapi
+from ctpapi import CtpMdApi, CtpTraderApi
 from elemmap import ElementMap
 
 class MarketDataAgent:
-	def __init__ (self):
-		self.dataMap = ElementMap()
-		pass
+	def __init__ (self,
+		instruments, 	#合约 
+		broker_id,   	#期货公司ID
+		investor_id, 	#投资者ID
+		passwd,	 	#口令
+		server_port	#交易服务器端口
+		):
+		
+		self.instruments = instruments
+		self.broker_id = broker_id
+		self.investor_id = investor_id
+		self.passwd = passwd
+		self.server_port = server_port
+		
+		self.request_id = 1
+		
+		self.dataMap = ElementMap()	#行情记录映射表
 		
 	# 在开始行情服务前必须被调用	
-	def initAgent (self, logger, instList):
-		self.logger = logger
-		self.instruments = instList
-		pass
+	def init_init (self):
+		#初始化日志管理
+		logName = 'ctpMd_%s.log' % int(time.strftime('%Y%m%d'))
+		logging.basicConfig(filename=logName,level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
+		self.logger = logging.getLogger('Md')
+			
+		#初始化CTP行情接口
+		mdSpi = CtpMdApi(self.instruments, self.broker_id, self.investor_id, self.passwd, self)
+		mdSpi.Create("MarketDataAgent")
+		mdSpi.RegisterFront(self.server_port)
+		mdSpi.Init()
+		self.mdspi = mdSpi
+			
+	def inc_request_id (self):
+		self.request_id += 1
+		return self.request_id
 		
 	# CtpMdApi对象OnRtnDepthMarketData成员方法的真实回调函数	
-	def OnRtnDepthMarketData (self, depth_market_data):
+	def rtn_depth_market_data (self, depth_market_data):
 		#print "Agent:OnRtnDepthMarketData"
 		dp = depth_market_data
 		try:
@@ -46,9 +72,7 @@ class MarketDataAgent:
 		finally:
 			self.logger.debug(u'接收行情数据异常!')
 			
-		pass
-		
-		
+
 class TraderAgent:
 	def __init__ (self,
 		instruments, 	#合约 
@@ -84,18 +108,17 @@ class TraderAgent:
 	#init中的init,用于子类的处理
 	def init_init (self):
 		#初始化日志管理
-		logName = 'ctp_%s.log' % self.instruments
+		logName = 'ctpTd_%s_%s.log' % (self.instruments, int(time.strftime('%Y%m%d')))
 		logging.basicConfig(filename=logName,level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
-		self.logger = logging.getLogger('ctp')
+		self.logger = logging.getLogger('Td')
 		
 		#初始化CTP交易接口
-		traderSpi = ctpapi.CtpTraderApi(self.instruments, self.broker_id, self.investor_id, self.passwd, self)
+		traderSpi = CtpTraderApi(self.instruments, self.broker_id, self.investor_id, self.passwd, self)
 		traderSpi.Create("TraderAgent")
 		traderSpi.RegisterFront(self.server_port)
 		traderSpi.Init()
 		self.trader = traderSpi
 		#self.initialized = True
-		pass
 		
 	def initialize (self):
 		while self.isSettlementInfoConfirmed == False:
