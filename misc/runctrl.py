@@ -79,7 +79,6 @@ class RunCtrlSet:
 		self.set = []
 		self.maxAllowedPos = maxAllowedPos
 		self.tickSrc = tickSrc
-		self.marRunStat = MarketRunStat(maxAllowedPos)
 		self.priMgr = Priority()
 		return
 	
@@ -219,9 +218,10 @@ class RunCtrlSet:
 			i += 1
 			
 	# Enable doing statistics for a market.
-	def enableMarketRunStat(self):
+	def enableMarketRunStat(self, mute=False):
+		marRunStat = MarketRunStat(self.maxAllowedPos, mute)
 		i = 0
 		while (i < self.num):
-			self.set[i].marRunStat = self.marRunStat
+			self.set[i].marRunStat = marRunStat
 			i += 1
 		
