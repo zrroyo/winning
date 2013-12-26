@@ -41,6 +41,7 @@ class Futures(STRT.Strategy):
 		self.workDay = None	#指定当前工作日
 		self.ctpPos = None	#CTP服务器持仓管理接口
 		self.ctpOn = False	#CTP启动开关，True则可进行开平仓操作
+		self.logMgr = None	#日志管理接口
 		
 		return
 	
@@ -249,16 +250,20 @@ class Futures(STRT.Strategy):
 		self.data = CtpData(self.futName, self.database, self.dataTable, workDay, mdAgent)
 		self.ctpPos = CtpAutoPosition(mdAgent, tdAgent)
 			
+	#开启日志记录.
+	def enableStoreLogs(self, logMgr):
+		self.logMgr = logMgr
+		
 	# Manage storing logs.
 	def log (self, logMsg, *args):
 		logs = logMsg % (args)
 		#logs = '%s>| %s' % (self.futName, logs)
 		if self.emuRunCtrl:
 			logs = '<%s> | %s' % (self.futName, logs)
-			if self.emuRunCtrl.log:
-				self.emuRunCtrl.log.append(logs)
+			if self.logMgr is not None:
+				self.logMgr.append(logs)
 			else:
-				print logs	
+				print logs
 		else:
 			print logs
 		
