@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 import sys
 sys.path.append("..")
@@ -7,8 +7,12 @@ import date as DATE
 import turtle
 #import futcom
 import db.mysqldb as sql
+from time import sleep
 
 class Turt1(turtle.Turtle):
+	
+	stableTriggerCount = 3	#可判断为稳定的连续触发次数
+	
 	def __init__ (self, futName, dataTable, tradeTable, database='futures', runStat=None):
 		# Inherit all public methods and attributes from Turtle Class.
 		turtle.Turtle.__init__(self, futName, dataTable, tradeTable, database, runStat)
@@ -44,6 +48,184 @@ class Turt1(turtle.Turtle):
 			return True
 		return False
 		
+	#是否稳定为过去几天内最高值
+	def stableHighestInPastDays (self, 
+		price,	#待判断价格
+		time, 	#交易日
+		days	#指定判断天数
+		):
+		'''
+		对于非CTP模式或CTP模式的拟合阶段，数据均来源于本地，都是稳定的。
+		'''
+		if self.ctpPosOn == False:
+			if price > self.highestBeforeDate(time, days):
+				return True
+			else:
+				return False
+		
+		'''
+		在实盘阶段，如果连续指定次价格均为指定天数内最高价，则判定为稳定并返回真，否则为假。
+		'''
+		count = 0
+		while price > self.highestBeforeDate(time, days):
+			if count < self.stableTriggerCount:
+				sleep(1)
+				count += 1
+				price = self.data.getgetClose(time)
+				continue
+				
+			return True
+				
+		return False
+		
+	#是否稳定为过去几天内最低值
+	def stableLowestInPastDays (self, 
+		price,	#待判断价格
+		time, 	#交易日
+		days	#指定判断天数
+		):
+		'''
+		对于非CTP模式或CTP模式的拟合阶段，数据均来源于本地，都是稳定的。
+		'''
+		if self.ctpPosOn == False:
+			if price < self.lowestBeforeDate(time, days):
+				return True
+			else:
+				return False
+		
+		'''
+		在实盘阶段，如果连续指定次价格均为指定天数内最低价，则判定为稳定并返回真，否则为假。
+		'''
+		count = 0
+		while price < self.lowestBeforeDate(time, days):
+			if count < self.stableTriggerCount:
+				sleep(1)
+				count += 1
+				price = self.data.getgetClose(time)
+				continue
+				
+			return True
+				
+		return False
+		
+	#是否稳定高于M10
+	def stableHigherThanM10 (self, 
+		price,	#待判断价格
+		time, 	#交易日
+		):
+		'''
+		对于非CTP模式或CTP模式的拟合阶段，数据均来源于本地，都是稳定的。
+		'''
+		if self.ctpPosOn == False:
+			if price > self.data.M10(time):
+				return True
+			else:
+				return False
+		
+		'''
+		在实盘阶段，如果连续指定次价格均高于M10，则判定为稳定并返回真，否则为假。
+		'''
+		count = 0
+		while price > self.data.M10(time):
+			if count < self.stableTriggerCount:
+				sleep(1)
+				count += 1
+				price = self.data.getgetClose(time)
+				continue
+				
+			return True
+				
+		return False
+		
+	#是否稳定低于M10
+	def stableLowerThanM10 (self, 
+		price,	#待判断价格
+		time, 	#交易日
+		):
+		'''
+		对于非CTP模式或CTP模式的拟合阶段，数据均来源于本地，都是稳定的。
+		'''
+		if self.ctpPosOn == False:
+			if price < self.data.M10(time):
+				return True
+			else:
+				return False
+		
+		'''
+		在实盘阶段，如果连续指定次价格均低于M10，则判定为稳定并返回真，否则为假。
+		'''
+		count = 0
+		while price < self.data.M10(time):
+			if count < self.stableTriggerCount:
+				sleep(1)
+				count += 1
+				price = self.data.getgetClose(time)
+				continue
+				
+			return True
+				
+		return False
+		
+	#是否稳定满足加空仓条件
+	def stableToAddShortPosition (self, 
+		pLastAddPrice,	#上一次加仓价格
+		price,		#待判断价格
+		minPosIntv, 	#加仓间断值
+		):
+		'''
+		对于非CTP模式或CTP模式的拟合阶段，数据均来源于本地，都是稳定的。
+		'''
+		if self.ctpPosOn == False:
+			if pLastAddPrice - price >= minPosIntv:
+				return True
+			else:
+				return False
+		
+		'''
+		在实盘阶段，如果连续指定次价格均条件为真，则判定为稳定并返回真，否则为假。
+		'''
+		count = 0
+		while pLastAddPrice - price >= minPosIntv:
+			if count < self.stableTriggerCount:
+				sleep(1)
+				count += 1
+				price = self.data.getgetClose(time)
+				continue
+				
+			return True
+				
+		return False
+		
+	#是否稳定满足加多仓条件
+	def stableToAddLongPosition (self, 
+		pLastAddPrice,	#上一次加仓价格
+		price,		#待判断价格
+		minPosIntv, 	#加仓间断值
+		):
+		'''
+		对于非CTP模式或CTP模式的拟合阶段，数据均来源于本地，都是稳定的。
+		'''
+		if self.ctpPosOn == False:
+			if price - pLastAddPrice >= minPosIntv:
+				return True
+			else:
+				return False
+		
+		'''
+		在实盘阶段，如果连续指定次价格均条件为真，则判定为稳定并返回真，否则为假。
+		'''
+		count = 0
+		while price - pLastAddPrice >= minPosIntv:
+			if count < self.stableTriggerCount:
+				sleep(1)
+				count += 1
+				price = self.data.getgetClose(time)
+				continue
+				
+			return True
+				
+		return False
+		
 	def doShort (self, dateSet, date):
 		days = 0
 		self.emptyPostion()
@@ -64,17 +246,15 @@ class Turt1(turtle.Turtle):
 					continue
 				
 			days = days + 1
-			
-			# Cut losses.
 			price = self.data.getClose(time)
-			#if price > self.data.M20(time):
-			if price > self.highestBeforeDate(time, 10):
+			
+			if self.stableHighestInPastDays(price, time, 10):
 				price = self.closeAllPostion(price, 'short')
 				self.log("	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
 			
-			if price > self.data.M10(time):
+			if self.stableHigherThanM10(price, time):
 				if cutLossMode:
 					time = self.moveToNextTick(dateSet)
 					continue
@@ -103,7 +283,7 @@ class Turt1(turtle.Turtle):
 				time = self.moveToNextTick(dateSet)
 				continue
 			
-			if pLastAddPrice - price >= minPosIntv:
+			if self.stableToAddShortPosition(pLastAddPrice, price, minPosIntv):
 				if self.curPostion() < self.maxAddPos:
 					price = self.openShortPosition(price)
 					if price is not None:
@@ -136,17 +316,15 @@ class Turt1(turtle.Turtle):
 					continue
 					
 			days = days + 1
-			
-			# Cut losses.
 			price = self.data.getClose(time)
-			#if price < self.data.M20(time):
-			if price < self.lowestBeforeDate(time, 10):
+			
+			if self.stableLowestInPastDays(price, time, 10):
 				price = self.closeAllPostion(price, 'long')
 				self.log("	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
 			
-			if price < self.data.M10(time):
+			if self.stableLowerThanM10(price, time):
 				if cutLossMode:
 					time = self.moveToNextTick(dateSet)
 					continue
@@ -175,7 +353,7 @@ class Turt1(turtle.Turtle):
 				time = self.moveToNextTick(dateSet)
 				continue
 				
-			if price - pLastAddPrice >= minPosIntv:
+			if self.stableToAddLongPosition(pLastAddPrice, price, minPosIntv):
 				if self.curPostion() < self.maxAddPos:
 					price = self.openLongPosition(price)
 					if price is not None:
