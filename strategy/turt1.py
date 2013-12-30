@@ -72,7 +72,7 @@ class Turt1(turtle.Turtle):
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
-				price = self.data.getgetClose(time)
+				price = self.data.getClose(time)
 				continue
 				
 			return True
@@ -103,7 +103,7 @@ class Turt1(turtle.Turtle):
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
-				price = self.data.getgetClose(time)
+				price = self.data.getClose(time)
 				continue
 				
 			return True
@@ -133,7 +133,7 @@ class Turt1(turtle.Turtle):
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
-				price = self.data.getgetClose(time)
+				price = self.data.getClose(time)
 				continue
 				
 			return True
@@ -163,7 +163,7 @@ class Turt1(turtle.Turtle):
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
-				price = self.data.getgetClose(time)
+				price = self.data.getClose(time)
 				continue
 				
 			return True
@@ -194,7 +194,7 @@ class Turt1(turtle.Turtle):
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
-				price = self.data.getgetClose(time)
+				price = self.data.getClose(time)
 				continue
 				
 			return True
@@ -225,7 +225,7 @@ class Turt1(turtle.Turtle):
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
-				price = self.data.getgetClose(time)
+				price = self.data.getClose(time)
 				continue
 				
 			return True
