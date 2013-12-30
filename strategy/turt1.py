@@ -68,6 +68,7 @@ class Turt1(turtle.Turtle):
 		'''
 		count = 0
 		while price > self.highestBeforeDate(time, days):
+			self.log("Matching stable highest in past %d days, price %d, count %d" % (days, price, count))
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
@@ -98,6 +99,7 @@ class Turt1(turtle.Turtle):
 		'''
 		count = 0
 		while price < self.lowestBeforeDate(time, days):
+			self.log("Matching stable lowest in past %d days, price %d, count %d" % (days, price, count))
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
@@ -127,6 +129,7 @@ class Turt1(turtle.Turtle):
 		'''
 		count = 0
 		while price > self.data.M10(time):
+			self.log("Matching stable higher than M10, price %d, count %d" % (price, count))
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
@@ -156,6 +159,7 @@ class Turt1(turtle.Turtle):
 		'''
 		count = 0
 		while price < self.data.M10(time):
+			self.log("Matching stable lower than M10, price %d, count %d" % (price, count))
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
@@ -186,6 +190,7 @@ class Turt1(turtle.Turtle):
 		'''
 		count = 0
 		while pLastAddPrice - price >= minPosIntv:
+			self.log("Matching stable to add short position, price %d, count %d" % (price, count))
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
@@ -216,6 +221,7 @@ class Turt1(turtle.Turtle):
 		'''
 		count = 0
 		while price - pLastAddPrice >= minPosIntv:
+			self.log("Matching stable to add long position, price %d, count %d" % (price, count))
 			if count < self.stableTriggerCount:
 				sleep(1)
 				count += 1
