@@ -165,7 +165,7 @@ def ctpTradeCoreThreadStart (
 	emu.run()
 		
 #下单处理
-def processOrder(
+def processOrder (
 	details, 	#下单明细
 	mdBrokerid, mdInvestor, mdPasswd, mdServer,
 	tdBrokerid, tdInvestor, tdPasswd, tdServer
@@ -206,19 +206,19 @@ def processOrder(
 	try:
 		
 		if orderType == 'o' and direction == 'b':
-			price = autoPosMgr.open_long_position(instrument, 
+			price = autoPosMgr.openLongPosition(instrument, 
 					mdAgent.mdlocal.getClose(instrument), poses)
 			print u'开多成功，价格 %d' % price
 		elif orderType == 'o' and direction == 's':
-			price = autoPosMgr.open_short_position(instrument, 
+			price = autoPosMgr.openShortPosition(instrument, 
 					mdAgent.mdlocal.getClose(instrument), poses)
 			print u'开空成功，价格 %d' % price
 		elif orderType == 'c' and direction == 'b':
-			price = autoPosMgr.close_long_position(instrument, 
+			price = autoPosMgr.closeLongPosition(instrument, 
 					mdAgent.mdlocal.getClose(instrument), poses)
 			print u'平多成功，价格 %d' % price
 		elif orderType == 'c' and direction == 's':
-			price = autoPosMgr.close_short_position(instrument, 
+			price = autoPosMgr.closeShortPosition(instrument, 
 					mdAgent.mdlocal.getClose(instrument), poses)
 			print u'平空成功，价格 %d' % price
 	except:
