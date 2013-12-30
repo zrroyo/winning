@@ -43,14 +43,20 @@ class CtpAutoPosition:
 		self.optPriceLimit = optPriceLimit
 		
 	#撤消下单
-	def cancelOrder (self, instrument, order_ref):
+	def cancelOrder (self, 
+		instrument,	#合约
+		order_ref	#本地报单序号
+		):
 		try:
 			self.tdAgent.cancel_command(instrument, order_ref)
 		except:	
 			self.log('CtpPosition: cancelOrder error')
 			
 	#得到合理的买入价
-	def __getReasonableBuyPrice (self, instrument, count):
+	def __getReasonableBuyPrice (self, 
+		instrument,	#合约
+		count		#累计判断次数
+		):
 		if count < self.optPriceLimit:
 			return self.mdlocal.getBidPrice1(instrument)
 		elif count < self.optPriceLimit*2:
@@ -59,7 +65,10 @@ class CtpAutoPosition:
 			return self.mdlocal.getAskPrice1(instrument)
 		
 	#得到合理的卖出价
-	def __getReasonableSellPrice (self, instrument, count):
+	def __getReasonableSellPrice (self, 
+		instrument,	#合约
+		count		#累计判断次数
+		):
 		if count < self.optPriceLimit:
 			return self.mdlocal.getAskPrice1(instrument)
 		elif count < self.optPriceLimit*2:
@@ -68,7 +77,11 @@ class CtpAutoPosition:
 			return self.mdlocal.getBidPrice1(instrument)
 			
 	#开多
-	def openLongPosition (self, instrument, buyPrice, volume):
+	def openLongPosition (self, 
+		instrument,	#合约
+		buyPrice,	#买入价
+		volume		#手数
+		):
 		count = 0
 		price = self.__getReasonableBuyPrice(instrument, count)
 		self.log('Opening [long] position, trigger %g, buy %g, %d' % (buyPrice, price, volume))
@@ -93,7 +106,11 @@ class CtpAutoPosition:
 			return None
 			
 	#开空
-	def openShortPosition (self, instrument, sellPrice, volume):
+	def openShortPosition (self, 
+		instrument,	#合约
+		sellPrice,	#卖出价
+		volume		#手数
+		):
 		count = 0
 		price = self.__getReasonableSellPrice(instrument, count)
 		self.log('Opening [short] position, trigger %g, sell %g, %d' % (sellPrice, price, volume))
@@ -118,7 +135,12 @@ class CtpAutoPosition:
 			return None
 			
 	#平多
-	def closeLongPosition (self, instrument, sellPrice, volume, cos_flag=OF_Close):
+	def closeLongPosition (self, 
+		instrument,	#合约
+		sellPrice,	#卖出价
+		volume,		#手数
+		cos_flag=OF_Close	#平仓标志，默认为平前仓
+		):
 		count = 0
 		price = self.__getReasonableSellPrice(instrument, count)
 		self.log('Closing [long] position, trigger %g, sell %g, %d' % (sellPrice, price, volume))
@@ -143,7 +165,12 @@ class CtpAutoPosition:
 			return None
 		
 	#平空
-	def closeShortPosition (self, instrument, buyPrice, volume, cos_flag=OF_Close):
+	def closeShortPosition (self, 
+		instrument,	#合约
+		buyPrice,	#买入价
+		volume,		#手数
+		cos_flag=OF_Close	#平仓标志，默认为平前仓
+		):
 		count = 0
 		price = self.__getReasonableBuyPrice(instrument, count)
 		self.log('Closing [short] position, trigger %g, sell %g, %d' % (buyPrice, price, volume))
