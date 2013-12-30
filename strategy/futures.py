@@ -78,6 +78,7 @@ class Futures(STRT.Strategy):
 		self._pList = []
 		self.profit = 0
 	
+	#开空
 	def openShortPosition (self, price):
 		if self.curPostion() >= self.maxAddPos:
 			return None
@@ -95,6 +96,7 @@ class Futures(STRT.Strategy):
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
 		return price
 		
+	#开多
 	def openLongPosition (self, price):
 		if self.curPostion() >= self.maxAddPos:
 			return None
@@ -113,7 +115,10 @@ class Futures(STRT.Strategy):
 		return price
 		
 	#平空头仓位
-	def closeShortPosition (self, price, poses):
+	def closeShortPosition (self, 
+		price,	#平仓价格
+		poses	#仓数
+		):
 		if self.curPostion() < poses:
 			print 'close short position error'
 			return
@@ -162,7 +167,10 @@ class Futures(STRT.Strategy):
 		return price
 	
 	#平多头仓位
-	def closeLongPosition (self, price, poses):
+	def closeLongPosition (self, 
+		price,	#平仓价格
+		poses	#仓数
+		):
 		if self.curPostion() < poses:
 			print 'close long position error'
 			return
@@ -211,7 +219,10 @@ class Futures(STRT.Strategy):
 		return price
 		
 	#平掉所有仓位	
-	def closeAllPostion (self, price, short):
+	def closeAllPostion (self, 
+		price,	#平仓价格
+		short	#多空标志
+		):
 		poses = self.curPostion()
 		if short is 'short':
 			return self.closeShortPosition(price, poses)
@@ -219,7 +230,11 @@ class Futures(STRT.Strategy):
 			return self.closeLongPosition(price, poses)
 			
 	#平掉多个仓位	
-	def closeMultPostion (self, poses, price, short):
+	def closeMultPostion (self, 
+		poses,	#仓数
+		price,	#平仓价格
+		short	#多空标志
+		):
 		if short is 'short':
 			return self.closeShortPosition(price, poses)
 		else:
