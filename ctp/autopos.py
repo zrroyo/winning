@@ -43,11 +43,11 @@ class CtpAutoPosition:
 		self.optPriceLimit = optPriceLimit
 		
 	#撤消下单
-	def cancel_order (self, instrument, order_ref):
+	def cancelOrder (self, instrument, order_ref):
 		try:
 			self.tdAgent.cancel_command(instrument, order_ref)
 		except:	
-			self.log('CtpPosition: cancel_order error')
+			self.log('CtpPosition: cancelOrder error')
 			
 	#得到合理的买入价
 	def __getReasonableBuyPrice (self, instrument, count):
@@ -68,7 +68,7 @@ class CtpAutoPosition:
 			return self.mdlocal.getBidPrice1(instrument)
 			
 	#开多
-	def open_long_position (self, instrument, buyPrice, volume):
+	def openLongPosition (self, instrument, buyPrice, volume):
 		count = 0
 		price = self.__getReasonableBuyPrice(instrument, count)
 		self.log('Opening [long] position, trigger %g, buy %g, %d' % (buyPrice, price, volume))
@@ -83,17 +83,17 @@ class CtpAutoPosition:
 					break
 				
 				#如果开仓不成功，刚重新获取合理价并报单重开
-				self.cancel_order(instrument, order_ref)
+				self.cancelOrder(instrument, order_ref)
 				price = self.__getReasonableBuyPrice(instrument, count)
 				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
 					
 			return price
 		except:
-			self.log('CtpPosition: open_long_position error')
+			self.log('CtpPosition: openLongPosition error')
 			return None
 			
 	#开空
-	def open_short_position (self, instrument, sellPrice, volume):
+	def openShortPosition (self, instrument, sellPrice, volume):
 		count = 0
 		price = self.__getReasonableSellPrice(instrument, count)
 		self.log('Opening [short] position, trigger %g, sell %g, %d' % (sellPrice, price, volume))
@@ -108,17 +108,17 @@ class CtpAutoPosition:
 					break
 					
 				#如果开仓不成功，刚重新获取合理价并报单重开
-				self.cancel_order(instrument, order_ref)
+				self.cancelOrder(instrument, order_ref)
 				price = self.__getReasonableSellPrice(instrument, count)
 				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
 					
 			return price
 		except:
-			self.log('CtpPosition: open_short_position error')
+			self.log('CtpPosition: openShortPosition error')
 			return None
 			
 	#平多
-	def close_long_position (self, instrument, sellPrice, volume, cos_flag=OF_Close):
+	def closeLongPosition (self, instrument, sellPrice, volume, cos_flag=OF_Close):
 		count = 0
 		price = self.__getReasonableSellPrice(instrument, count)
 		self.log('Closing [long] position, trigger %g, sell %g, %d' % (sellPrice, price, volume))
@@ -133,17 +133,17 @@ class CtpAutoPosition:
 					break
 					
 				#如果开仓不成功，刚重新获取合理价并报单重开
-				self.cancel_order(instrument, order_ref)
+				self.cancelOrder(instrument, order_ref)
 				price = self.__getReasonableSellPrice(instrument, count)
 				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
 					
 			return price
 		except:
-			self.log('CtpPosition: close_long_position error')
+			self.log('CtpPosition: closeLongPosition error')
 			return None
 		
 	#平空
-	def close_short_position (self, instrument, buyPrice, volume, cos_flag=OF_Close):
+	def closeShortPosition (self, instrument, buyPrice, volume, cos_flag=OF_Close):
 		count = 0
 		price = self.__getReasonableBuyPrice(instrument, count)
 		self.log('Closing [short] position, trigger %g, sell %g, %d' % (buyPrice, price, volume))
@@ -158,13 +158,13 @@ class CtpAutoPosition:
 					break
 					
 				#如果开仓不成功，刚重新获取合理价并报单重开
-				self.cancel_order(instrument, order_ref)
+				self.cancelOrder(instrument, order_ref)
 				price = self.__getReasonableBuyPrice(instrument, count)
 				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
 					
 			return price
 		except:
-			self.log('CtpPosition: close_short_position error')
+			self.log('CtpPosition: closeShortPosition error')
 			return None
 		
 	#日志（输出）统一接口

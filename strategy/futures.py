@@ -89,7 +89,7 @@ class Futures(STRT.Strategy):
 		
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
 		if self.ctpPosOn == True:
-			price = self.ctpPos.open_short_position(self.futName, price, self.minPos)
+			price = self.ctpPos.openShortPosition(self.futName, price, self.minPos)
 		
 		self._pList.append(price)
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
@@ -106,7 +106,7 @@ class Futures(STRT.Strategy):
 			
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
 		if self.ctpPosOn == True:
-			price = self.ctpPos.open_long_position(self.futName, price, self.minPos)
+			price = self.ctpPos.openLongPosition(self.futName, price, self.minPos)
 			
 		self._pList.append(price)
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
@@ -124,7 +124,7 @@ class Futures(STRT.Strategy):
 			
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
 		if self.ctpPosOn == True:
-			price = self.ctpPos.close_short_position(self.futName, price, self.minPos * poses)
+			price = self.ctpPos.closeShortPosition(self.futName, price, self.minPos * poses)
 			
 		profit = 0
 		while poses > 0:
@@ -173,7 +173,7 @@ class Futures(STRT.Strategy):
 		
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
 		if self.ctpPosOn == True:
-			price = self.ctpPos.close_long_position(self.futName, price, self.minPos * poses)
+			price = self.ctpPos.closeLongPosition(self.futName, price, self.minPos * poses)
 			
 		profit = 0
 		while poses > 0:
