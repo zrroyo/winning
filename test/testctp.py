@@ -130,10 +130,10 @@ def testPosMgr(price):
 	
 	price = int(price)
 	ctpAutoPos = CtpAutoPosition(mdAgent, tdAgent)
-	price = ctpAutoPos.open_long_position(inst[1], price, 1)
+	price = ctpAutoPos.openLongPosition(inst[1], price, 1)
 	#print u'准备平仓:'
 	#time.sleep(5)
-	ctpAutoPos.close_long_position(inst[1], price+1, 1, OF_CloseToday)
+	ctpAutoPos.closeLongPosition(inst[1], price+1, 1, OF_CloseToday)
 	print u'操作完成，等待:'
 	while 1:
 		time.sleep(1)
