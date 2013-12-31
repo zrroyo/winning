@@ -178,6 +178,7 @@ class Turt1(turtle.Turtle):
 		
 	#是否稳定满足加空仓条件
 	def stableToAddShortPosition (self, 
+		time,		#交易日
 		pLastAddPrice,	#上一次加仓价格
 		price,		#待判断价格
 		minPosIntv, 	#加仓间断值
@@ -209,6 +210,7 @@ class Turt1(turtle.Turtle):
 		
 	#是否稳定满足加多仓条件
 	def stableToAddLongPosition (self, 
+		time,		#交易日
 		pLastAddPrice,	#上一次加仓价格
 		price,		#待判断价格
 		minPosIntv, 	#加仓间断值
@@ -295,7 +297,7 @@ class Turt1(turtle.Turtle):
 				time = self.moveToNextTick(dateSet)
 				continue
 			
-			if self.stableToAddShortPosition(pLastAddPrice, price, minPosIntv):
+			if self.stableToAddShortPosition(time, pLastAddPrice, price, minPosIntv):
 				if self.curPostion() < self.maxAddPos:
 					price = self.openShortPosition(price)
 					if price is not None:
@@ -365,7 +367,7 @@ class Turt1(turtle.Turtle):
 				time = self.moveToNextTick(dateSet)
 				continue
 				
-			if self.stableToAddLongPosition(pLastAddPrice, price, minPosIntv):
+			if self.stableToAddLongPosition(time, pLastAddPrice, price, minPosIntv):
 				if self.curPostion() < self.maxAddPos:
 					price = self.openLongPosition(price)
 					if price is not None:
