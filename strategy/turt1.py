@@ -23,10 +23,12 @@ class Turt1(turtle.Turtle):
 	def __exit__ (self):
 		turtle.Turtle.__exit__(self)
 		return
-	
-	def hitShortSignal (self, date, price):
-		#if self.data.getClose(date) < self.lowestBeforeDate(date, 20, 'Lowest'):
-		if price < self.lowestBeforeDate(date, 20):
+		
+	def hitShortSignal (self, 
+		date,	#交易日
+		price,	#待判定价格
+		):
+		if self.stableLowestInPastDays(price, date, 20):
 			if self.workMode == 'atr':
 				minPosIntv = self.turtData.getAtr(date) / 2
 			else:
@@ -34,11 +36,14 @@ class Turt1(turtle.Turtle):
 			
 			self.log("%s Hit Short Signal: Close %s, Lowest %s, minPosIntv %d" % (date, price, self.lowestBeforeDate(date, 20), minPosIntv))
 			return True
+			
 		return False
 			
-	def hitLongSignal (self, date, price):
-		#if self.data.getClose(date) > self.highestBeforeDate(date, 20, 'Highest'):
-		if price > self.highestBeforeDate(date, 20):
+	def hitLongSignal (self, 
+		date,	#交易日
+		price,	#待判定价格
+		):
+		if self.stableHighestInPastDays(price, date, 20):
 			if self.workMode == 'atr':
 				minPosIntv = self.turtData.getAtr(date) / 2
 			else:
@@ -46,6 +51,7 @@ class Turt1(turtle.Turtle):
 				
 			self.log("%s Hit Long Signal: Close %s, Highest %s, minPosIntv %d" % (date, price, self.highestBeforeDate(date, 20), minPosIntv))
 			return True
+			
 		return False
 		
 	#是否稳定为过去几天内最高值
