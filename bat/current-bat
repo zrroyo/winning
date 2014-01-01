@@ -1,22 +1,22 @@
-#./win.py importer -b current -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/current
-./win.py importer -b current -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/current01/
+#./win.py importer -b current -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/current01/
 ./win.py importer -b current -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/current05/
+./win.py importer -b current -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/current09
 # 09/10
-#./win.py data -b current -c -t rb1310
-#./win.py data -b current -c -t TA309
-#./win.py data -b current -c -t SR309
-#./win.py data -b current -c -t m1309
-#./win.py data -b current -c -t p1309
-#./win.py data -b current -c -t FG309
-#./win.py data -b current -c -t RM309
+./win.py data -b current -c -t rb1410
+./win.py data -b current -c -t TA409
+./win.py data -b current -c -t m1409
+./win.py data -b current -c -t p1409
+./win.py data -b current -c -t FG409
+./win.py data -b current -c -t RM409
+./win.py data -b current -c -t SR409
 # 01 
-./win.py data -b current -c -t FG401
-./win.py data -b current -c -t SR401
-./win.py data -b current -c -t TA401
-./win.py data -b current -c -t m1401
-./win.py data -b current -c -t p1401
-./win.py data -b current -c -t rb1401
-./win.py data -b current -c -t RM401
+#./win.py data -b current -c -t FG401
+#./win.py data -b current -c -t SR401
+#./win.py data -b current -c -t TA401
+#./win.py data -b current -c -t m1401
+#./win.py data -b current -c -t p1401
+#./win.py data -b current -c -t rb1401
+#./win.py data -b current -c -t RM401
 # 05 
 ./win.py data -b current -c -t rb1405
 ./win.py data -b current -c -t m1405
