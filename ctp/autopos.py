@@ -50,7 +50,7 @@ class CtpAutoPosition:
 		try:
 			self.tdAgent.cancel_command(instrument, order_ref)
 		except:	
-			self.log('CtpPosition: cancelOrder error')
+			self.log('CtpAutoPosition: cancelOrder error')
 			
 	#得到合理的买入价
 	def __getReasonableBuyPrice (self, 
@@ -76,6 +76,15 @@ class CtpAutoPosition:
 		else:
 			return self.mdlocal.getBidPrice1(instrument)
 			
+	#停止执行
+	def halt(self):
+		while 1:
+			#try:
+				#time.sleep(5)
+			#except:
+				#self.log('CtpAutoPosition: Received cxception but halting...')
+			time.sleep(5)
+		
 	#开多
 	def openLongPosition (self, 
 		instrument,	#合约
@@ -90,19 +99,34 @@ class CtpAutoPosition:
 			while 1:
 				count += 1
 				order_ref = self.tdAgent.open_position(instrument, D_Buy, price, volume)
-				sleep(self.timeWaitOrder)
+				if self.tdAgent.is_err_order(order_ref):
+					self.log('openLongPosition: Failed to insert order, halting...')
+					self.halt()
 				
+				sleep(self.timeWaitOrder)
+					
 				if self.tdAgent.is_order_success(order_ref):
 					break
 				
 				#如果开仓不成功，刚重新获取合理价并报单重开
 				self.cancelOrder(instrument, order_ref)
+				cancelled = self.tdAgent.is_order_cancelled(order_ref)
+				if cancelled == False:
+					#报单已经成交
+					break
+				elif cancelled == 'EXCEPT':
+					self.log('openLongPosition: Failed to cancel order, halting...')
+					self.halt()
+				
+				#成功撤单，清除在报单状态映射中的记录
+				self.tdAgent.clear_ordermaps(order_ref)
+				
 				price = self.__getReasonableBuyPrice(instrument, count)
 				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
 					
 			return price
 		except:
-			self.log('CtpPosition: openLongPosition error')
+			self.log('CtpAutoPosition: openLongPosition error')
 			return None
 			
 	#开空
@@ -119,19 +143,34 @@ class CtpAutoPosition:
 			while 1:
 				count += 1
 				order_ref = self.tdAgent.open_position(instrument, D_Sell, price, volume)
-				sleep(self.timeWaitOrder)
+				if self.tdAgent.is_err_order(order_ref):
+					self.log('openShortPosition: Failed to insert order, halting...')
+					self.halt()
 				
+				sleep(self.timeWaitOrder)
+					
 				if self.tdAgent.is_order_success(order_ref):
 					break
 					
 				#如果开仓不成功，刚重新获取合理价并报单重开
 				self.cancelOrder(instrument, order_ref)
+				cancelled = self.tdAgent.is_order_cancelled(order_ref)
+				if cancelled == False:
+					#报单已经成交
+					break
+				elif cancelled == 'EXCEPT':
+					self.log('openShortPosition: Failed to cancel order, halting...')
+					self.halt()
+					
+				#成功撤单，清除在报单状态映射中的记录
+				self.tdAgent.clear_ordermaps(order_ref)
+					
 				price = self.__getReasonableSellPrice(instrument, count)
 				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
 					
 			return price
 		except:
-			self.log('CtpPosition: openShortPosition error')
+			self.log('CtpAutoPosition: openShortPosition error')
 			return None
 			
 	#平多
@@ -149,19 +188,34 @@ class CtpAutoPosition:
 			while 1:
 				count += 1
 				order_ref = self.tdAgent.close_position(instrument, D_Sell, price, volume, cos_flag)
-				sleep(self.timeWaitOrder)
+				if self.tdAgent.is_err_order(order_ref):
+					self.log('closeLongPosition: Failed to insert order, halting...')
+					self.halt()
 				
+				sleep(self.timeWaitOrder)
+						
 				if self.tdAgent.is_order_success(order_ref):
 					break
 					
 				#如果开仓不成功，刚重新获取合理价并报单重开
 				self.cancelOrder(instrument, order_ref)
+				cancelled = self.tdAgent.is_order_cancelled(order_ref)
+				if cancelled == False:
+					#报单已经成交
+					break
+				elif cancelled == 'EXCEPT':
+					self.log('closeLongPosition: Failed to cancel order, halting...')
+					self.halt()
+				
+				#成功撤单，清除在报单状态映射中的记录
+				self.tdAgent.clear_ordermaps(order_ref)
+				
 				price = self.__getReasonableSellPrice(instrument, count)
 				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
 					
 			return price
 		except:
-			self.log('CtpPosition: closeLongPosition error')
+			self.log('CtpAutoPosition: closeLongPosition error')
 			return None
 		
 	#平空
@@ -179,19 +233,34 @@ class CtpAutoPosition:
 			while 1:
 				count += 1
 				order_ref = self.tdAgent.close_position(instrument, D_Buy, price, volume, cos_flag)
-				sleep(self.timeWaitOrder)
+				if self.tdAgent.is_err_order(order_ref):
+					self.log('closeShortPosition: Failed to insert order, halting...')
+					self.halt()
 				
+				sleep(self.timeWaitOrder)
+						
 				if self.tdAgent.is_order_success(order_ref):
 					break
 					
 				#如果开仓不成功，刚重新获取合理价并报单重开
 				self.cancelOrder(instrument, order_ref)
+				cancelled = self.tdAgent.is_order_cancelled(order_ref)
+				if cancelled == False:
+					#报单已经成交
+					break
+				elif cancelled == 'EXCEPT':
+					self.log('closeShortPosition: Failed to cancel order, halting...')
+					self.halt()
+				
+				#成功撤单，清除在报单状态映射中的记录
+				self.tdAgent.clear_ordermaps(order_ref)
+				
 				price = self.__getReasonableBuyPrice(instrument, count)
 				self.log('Cancel order %d, new price %d, count %d' % (order_ref, price, count))
 					
 			return price
 		except:
-			self.log('CtpPosition: closeShortPosition error')
+			self.log('CtpAutoPosition: closeShortPosition error')
 			return None
 		
 	#日志（输出）统一接口
