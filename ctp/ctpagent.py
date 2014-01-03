@@ -157,13 +157,15 @@ class TraderAgent:
 		traderSpi.RegisterFront(self.server_port)
 		traderSpi.Init()
 		self.trader = traderSpi
-		#self.initialized = True
+		
+		#预留时间给API接受完历史报单
+		time.sleep(2)
+		#print u'代理初始化完成'
+		self.initialized = True
 		
 	def initialize (self):
 		while self.isSettlementInfoConfirmed == False:
 			time.sleep(1)
-		#print u'代理初始化完成'
-		pass
 		
 	def login_success (self,frontID, sessionID, max_order_ref):
 		#print u'FrondId %s, SessionID %s, OrderRef %s' % (frontID, sessionID, max_order_ref)
@@ -198,11 +200,19 @@ class TraderAgent:
 	
 	#报单(状态)响应：CTP报单通知
 	def rtn_order (self, order):
+		#只有在初始化完成并接受完历史报单后才开始工作
+		if self.initialized == False:
+			return
+		
 		#接收报单状态，并更新在报单映射中
 		self.orderMap.addElement(order.OrderRef, order)
 		
 	#成交响应：CTP成交通知
 	def rtn_trade (self, trader):
+		#只有在初始化完成并接受完历史报单后才开始工作
+		if self.initialized == False:
+			return
+		
 		#报单成交，从报单映射中删除
 		self.orderMap.delElement(trader.OrderRef)
 		
