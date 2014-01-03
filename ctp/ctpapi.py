@@ -294,8 +294,8 @@ class CtpTraderApi(TraderApi):
 		self.logger.warning(u'TD:CTP报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
 		#self.logger.warning(u'报单校验错误,ErrorID=%s,ErrorMsg=%s,pRspInfo=%s,bIsLast=%s' % (pRspInfo.ErrorID,pRspInfo.ErrorMsg,str(pRspInfo),bIsLast))
 		#self.agent.rsp_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
-		#self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
-	
+		self.agent.err_order_insert(pInputOrder)
+		
 	def OnErrRtnOrderInsert(self, pInputOrder, pRspInfo):
 		'''
 		交易所报单录入错误回报
@@ -312,17 +312,13 @@ class CtpTraderApi(TraderApi):
 		Agent中不区分，所得信息只用于撤单
 		'''
 		#print u'接受报单,状态 %s' % pOrder.OrderStatus
-		self.logger.info(u'报单响应,OrderStatus=%s' % str(pOrder.OrderStatus))
+		self.logger.info(u'报单响应,OrderStatus=%s, OrderRef=%s' % (str(pOrder.OrderStatus), str(pOrder.OrderRef)))
 		if pOrder.OrderStatus == 'a':
-			#CTP接受，但未发到交易所
-			#print u'CTP接受Order，但未发到交易所, BrokerID=%s,BrokerOrderSeq = %s,TraderID=%s, OrderLocalID=%s' % (pOrder.BrokerID,pOrder.BrokerOrderSeq,pOrder.TraderID,pOrder.OrderLocalID)
 			self.logger.info(u'TD:CTP接受Order，但未发到交易所, BrokerID=%s,BrokerOrderSeq = %s,TraderID=%s, OrderLocalID=%s' % (pOrder.BrokerID,pOrder.BrokerOrderSeq,pOrder.TraderID,pOrder.OrderLocalID))
-			self.agent.rtn_order(pOrder)
 		else:
-			#print u'交易所接受Order,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' % (pOrder.ExchangeID,pOrder.OrderSysID,pOrder.TraderID,pOrder.OrderLocalID)
 			self.logger.info(u'TD:交易所接受Order,exchangeID=%s,OrderSysID=%s,TraderID=%s, OrderLocalID=%s' % (pOrder.ExchangeID,pOrder.OrderSysID,pOrder.TraderID,pOrder.OrderLocalID))
-			#self.agent.rtn_order_exchange(pOrder)
-			self.agent.rtn_order(pOrder)
+		
+		self.agent.rtn_order(pOrder)
 	
 	def OnRtnTrade(self, pTrade):
 		'''成交通知'''

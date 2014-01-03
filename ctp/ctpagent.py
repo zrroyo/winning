@@ -216,29 +216,74 @@ class TraderAgent:
 		#报单成交，从报单映射中删除
 		self.orderMap.delElement(trader.OrderRef)
 		
-	#返回开某平仓操作（以本地记录号标识）是否成功
-	def is_order_success (self, order_ref):
-		return not self.orderMap.isElementExisted(str(order_ref))
+	#是否报单出错
+	def is_err_order (self, 
+		order_ref	#本地报单编号记录
+		):
+		#稍做睡眠以保证在判断前能正确接受到CTP服务器端的响应
+		time.sleep(0.5)
+		order = str(order_ref)
+		return self.errOrderMap.isElementExisted(order)
+		
+	#返回报单是否成功
+	def is_order_success (self, 
+		order_ref	#本地报单编号记录
+		):
+		#稍做睡眠以保证在判断前能正确接受到CTP服务器端的响应
+		#time.sleep(0.5)
+		order = str(order_ref)
+		return not self.orderMap.isElementExisted(order) and not self.errOrderMap.isElementExisted(order)
 		
 	#发起撤单申请
-	def cancel_command(self, instrument, order_ref):
-		order = str(order_ref)
+	def cancel_command(self, 
+		instrument,	#合约
+		order_ref	#本地报单编号记录
+		):
 		self.trader.cancel_command(instrument, order_ref)
-		time.sleep(1)
-		
-		#print self.errOrderMap.elemDict
-		
-		#错误报单映射中无记录证明成功撤单
-		if self.errOrderMap.isElementExisted(order):
-			#撤单失败，清除记录
-			self.errOrderMap.delElement(order)
-		else:
-			#撤单成功，从报单映射中清除
-			self.orderMap.delElement(order)
 		 
-	#def err_order_insert (self, ptrader):
-		#pass
-			
+	#是否撤单成功
+	def is_order_cancelled (self, 
+		order_ref	#本地报单编号记录
+		):
+		#稍做睡眠以保证在判断前能正确接受到CTP服务器端的响应
+		time.sleep(0.5)
+		
+		order = str(order_ref)
+		'''
+		错误报单映射中无记录证明成功撤单，如错误刻录存在则需检查是否已成交
+		'''
+		#print self.errOrderMap.elemDict
+		#print self.orderMap.elemDict
+		#print order, self.errOrderMap.isElementExisted(order)
+		
+		if self.errOrderMap.isElementExisted(order):
+			if self.is_order_success(order):
+				#报单已经成交，不能撤单，返回错误
+				return False
+			else:
+				#撤单出错，返回异常
+				return 'EXCEPT'
+		
+		else:
+			#正常撤单，返回正确
+			return True
+		 
+	#清除报单、错误映射中的记录
+	def clear_ordermaps(self,
+		order_ref	#本地报单编号记录
+		):
+		#print 'Clear orderMap and errOrderMap for %d' % order_ref
+		order = str(order_ref)
+		self.errOrderMap.delElement(order)
+		self.orderMap.delElement(order)
+		#print self.errOrderMap.elemDict
+		#print self.orderMap.elemDict
+	 
+	#回调函数响应：插入报单出错
+	def err_order_insert (self, pInputOrder):
+		self.errOrderMap.addElement(pInputOrder.OrderRef, pInputOrder)
+		pass
+		
 	#回调函数响应：CTP撤单错误通知
 	def err_order_action (self, pInputOrderAction):
 		self.errOrderMap.addElement(pInputOrderAction.OrderRef, pInputOrderAction)
