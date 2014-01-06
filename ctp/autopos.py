@@ -80,10 +80,10 @@ class CtpAutoPosition:
 	def halt(self):
 		while 1:
 			#try:
-				#time.sleep(5)
+				#sleep(5)
 			#except:
 				#self.log('CtpAutoPosition: Received cxception but halting...')
-			time.sleep(5)
+			sleep(5)
 		
 	#开多
 	def openLongPosition (self, 
