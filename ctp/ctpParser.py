@@ -16,7 +16,7 @@ from misc.logmgr import Log, LogPainter
 from misc.runstat import RunStat
 from misc.runctrl import RunControl, RunCtrlSet
 from ctp.ctpagent import MarketDataAgent, TraderAgent
-from ctp.autopos import CtpAutoPosition, OF_CloseToday
+from ctp.autopos import CtpAutoPosition, OF_CloseToday, OF_Close
 from regress.emulate import CommonAttrs, emulationThreadEnd, Emulate
 from regress.tick import Tick
 from futconfig import TradingConfig, CtpConfig
@@ -172,15 +172,18 @@ def processOrder (
 	):
 		
 	orderDetails = details.split(',')
-	if len(orderDetails) != 4:
-		print u'下单明细格式错误，正确格式例如：c,b,1,SR405'
+	if len(orderDetails) != 4 and len(orderDetails) != 5:
+		print u'下单明细格式错误，正确格式例如：c,b,1,SR405，或c,b,1,SR405,t'
 		return
 			
 	orderType = orderDetails[0]
 	direction = orderDetails[1]
 	poses = int(orderDetails[2])
 	instrument = orderDetails[3]
-	
+	closeFlag = OF_Close
+	if len(orderDetails) == 5 and orderDetails[4] == 't':
+		closeFlag = OF_CloseToday
+		
 	print u'登录行情服务器...'
 	
 	#初始化并启动行情数据服务代理
@@ -215,11 +218,11 @@ def processOrder (
 			print u'开空成功，价格 %d' % price
 		elif orderType == 'c' and direction == 'b':
 			price = autoPosMgr.closeLongPosition(instrument, 
-					mdAgent.mdlocal.getClose(instrument), poses)
+					mdAgent.mdlocal.getClose(instrument), poses, closeFlag)
 			print u'平多成功，价格 %d' % price
 		elif orderType == 'c' and direction == 's':
 			price = autoPosMgr.closeShortPosition(instrument, 
-					mdAgent.mdlocal.getClose(instrument), poses)
+					mdAgent.mdlocal.getClose(instrument), poses, closeFlag)
 			print u'平空成功，价格 %d' % price
 	except:
 		print "\n下单错误，退出"
