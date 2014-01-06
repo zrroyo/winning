@@ -135,8 +135,10 @@ def testPosMgr(price):
 	#time.sleep(5)
 	ctpAutoPos.closeLongPosition(inst[1], price+1, 1, OF_CloseToday)
 	print u'操作完成，等待:'
-	while 1:
-		time.sleep(1)
+	#while 1:
+		#time.sleep(1)
+		
+	ctpAutoPos.halt()
 	
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
