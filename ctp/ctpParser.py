@@ -195,8 +195,9 @@ def processOrder (
 	
 	#初始化并启动交易服务器端代理
 	tdAgent = TraderAgent(tdBrokerid, tdInvestor, tdPasswd, tdServer)
-	tdAgent.init_init()
-	time.sleep(1)	
+	if tdAgent.init_init() == False:
+		print u'登录失败，请查看日志，退出'
+		exit()
 		
 	print u'开始下单...'
 	
@@ -371,9 +372,10 @@ def ctpOptionsHandler (options, args):
 	try:
 		#初始化并启动交易服务器端代理
 		tdAgent = TraderAgent(tdBrokerid, tdInvestor, tdPasswd, tdServer)
-		tdAgent.init_init()
-		time.sleep(2)
-	
+		if tdAgent.init_init() == False:
+			print u'登录失败，请查看日志，退出'
+			exit()
+		
 		#print tradings
 		
 		window2 = painter.newWindow('交易跟踪', height2, width, height1+2, 0)
