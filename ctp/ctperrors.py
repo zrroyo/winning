@@ -48,6 +48,12 @@ class CtpErrorParser:
 			if node.getAttribute('value') == str(ErrorId):
 				return node.getAttribute('prompt')
 			
+	#返回复合的错误提示
+	def errorMsgFactory (self,
+		ErrorId,	#错误ID号
+		):
+		errMsg = 'ErrID=%d,ErrMsg=%s' % (ErrorId, self.getErrorMsgById(ErrorId))
+		return errMsg
 		
 #def doTest():
 	#parser = CtpErrorParser('futures/error.xml')
@@ -56,6 +62,9 @@ class CtpErrorParser:
 	#print parser.getErrorMsgById(2001)
 	#print parser.getErrorMsgById(333)
 	
+	#print parser.errorMsgFactory(0)
+	#print parser.errorMsgFactory(2001)
+	#print parser.errorMsgFactory(333)
 		
 #if __name__ == '__main__':
 	#doTest()
