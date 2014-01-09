@@ -21,9 +21,9 @@ class TestVar:
 def testMdApi():
 	''' Test CtpMdApi '''
 	
-	#inst=[u'm1401', u'p1401']
-	inst=['m1401', 'm1405', 'rb1401', 'p1401']
-	#inst=[u'p1401']
+	#inst=[u'm1409', u'p1409']
+	inst=['m1409', 'm1405', 'rb1410', 'p1409']
+	#inst=[u'p1409']
 	#mdSpi = CtpMdApi(inst, '1024', '00092', '888888', None)
 	
 	#v1
@@ -54,7 +54,7 @@ def testMdApi():
 	time.sleep(2)
 	workDay = time.strftime('%Y-%m-%d')
 	print workDay
-	ctpData = CtpData('p1401', 'history', 'p1401_dayk', workDay, agent)
+	ctpData = CtpData('p1409', 'history', 'p1409_dayk', workDay, agent)
 	while 1:
 		time.sleep(1)
 		#print agent.mdlocal.getClose(inst[0]), agent.mdlocal.getVolume(inst[0])
@@ -67,11 +67,11 @@ def testTraderApi(price):
 	''' Test TraderApi '''
 	''' Test CtpMdApi '''
 	
-	#inst=[u'm1401', u'p1401']
-	#inst=[u'rb1401', u'm1401']
-	#inst=[u'm1401']
-	#inst=u'm1401'
-	inst='m1401'
+	#inst=[u'm1409', u'p1409']
+	#inst=[u'rb1410', u'm1409']
+	#inst=[u'm1409']
+	#inst=u'm1409'
+	inst='m1409'
 	
 	# v1
 	#agent = TraderAgent(inst)
@@ -116,17 +116,19 @@ def testTraderApi(price):
 		time.sleep(1)
 	
 def testPosMgr(price):
-	inst=[u'rb1401', u'm1401']
+	inst=[u'rb1410', u'm1409']
 	
 	mdAgent = MarketDataAgent(inst, '1024', '00000038', '123456', 'tcp://180.166.30.117:41213')
 	mdAgent.init_init()
 	
 	tdAgent = TraderAgent("1024", "00000038", "123456", 'tcp://180.166.30.117:41205')
-	tdAgent.init_init()
-	
+	if tdAgent.init_init() == False:
+		print u'登录失败'
+		exit()
+			
 	print inst[1]
-	print '等待连接'
-	time.sleep(5)
+	#print '等待连接'
+	#time.sleep(5)
 	
 	price = int(price)
 	ctpAutoPos = CtpAutoPosition(mdAgent, tdAgent)
