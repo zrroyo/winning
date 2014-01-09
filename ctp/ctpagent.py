@@ -158,10 +158,24 @@ class TraderAgent:
 		traderSpi.Init()
 		self.trader = traderSpi
 		
+		#等待确认API已正确登录
+		waitLoggedSeconds = 10	#最长等待时间
+		while waitLoggedSeconds > 0:
+			time.sleep(1)
+			if self.trader.is_logged:
+				break
+			
+			waitLoggedSeconds -= 1
+			
+		if self.trader.is_logged == False:
+			return False
+		
 		#预留时间给API接受完历史报单
 		time.sleep(2)
 		#print u'代理初始化完成'
 		self.initialized = True
+		
+		return True
 		
 	def initialize (self):
 		while self.isSettlementInfoConfirmed == False:
