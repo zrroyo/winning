@@ -3,6 +3,7 @@
 import logging
 import time
 from futures import ApiStruct, MdApi, TraderApi
+from ctperrors import CtpErrorParser
 
 # CTP行情数据接口
 class CtpMdApi(MdApi):
@@ -62,6 +63,12 @@ class CtpMdApi(MdApi):
 			
 # 基本CTP交易接口
 class CtpTraderApi(TraderApi):
+	'''
+	CTP返回错误的解析接口。因为CTP返回的错误信息为ASCII编码，所以直接通过
+	错误ID号从本地查找得到错误提示。
+	'''
+	errorParser = CtpErrorParser('ctp/futures/error.xml')
+			
 	def __init__(self,
 		broker_id,   	#期货公司ID
 		investor_id, 	#投资者ID
@@ -105,9 +112,9 @@ class CtpTraderApi(TraderApi):
 	
 	def OnRspUserLogin(self, pRspUserLogin, pRspInfo, nRequestID, bIsLast):
 		self.logger.info(u'TD:trader login')
-		self.logger.debug(u"TD:loggin %s" % str(pRspInfo))
+		self.logger.debug(u"TD:loggin %s" % self.errorParser.errorMsgFactory(pRspInfo.ErrorID))
 		if not self.isRspSuccess(pRspInfo):
-			self.logger.warning('TD:trader login failed, errMsg=%s' %(pRspInfo.ErrorMsg))
+			self.logger.warning('TD:trader login failed, %s' % self.errorParser.errorMsgFactory(pRspInfo.ErrorID))
 			print u'综合交易平台登陆失败，请检查网络或用户名/口令'
 			self.is_logged = False
 			return
@@ -185,7 +192,8 @@ class CtpTraderApi(TraderApi):
 			
 	def OnRspQrySettlementInfoConfirm(self, pSettlementInfoConfirm, pRspInfo, nRequestID, bIsLast):
 		'''请求查询结算信息确认响应'''
-		self.logger.debug(u"TD:结算单确认信息查询响应:rspInfo=%s,结算单确认=%s" % (pRspInfo,pSettlementInfoConfirm))
+		#print pRspInfo
+		self.logger.debug(u"TD:结算单确认信息查询响应:rspInfo=%s,结算单确认=%s" % ((None if pRspInfo is None else self.errorParser.errorMsgFactory(pRspInfo.ErrorID)), pSettlementInfoConfirm))
 		#self.query_settlement_info()
 		if(self.resp_common(pRspInfo,bIsLast,u'结算单确认情况查询')>0):
 			#print pSettlementInfoConfirm
@@ -291,7 +299,7 @@ class CtpTraderApi(TraderApi):
 		'''
 		#print u'报单被拒绝, RID %d' % nRequestID
 		#print 'ErrID %s, ErrMsg %s' % (pRspInfo.ErrorID, pRspInfo.ErrorMsg)
-		self.logger.warning(u'TD:CTP报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
+		self.logger.warning(u'TD:CTP报单录入错误回报, 正常后不应该出现,rspInfo=%s' % self.errorParser.errorMsgFactory(pRspInfo.ErrorID))
 		#self.logger.warning(u'报单校验错误,ErrorID=%s,ErrorMsg=%s,pRspInfo=%s,bIsLast=%s' % (pRspInfo.ErrorID,pRspInfo.ErrorMsg,str(pRspInfo),bIsLast))
 		#self.agent.rsp_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 		self.agent.err_order_insert(pInputOrder)
@@ -303,7 +311,7 @@ class CtpTraderApi(TraderApi):
 		这个回报因为没有request_id,所以没办法对应
 		'''
 		#print u'ERROR Order Insert'
-		self.logger.warning(u'TD:交易所报单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
+		self.logger.warning(u'TD:交易所报单录入错误回报, 正常后不应该出现,rspInfo=%s'%  self.errorParser.errorMsgFactory(pRspInfo.ErrorID))
 		#self.agent.err_order_insert(pInputOrder.OrderRef,pInputOrder.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 	
 	def OnRtnOrder(self, pOrder):
@@ -332,7 +340,7 @@ class CtpTraderApi(TraderApi):
 		ctp撤单校验错误
 		'''
 		#print u'撤单校验错误'
-		self.logger.warning(u'TD:CTP撤单录入错误回报, 正常后不应该出现,rspInfo=%s'%(str(pRspInfo),))
+		self.logger.warning(u'TD:CTP撤单录入错误回报, 正常后不应该出现,rspInfo=%s' % self.errorParser.errorMsgFactory(pRspInfo.ErrorID))
 		self.agent.err_order_action(pInputOrderAction)
 		
 	def OnErrRtnOrderAction(self, pOrderAction, pRspInfo):
@@ -340,7 +348,7 @@ class CtpTraderApi(TraderApi):
 		交易所撤单操作错误回报
 		正常情况后不应该出现
 		'''
-		self.logger.warning(u'TD:交易所撤单录入错误回报, 可能已经成交,rspInfo=%s'%(str(pRspInfo),))
+		self.logger.warning(u'TD:交易所撤单录入错误回报, 可能已经成交,rspInfo=%s'% self.errorParser.errorMsgFactory(pRspInfo.ErrorID))
 		#self.agent.err_order_action(pOrderAction.OrderRef,pOrderAction.InstrumentID,pRspInfo.ErrorID,pRspInfo.ErrorMsg)
 			
 	## Agent操作接口部分 ##
