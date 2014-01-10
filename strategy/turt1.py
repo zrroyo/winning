@@ -240,7 +240,11 @@ class Turt1(turtle.Turtle):
 				
 		return False
 		
-	def doShort (self, dateSet, date):
+	#做空
+	def doShort (self, 
+		dateSet,	#时间集
+		date,		#开始日期
+		):
 		days = 0
 		self.emptyPostion()
 		pLastAddPrice = self.openShortPosition(self.data.getClose(date))
@@ -268,6 +272,10 @@ class Turt1(turtle.Turtle):
 				#time = dateSet.getSetNextDate()
 				break
 			
+			if cutLossMode and price > self.data.M10(time):
+				time = self.moveToNextTick(dateSet)
+				continue
+				
 			if self.stableHigherThanM10(price, time):
 				if cutLossMode:
 					time = self.moveToNextTick(dateSet)
@@ -310,7 +318,11 @@ class Turt1(turtle.Turtle):
 		
 		return time
 		
-	def doLong (self, dateSet, date):
+	#做多
+	def doLong (self, 
+		dateSet,	#时间集
+		date,		#开始日期
+		):
 		days = 0
 		self.emptyPostion()
 		pLastAddPrice = self.openLongPosition(self.data.getClose(date))
@@ -338,6 +350,10 @@ class Turt1(turtle.Turtle):
 				#time = dateSet.getSetNextDate()
 				break
 			
+			if cutLossMode and price < self.data.M10(time):
+				time = self.moveToNextTick(dateSet)
+				continue
+				
 			if self.stableLowerThanM10(price, time):
 				if cutLossMode:
 					time = self.moveToNextTick(dateSet)
