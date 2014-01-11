@@ -322,4 +322,19 @@ class Turtle(FUT.Futures):
 				sleep(0.5)
 				
 		return nextTick
-	
+		
+	#是否有剩余仓位可用
+	def positionAvailable (self):
+		#是否已达合约最高持仓上限
+		if self.curPostion() >= self.maxAddPos:
+			return False
+		
+		#是否已达市场最高持仓上限
+		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
+			if self.emuRunCtrl.marRunStat.fullPositions():
+				#self.log("	@-.-@ Market max allowed positions are full!")
+				return False
+		
+		#两者均未满，返回
+		return True
+		
