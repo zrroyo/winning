@@ -191,7 +191,11 @@ class Turt1(turtle.Turtle):
 				return True
 			else:
 				return False
-		
+			
+		#已经满仓，直接返回。
+		if not self.positionAvailable():
+			return False
+			
 		'''
 		在实盘阶段，如果连续指定次价格均条件为真，则判定为稳定并返回真，否则为假。
 		'''
@@ -223,7 +227,11 @@ class Turt1(turtle.Turtle):
 				return True
 			else:
 				return False
-		
+			
+		#已经满仓，直接返回。
+		if not self.positionAvailable():
+			return False
+			
 		'''
 		在实盘阶段，如果连续指定次价格均条件为真，则判定为稳定并返回真，否则为假。
 		'''
