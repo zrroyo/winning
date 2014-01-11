@@ -129,6 +129,16 @@ class MarketRunStat(RunStat):
 		self.lock.release()
 		return True
 	
+	#市场是否已经满仓
+	def fullPositions (self):
+		retVal = False
+		self.lock.acquire()
+		if self.curPoses >= self.maxAllowedPos:
+			retVal = True
+		
+		self.lock.release()
+		return retVal
+	
 	# Update all counted attributes.
 	def update (self, profit):
 		self.lock.acquire()
