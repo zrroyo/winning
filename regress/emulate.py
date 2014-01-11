@@ -136,6 +136,8 @@ class Emulate:
 						futCode = self.futList.pop()
 						self.ctrlSet.setApplied(i)
 						#print '# %s priority %d, priMgr list %s' % (futCode, self.ctrlSet.priMgr.updatePriority(i), self.ctrlSet.priMgr.listPriorities())
+						self.ctrlSet.priMgr.updatePriority(i)
+						self.ctrlSet.priMgr.listPriorities()
 						self.ctrlSet.releaseLock(i)
 						
 						#print 'Thread %d:' % i
