@@ -48,19 +48,23 @@ class PositionMananger:
 		
 		return self.__posStack.pop()
 		
-def doTest():
-	posMgr = PositionMananger(3)
+	#清空持仓
+	def emptyPosition (self):
+		self.__posStack = []
 		
-	time = '2014-1-13'
-	print posMgr.pushPosition(3666, time)
-	print posMgr.pushPosition(3677, time)
-	print posMgr.pushPosition(3688, time)
-	print posMgr.pushPosition(3699, time)
+#def doTest():
+	#posMgr = PositionMananger(3)
+		
+	#time = '2014-1-13'
+	#print posMgr.pushPosition(3666, time)
+	#print posMgr.pushPosition(3677, time)
+	#print posMgr.pushPosition(3688, time)
+	#print posMgr.pushPosition(3699, time)
 	
-	while posMgr.numPositions():
-		pos = posMgr.popPosition()
-		print pos.price, pos.time
+	#while posMgr.numPositions():
+		#pos = posMgr.popPosition()
+		#print pos.price, pos.time
 		
-if __name__ == '__main__':
-	doTest()
+#if __name__ == '__main__':
+	#doTest()
 	
