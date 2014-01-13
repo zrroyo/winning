@@ -63,10 +63,10 @@ def emulationThreadStart (strategy, futCode, runCtrl, **extraArgs):
 		emulationThreadEnd(runCtrl)
 		return
 		
-	# Enable storing logs.
-	logTemp = 'logs/%s.log' % futCode	
-	futLog = Log(logTemp)
-	#strt1.enableStoreLogs(futLog)
+	## Enable storing logs.
+	#logTemp = 'logs/%s.log' % futCode	
+	#futLog = Log(logTemp)
+	##strt1.enableStoreLogs(futLog)
 	
 	strt1.setAttrs(runCtrl.attrs.maxAddPos, runCtrl.attrs.minPos, 
 			runCtrl.attrs.minPosIntv, runCtrl.attrs.priceUnit)
