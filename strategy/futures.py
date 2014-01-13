@@ -7,6 +7,7 @@ import strategy as STRT
 from dataMgr.data import Data, CtpData
 from date import Date
 from ctp.autopos import CtpAutoPosition
+from misc.posmgr import PositionMananger
 
 #
 # Futures strategy super class which defines the most common methods 
@@ -27,7 +28,7 @@ class Futures(STRT.Strategy):
 		self.minPos = None		# The minimum unit to add positions.
 		self.minPosIntv = None		# The minimum interval to add positions.
 		self.priceUnit = None		# Price unit.
-		self._pList = []		# The list to contain all positions.
+		self.posMgr = None		#持仓管理接口
 		self.totalProfit = 0		# Total profit in one time of test.
 		self.profit = 0			# The current profit for a time of business.
 		self.runStat = runStat		# Count runtime statistics.
@@ -60,7 +61,17 @@ class Futures(STRT.Strategy):
 	# setAttrs() and checkAttrs() might be the key methods too, especially 
 	# the tests which are sensitive to the values of maxAddPos, minPos, minPosIntv, 
 	# etc. You need inherit and adjust these two method in your own occasions.
-	def setAttrs (self, maxAddPos, minPos, minPosIntv, priceUnit):
+	def setAttrs (self, 
+		maxAddPos,	#最大可加仓次数
+		minPos,		#每次加仓最小手数
+		minPosIntv,	#允许加仓的最小价格差
+		priceUnit,	#每‘1’价格差对应的真实价格波动
+		):
+		self.maxAddPos = maxAddPos
+		self.minPos = minPos
+		self.minPosIntv = minPosIntv
+		self.priceUnit = priceUnit
+		self.posMgr = PositionMananger(maxAddPos)
 		return
 		
 	def checkAttrs (self):
@@ -72,10 +83,10 @@ class Futures(STRT.Strategy):
 	
 	# Position Management Methods.
 	def curPostion (self):
-		return len(self._pList)
+		return self.posMgr.numPositions()
 	
 	def emptyPostion (self):
-		self._pList = []
+		self.posMgr.emptyPosition()
 		self.profit = 0
 	
 	#开空
@@ -92,7 +103,7 @@ class Futures(STRT.Strategy):
 		if self.ctpPosOn == True:
 			price = self.ctpPos.openShortPosition(self.futName, price, self.minPos)
 		
-		self._pList.append(price)
+		self.posMgr.pushPosition(price)
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
 		return price
 		
@@ -110,7 +121,7 @@ class Futures(STRT.Strategy):
 		if self.ctpPosOn == True:
 			price = self.ctpPos.openLongPosition(self.futName, price, self.minPos)
 			
-		self._pList.append(price)
+		self.posMgr.pushPosition(price)
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
 		return price
 		
@@ -136,7 +147,8 @@ class Futures(STRT.Strategy):
 			'''
 			从仓位记录队列中移除，并统计每一单的赢利
 			'''
-			orderProfit = self._pList.pop() - price
+			pos = self.posMgr.popPosition()
+			orderProfit = pos.price - price
 			orderProfit *= self.minPos
 			orderProfit *= self.priceUnit
 			poses -= 1
@@ -188,7 +200,8 @@ class Futures(STRT.Strategy):
 			'''
 			从仓位记录队列中移除，并统计每一单的赢利
 			'''
-			orderProfit = price - self._pList.pop()
+			pos = self.posMgr.popPosition()
+			orderProfit = price - pos.price
 			orderProfit *= self.minPos
 			orderProfit *= self.priceUnit
 			poses -= 1
