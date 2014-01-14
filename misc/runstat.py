@@ -21,6 +21,7 @@ class RunStat:
 		self.maxBusProfit = 0	#单次完整交易最高盈利
 		self.minBusProfit = 0	#单次完整交易最低盈利
 		self.profit = 0		#当前利润
+		self.tradeCounter = TradingCounter()	#交易数据记录接口
 		return
 	
 	def __exit__ (self):
@@ -56,17 +57,25 @@ class RunStat:
 	def updateProfit (self, 
 		profit,	#利润
 		):
-		#更新盈利最高点
-		if self.profit + profit > self.maxProfit:
-			self.maxProfit = self.profit + profit
-			
-		#更新盈利最低点
-		if self.profit + profit < self.minProfit:
-			self.minProfit = self.profit + profit
-			
 		#更新当前利润
 		self.profit += profit
-	
+			
+		#更新盈利最高点
+		if self.profit > self.maxProfit:
+			self.maxProfit = self.profit
+			
+		#更新盈利最低点
+		if self.profit < self.minProfit:
+			self.minProfit = self.profit
+			
+		#更新交易数据记录
+		if profit > 0:
+			self.tradeCounter.incNumOrderWin()
+		elif profit < 0:
+			self.tradeCounter.incNumOrderLoss()
+		else:
+			self.tradeCounter.incNumOrderFlat()
+			
 	#更新所有
 	def update (self, 
 		profit,	#利润
@@ -126,6 +135,12 @@ class MarketRunStat(RunStat):
 			self.lock.release()
 			return False
 		
+		#增加开仓数
+		self.tradeCounter.incNumOpen()
+		#初次开仓，增加交易数
+		if self.curPoses == 0:
+			self.tradeCounter.incNumTrade()
+			
 		self.curPoses += 1
 		self.lock.release()
 		return True	
@@ -142,6 +157,9 @@ class MarketRunStat(RunStat):
 			self.lock.release()
 			print u'MarketRunStat: closePosition error'
 			return False
+		
+		#增加平仓数
+		self.tradeCounter.incNumClose()
 		
 		self.curPoses -= poses
 		self.lock.release()
@@ -178,13 +196,23 @@ class MarketRunStat(RunStat):
 		当前持仓数为0表明一次完整交易结束，应进行统计。
 		'''
 		
+		self.busProfit += profit
+		
 		#更新单次完整交易最高盈利
-		if self.busProfit + profit > self.maxBusProfit:
-			self.maxBusProfit = self.busProfit + profit
+		if self.busProfit > self.maxBusProfit:
+			self.maxBusProfit = self.busProfit
 			
 		#更新单次完整交易最低盈利
-		if self.busProfit + profit < self.minBusProfit:
-			self.minBusProfit = self.busProfit + profit
+		if self.busProfit < self.minBusProfit:
+			self.minBusProfit = self.busProfit
+			
+		#更新交易数据记录
+		if self.busProfit > 0:
+			self.tradeCounter.incNumBusWin()
+		elif self.busProfit < 0:
+			self.tradeCounter.incNumBusLoss()
+		else:
+			self.tradeCounter.incNumBusFlat()
 			
 		#单次交易完成，当前利润清0
 		self.busProfit = 0
@@ -217,6 +245,98 @@ class MarketRunStat(RunStat):
 		self._formatPrint("         Min Profit", self.minProfit)
 		self._formatPrint("       Total Profit", self.profit)
 		#self._formatPrint("  Current Positions", self.curPoses)
+		print "\n	Trading Counters:"
+		self._formatPrint("       Open Numbers", self.tradeCounter.numOpen)
+		self._formatPrint("      Close Numbers", self.tradeCounter.numClose)
+		self._formatPrint("          Order Win", self.tradeCounter.numOrderWin)
+		self._formatPrint("         Order Loss", self.tradeCounter.numOrderLoss)
+		self._formatPrint("         Order Flat", self.tradeCounter.numOrderFlat)
+		self._formatPrint("     Order Win Rate", self.tradeCounter.orderWinRate())
+		self._formatPrint("       Business Win", self.tradeCounter.numBusWin)
+		self._formatPrint("      Business Loss", self.tradeCounter.numBusLoss)
+		self._formatPrint("      Business Flat", self.tradeCounter.numBusFlat)
+		self._formatPrint("      Trade Numbers", self.tradeCounter.numTrade)
+		self._formatPrint("  Business Win Rate", self.tradeCounter.busWinRate())
 		print "	* * * * * * * * * * * * * \n"
 		
 		self.lock.release()
+	
+'''
+交易数据记录
+'''
+class TradingCounter:
+	def __init__ (self):
+		self.numOpen = 0	#开仓数
+		self.numClose = 0	#平仓数
+		self.numBusWin = 0	#赢利交易数
+		self.numBusLoss = 0	#亏损交易数
+		self.numBusFlat = 0	#持平交易数
+		self.numOrderWin = 0	#赢利单数
+		self.numOrderLoss = 0	#亏损单数
+		self.numOrderFlat = 0	#持平单数
+		self.numTrade = 0	#总交易数
+		
+	#增加开仓数
+	def incNumOpen (self,
+		num = 1,	#增加值
+		):
+		self.numOpen += num
+		
+	#增加平仓数
+	def incNumClose (self,
+		num = 1,	#增加值
+		):
+		self.numClose += num
+		
+	#增加赢利交易数
+	def incNumBusWin (self,
+		num = 1,	#增加值
+		):
+		self.numBusWin += num
+		
+	#增加亏损交易数
+	def incNumBusLoss (self,
+		num = 1,	#增加值
+		):
+		self.numBusLoss += num
+		
+	#增加持平交易数
+	def incNumBusFlat (self,
+		num = 1,	#增加值
+		):
+		self.numBusFlat += num
+		
+	#增加赢利单数
+	def incNumOrderWin (self,
+		num = 1,	#增加值
+		):
+		self.numOrderWin += num
+		
+	#增加亏损单数
+	def incNumOrderLoss (self,
+		num = 1,	#增加值
+		):
+		self.numOrderLoss += num
+		
+	#增加持平单数
+	def incNumOrderFlat (self,
+		num = 1,	#增加值
+		):
+		self.numOrderFlat += num
+		
+	#增加总交易数
+	def incNumTrade (self,
+		num = 1,	#增加值
+		):
+		self.numTrade += num
+		
+	#赢利交易比
+	def busWinRate (self):
+		rate = float(self.numBusWin) / self.numTrade * 100
+		return '%.2f' % rate
+		
+	#赢利单比
+	def orderWinRate (self):
+		rate = float(self.numOrderWin) / self.numOpen * 100
+		return '%.2f' % rate
+	
