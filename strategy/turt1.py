@@ -279,20 +279,8 @@ class Turt1(turtle.Turtle):
 				self.log("	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
-			
-			if cutLossMode and price > self.data.M10(time):
-				time = self.moveToNextTick(dateSet)
-				continue
 				
-			if self.stableHigherThanM10(price, time):
-				if cutLossMode:
-					time = self.moveToNextTick(dateSet)
-					continue
-				
-				if self.curPostion() == 1:
-					time = self.moveToNextTick(dateSet)
-					continue
-					
+			if not (cutLossMode or self.curPostion() == 1) and self.stableHigherThanM10(price, time):
 				cutLossMode = True
 				pLimitByM10 = self.lowestBeforeDate(time, 5)
 				
@@ -357,20 +345,8 @@ class Turt1(turtle.Turtle):
 				self.log("	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
-			
-			if cutLossMode and price < self.data.M10(time):
-				time = self.moveToNextTick(dateSet)
-				continue
 				
-			if self.stableLowerThanM10(price, time):
-				if cutLossMode:
-					time = self.moveToNextTick(dateSet)
-					continue
-					
-				if self.curPostion() == 1:
-					time = self.moveToNextTick(dateSet)
-					continue
-				
+			if  not (cutLossMode or self.curPostion() == 1) and self.stableLowerThanM10(price, time):
 				cutLossMode = True
 				pLimitByM10 = self.highestBeforeDate(time, 5)
 					
