@@ -1,0 +1,10 @@
+SUFFIX=log1
+DIFF=diff1
+diff -uN bak/m-emul.${SUFFIX} m-emul.log > m${DIFF}; echo 0
+diff -uN bak/pta-emul.${SUFFIX} pta-emul.log > pta${DIFF}; echo 0
+diff -uN bak/sr-emul.${SUFFIX} sr-emul.log > sr${DIFF}; echo 0
+diff -uN bak/rb-emul.${SUFFIX} rb-emul.log > rb${DIFF}; echo 0
+diff -uN bak/p-emul.${SUFFIX} p-emul.log > p${DIFF}; echo 0
+diff -uN bak/fg-emul.${SUFFIX} fg-emul.log > fg${DIFF}; echo 0
+diff -uN bak/rm-emul.${SUFFIX} rm-emul.log > rm${DIFF}; echo 0
+
