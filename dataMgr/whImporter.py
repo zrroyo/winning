@@ -26,6 +26,11 @@ class WenhuaImport(IMPORT.Import):
 			sep = time.split('/')
 			#print sep
 			return '%s-%s-%s' % (sep[2], sep[0], sep[1])
+		elif len(time) == 8:
+			year = time[0:4]
+			month = time[4:6]
+			day = time[6:8]
+			return '%s-%s-%s' % (year, month, day)
 		else:
 			print 'Wrong time format found!'
 			exit()
