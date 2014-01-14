@@ -11,9 +11,20 @@ from misc.elemmap import ElementMap
 from mdtolocal import MarketDataAccess
 from misc.futcom import tempNameSuffix
 
-#初始化日志管理
+'''
+CTP日志管理
+'''
 logName = 'ctp%s.log' % tempNameSuffix()
-logging.basicConfig(filename=logName,level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
+loggingInited = False
+
+#初始化CTP日志接口
+def initLoggingBasic():
+	global loggingInited
+	
+	#如果还没完成初始化，则进行初始化
+	if loggingInited == False:
+		logging.basicConfig(filename=logName,level=logging.INFO,format='%(name)s:%(funcName)s:%(lineno)d:%(asctime)s %(levelname)s %(message)s')
+		loggingInited = True
 		
 #行情数据服务器端代理
 class MarketDataAgent:
@@ -38,6 +49,9 @@ class MarketDataAgent:
 		
 	# 在开始行情服务前必须被调用	
 	def init_init (self):
+		#初始化日志接口
+		initLoggingBasic()
+			
 		self.logger = logging.getLogger('Md')
 			
 		#初始化CTP行情接口
@@ -149,6 +163,9 @@ class TraderAgent:
 		
 	#init中的init,用于子类的处理
 	def init_init (self):
+		#初始化日志接口
+		initLoggingBasic()
+			
 		self.logger = logging.getLogger('Td')
 		
 		#初始化CTP交易接口
