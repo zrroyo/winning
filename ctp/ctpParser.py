@@ -277,7 +277,31 @@ def ctpOptionsHandler (options, args):
 			return
 		
 		endTime = datetime.strptime(options.endTime, timeFormat)
-			
+		
+	#如果指定了开始时间，则需要解析时间格式并设置
+	if options.beginTime is not None:
+		btList = options.beginTime.split(':')
+		if len(btList) == 3:
+			timeFormat = '%H:%M:%S'
+		elif len(btList) == 6:
+			timeFormat = '%Y:%m:%d:%H:%M:%S'
+		else:
+			print "\n指定的时间交易错误，退出.\n"
+			return
+				
+		beginTime = datetime.strptime(options.beginTime, timeFormat)
+		
+		#等待开始
+		if beginTime is not None:
+			strTimeNow = datetime.now().strftime(timeFormat)
+			timeNow = datetime.strptime(strTimeNow, timeFormat)
+			while timeNow < beginTime:
+				strTimeNow = datetime.now().strftime(timeFormat)
+				timeNow = datetime.strptime(strTimeNow, timeFormat)
+				#print timeNow, beginTime
+				time.sleep(10)
+				continue
+				
 	#确定可执行合约列表
 	
 	tradeConfig = TradingConfig(options.trading)
@@ -429,6 +453,8 @@ def ctpOptionsParser (parser):
 			default='logs')
 	parser.add_option('-e', '--endTime', dest='endTime', 
 			help="Time to end ctp trading and exit.")
+	parser.add_option('-b', '--beginTime', dest='beginTime', 
+			help="The time to start trading.")
 	parser.add_option('-d', '--details', dest='details', 
 			help="Details used according to each mode.")
 			
