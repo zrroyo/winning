@@ -22,6 +22,7 @@ from regress.tick import Tick
 from futconfig import TradingConfig, CtpConfig
 from misc.painter import Painter
 from misc.futcom import tempNameSuffix
+from misc.dateTime import formatDatetime, nowDatetimeFormat
 
 #CTP交易（模拟）执行线程入口
 def ctpExecutionThreadStart (
@@ -276,9 +277,9 @@ def ctpOptionsHandler (options, args):
 			print "\n指定的交易结束时间错误，退出.\n"
 			return
 		
-		endTime = datetime.strptime(options.endTime, timeFormat)
+		endTime = formatDatetime(timeFormat, options.endTime)
 		
-	#如果指定了开始时间，则需要解析时间格式并设置
+	#如果指定了开始时间则需要解析，并有可能等待
 	if options.beginTime is not None:
 		btList = options.beginTime.split(':')
 		if len(btList) == 3:
@@ -289,15 +290,13 @@ def ctpOptionsHandler (options, args):
 			print "\n指定的时间交易错误，退出.\n"
 			return
 				
-		beginTime = datetime.strptime(options.beginTime, timeFormat)
+		beginTime = formatDatetime(timeFormat, options.beginTime)
 		
 		#等待开始
 		if beginTime is not None:
-			strTimeNow = datetime.now().strftime(timeFormat)
-			timeNow = datetime.strptime(strTimeNow, timeFormat)
+			timeNow = nowDatetimeFormat(timeFormat)
 			while timeNow < beginTime:
-				strTimeNow = datetime.now().strftime(timeFormat)
-				timeNow = datetime.strptime(strTimeNow, timeFormat)
+				timeNow = nowDatetimeFormat(timeFormat)
 				#print timeNow, beginTime
 				time.sleep(10)
 				continue
@@ -414,8 +413,7 @@ def ctpOptionsHandler (options, args):
 		#等待结束
 		while 1:
 			if options.endTime is not None:
-				strTimeNow = datetime.now().strftime(timeFormat)
-				timeNow = datetime.strptime(strTimeNow, timeFormat)
+				timeNow = nowDatetimeFormat(timeFormat)
 				if timeNow >= endTime:
 					try:
 						painter.destroy()
