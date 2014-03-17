@@ -1,6 +1,6 @@
-#./win.py importer -b current -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/current01/
-./win.py importer -b current -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/current05/
-./win.py importer -b current -m append -d /media/Work/ubuntu/VirtualBox/shareDir/Data/Futures/wenhua/dayk/current09
+#./win.py importer -b current -m append -d /media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current01/
+./win.py importer -b current -m append -d /media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current05/
+./win.py importer -b current -m append -d /media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current09
 # 09/10
 ./win.py data -b current -c -t rb1410
 ./win.py data -b current -c -t TA409
