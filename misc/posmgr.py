@@ -48,10 +48,19 @@ class PositionMananger:
 		
 		return self.__posStack.pop()
 		
+	#返回索引号为@num的仓位，num从１开始记
+	def getPositionByNum (self, num):
+		try:
+			num -= 1
+			return self.__posStack[num]
+		except:
+			return None
+			
 	#清空持仓
 	def emptyPosition (self):
 		self.__posStack = []
 		
+##测试
 #def doTest():
 	#posMgr = PositionMananger(3)
 		
@@ -60,6 +69,8 @@ class PositionMananger:
 	#print posMgr.pushPosition(3677, time)
 	#print posMgr.pushPosition(3688, time)
 	#print posMgr.pushPosition(3699, time)
+	#print posMgr.getPositionByNum(3).price
+	#print posMgr.getPositionByNum(4)
 	
 	#while posMgr.numPositions():
 		#pos = posMgr.popPosition()
