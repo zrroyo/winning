@@ -7,6 +7,45 @@
 
 import thread
 
+	
+'''
+利润及回撤类
+'''
+class ProfitRegress:
+	def __init__ (self):
+		self.profit = 0		#当前利润
+		self.maxProfit = 0	#盈利最高点
+		self.minProfit = 0	#盈利最低点
+		
+	#更新最大最小利润
+	def updateMaxMinProfit (self, 
+		profit,	#利润
+		):
+		newProfit = self.profit + profit
+		
+		#更新盈利最高点
+		if newProfit > self.maxProfit:
+			self.maxProfit = newProfit
+			
+		#更新盈利最低点
+		if newProfit < self.minProfit:
+			self.minProfit = newProfit
+	
+	#更新利润(以交易单为单位)
+	def updateProfitByOrder (self, 
+		profit,	#利润
+		):
+		#更新当前利润
+		self.profit += profit
+			
+		#更新盈利最高点
+		if self.profit > self.maxProfit:
+			self.maxProfit = self.profit
+			
+		#更新盈利最低点
+		if self.profit < self.minProfit:
+			self.minProfit = self.profit
+		
 '''
 运行时统计类(Run-time Statistics Class)
 	-- 只适用于单合约统计
@@ -16,12 +55,10 @@ class RunStat:
 		self.name = name	#合约
 		self.maxOrderWin = 0	#最大盈利单
 		self.maxOrderLoss = 0	#最大止损单
-		self.maxProfit = 0	#盈利最高点
-		self.minProfit = 0	#盈利最低点
 		self.maxBusProfit = 0	#单次完整交易最高盈利
 		self.minBusProfit = 0	#单次完整交易最低盈利
-		self.profit = 0		#当前利润
 		self.tradeCounter = TradingCounter()	#交易数据记录接口
+		self.regress = ProfitRegress()	#利润及回撤
 		return
 	
 	def __exit__ (self):
@@ -53,20 +90,11 @@ class RunStat:
 		if profit <  self.minBusProfit:
 			self.minBusProfit = profit
 			
-	#更新利润
-	def updateProfit (self, 
+	#更新利润(以交易单为单位)
+	def updateProfitByOrder (self, 
 		profit,	#利润
 		):
-		#更新当前利润
-		self.profit += profit
-			
-		#更新盈利最高点
-		if self.profit > self.maxProfit:
-			self.maxProfit = self.profit
-			
-		#更新盈利最低点
-		if self.profit < self.minProfit:
-			self.minProfit = self.profit
+		self.regress.updateProfitByOrder(profit)
 			
 		#更新交易数据记录
 		if profit > 0:
@@ -76,13 +104,19 @@ class RunStat:
 		else:
 			self.tradeCounter.incNumOrderFlat()
 			
+	#更新最大最小利润
+	def updateMaxMinProfit (self, 
+		profit,	#利润
+		):
+		self.regress.updateMaxMinProfit(profit)
+		
 	#更新所有
 	def update (self, 
 		profit,	#利润
 		):
 		self.updateOrderMaxWin(profit)
 		self.updateOrderMaxLoss(profit)
-		self.updateProfit(profit)
+		self.updateProfitByOrder(profit)
 		
 	#固定格式输出
 	def _formatPrint (self, 
@@ -99,9 +133,9 @@ class RunStat:
 		self._formatPrint("     Max Order Loss", self.maxOrderLoss)
 		self._formatPrint("Max Business Profit", self.maxBusProfit)
 		self._formatPrint("Min Business Profit", self.minBusProfit)
-		self._formatPrint("         Max Profit", self.maxProfit)
-		self._formatPrint("         Min Profit", self.minProfit)
-		self._formatPrint("       Total Profit", self.profit)
+		self._formatPrint("         Max Profit", self.regress.maxProfit)
+		self._formatPrint("         Min Profit", self.regress.minProfit)
+		self._formatPrint("       Total Profit", self.regress.profit)
 		print "		* * * * * * * * * * * * * \n"
 	
 '''
@@ -241,9 +275,9 @@ class MarketRunStat(RunStat):
 		self._formatPrint("     Max Order Loss", self.maxOrderLoss)
 		self._formatPrint("Max Business Profit", self.maxBusProfit)
 		self._formatPrint("Min Business Profit", self.minBusProfit)
-		self._formatPrint("         Max Profit", self.maxProfit)
-		self._formatPrint("         Min Profit", self.minProfit)
-		self._formatPrint("       Total Profit", self.profit)
+		self._formatPrint("         Max Profit", self.regress.maxProfit)
+		self._formatPrint("         Min Profit", self.regress.minProfit)
+		self._formatPrint("       Total Profit", self.regress.profit)
 		#self._formatPrint("  Current Positions", self.curPoses)
 		print "\n	Trading Counters:"
 		self._formatPrint("       Open Numbers", self.tradeCounter.numOpen)
