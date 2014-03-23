@@ -258,8 +258,10 @@ class Turt1(turtle.Turtle):
 		pLastAddPrice = self.openShortPosition(self.data.getClose(date))
 		cutLossMode = False
 		pLimitByM10 = 0
-		time = self.moveToNextTick(dateSet)
-		
+		time = self.moveToNextTick(dateSet,
+				price = self.data.getClose(date),
+				direction = 'short')
+				
 		if self.workMode == 'atr':
 			minPosIntv = self.turtData.getAtr(date) / 2
 		else:
@@ -294,11 +296,17 @@ class Turt1(turtle.Turtle):
 				
 				if self.curPostion() == 0:
 					break
-				time = self.moveToNextTick(dateSet)
+				time = self.moveToNextTick(dateSet, 
+							price = self.data.getClose(time), 
+							direction = 'short'
+							)
 				continue
 			
 			if cutLossMode and price >= pLimitByM10:
-				time = self.moveToNextTick(dateSet)
+				time = self.moveToNextTick(dateSet, 
+							price = self.data.getClose(time), 
+							direction = 'short'
+							)
 				continue
 			
 			if self.stableToAddShortPosition(time, pLastAddPrice, price, minPosIntv):
@@ -310,8 +318,11 @@ class Turt1(turtle.Turtle):
 						cutLossMode = False
 						pLimitByM10 = 0
 				
-			time = self.moveToNextTick(dateSet)
-		
+			time = self.moveToNextTick(dateSet, 
+						price = self.data.getClose(time), 
+						direction = 'short'
+						)
+				
 		return time
 		
 	#做多
@@ -324,7 +335,9 @@ class Turt1(turtle.Turtle):
 		pLastAddPrice = self.openLongPosition(self.data.getClose(date))
 		cutLossMode = False
 		pLimitByM10 = 0
-		time = self.moveToNextTick(dateSet)
+		time = self.moveToNextTick(dateSet,
+				price = self.data.getClose(date), 
+				direction = 'long')
 		
 		if self.workMode == 'atr':
 			minPosIntv = self.turtData.getAtr(date) / 2
@@ -360,11 +373,17 @@ class Turt1(turtle.Turtle):
 				
 				if self.curPostion() == 0:
 					break
-				time = self.moveToNextTick(dateSet)
+				time = self.moveToNextTick(dateSet, 
+							price = self.data.getClose(time), 
+							direction = 'long'
+							)
 				continue
 				
 			if cutLossMode and price <= pLimitByM10:
-				time = self.moveToNextTick(dateSet)
+				time = self.moveToNextTick(dateSet, 
+							price = self.data.getClose(time), 
+							direction = 'long'
+							)
 				continue
 				
 			if self.stableToAddLongPosition(time, pLastAddPrice, price, minPosIntv):
@@ -376,7 +395,10 @@ class Turt1(turtle.Turtle):
 						cutLossMode = False
 						pLimitByM10 = 0
 						
-			time = self.moveToNextTick(dateSet)
+			time = self.moveToNextTick(dateSet, 
+						price = self.data.getClose(time), 
+						direction = 'long'
+						)
 				
 		return time
 	
