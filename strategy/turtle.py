@@ -241,7 +241,10 @@ class Turtle(FUT.Futures):
 				else:
 					mode = None
 	
-				time = self.moveToNextTick(lcDateSet)
+				time = self.moveToNextTick(lcDateSet, 
+							price = self.data.getClose(time), 
+							direction = mode
+							)
 				
 			if mode is not None:
 				self.endRun(mode)
@@ -268,7 +271,11 @@ class Turtle(FUT.Futures):
 	
 	# Move to next tick (typically next day), and set acted if in emulation mode 
 	# noticing main thread actions have been taken for this tick.
-	def moveToNextTick (self, dateSet):
+	def moveToNextTick (self, 
+		dateSet,
+		**extra	#附加参数，仅用于统计数据
+		):
+		time = dateSet.curDate()
 		nextTick = dateSet.getSetNextDate()
 		'''
 		nextTick为None说明模拟已经结束，无论是Emulation或CTP模式，都不能直接设置acted
@@ -278,6 +285,11 @@ class Turtle(FUT.Futures):
 		'''
 		if self.emuRunCtrl is not None :
 			#在emulate或CTP模式。
+			
+			#doStatistics仅仅在交易日结束之后统计利润等数据，对moveToNextTick的工作流程
+			#没有任何影响，可以把它当作透明的
+			self.doStatistics(time, extra['price'], extra['direction'])
+			
 			if nextTick is not None:
 				#对历史数据的模拟未结束，设置acted标志等待主线程调度
 				self.emuRunCtrl.setActed()
