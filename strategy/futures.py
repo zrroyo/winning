@@ -313,3 +313,30 @@ class Futures(STRT.Strategy):
 		else:
 			print logs
 		
+	#数据统计，如，最高、低利润，回撤率等
+	def doStatistics (self, 
+		time,		#交易日
+		price,		#价格
+		direction,	#多空方向
+		):
+		if self.posMgr.numPositions() == 0:
+			#暂时只更新持仓统计
+			return
+			
+		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
+			profit = 0.0
+			numPoses = self.posMgr.numPositions()
+			while numPoses > 0:
+				pos = self.posMgr.getPositionByNum(numPoses)
+				if direction == 'long':
+					interval = price - pos.price
+				else:
+					interval = pos.price - price
+					
+				interval *= self.minPos
+				interval *= self.priceUnit
+				profit += interval
+				numPoses -= 1
+				
+			self.emuRunCtrl.marRunStat.updateMaxMinProfit(profit, time)
+				
