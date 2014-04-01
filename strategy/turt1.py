@@ -269,7 +269,7 @@ class Turt1(turtle.Turtle):
 		
 		while time is not None:
 			if self.emuRunCtrl is not None:
-				tickReady = self.emuRunCtrl.tickIsReady(time)
+				tickReady = self.emuRunCtrl.tickIsReady(time, self, direction = 'short')
 				if tickReady is 'False':
 					continue
 				
@@ -346,7 +346,7 @@ class Turt1(turtle.Turtle):
 			
 		while time is not None:
 			if self.emuRunCtrl is not None:
-				tickReady = self.emuRunCtrl.tickIsReady(time)
+				tickReady = self.emuRunCtrl.tickIsReady(time, self, direction = 'long')
 				if tickReady is 'False':
 					continue
 					
