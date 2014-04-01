@@ -44,7 +44,11 @@ class RunControl:
 		return
 	
 	# Judge if a tick is ready for a strategy to take actions.
-	def tickIsReady (self, timeTick):
+	def tickIsReady (self, 
+		timeTick,	#策略工作tick（交易日）
+		hookObj = None,	#需要辅助hook功能的对象，必须实现了tickBehindHook成员方法
+		**extra		#hook操作所需参数
+		):
 		self.lock.acquire()
 		#print timeTick, self.acted
 		if self.acted:
@@ -52,6 +56,12 @@ class RunControl:
 			self.tinyHaltLoop()
 			return 'False'
 		elif self.tickBehind(timeTick):
+			''''
+			注意：如果指定了hook对象，则需要为其调用hook操作来辅助其实现特定功能。
+			'''
+			if hookObj is not None:
+				hookObj.tickBehindHook(self.tick, **extra)
+				
 			self.acted = True
 			self.lock.release()
 			self.tinyHaltLoop()

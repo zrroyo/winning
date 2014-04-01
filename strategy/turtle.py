@@ -211,7 +211,7 @@ class Turtle(FUT.Futures):
 			
 			while time is not None:
 				if self.emuRunCtrl is not None:
-					tickReady = self.emuRunCtrl.tickIsReady(time)
+					tickReady = self.emuRunCtrl.tickIsReady(time, self, direction = 'long')
 					#print tickReady
 					if tickReady == 'False':
 						continue
@@ -285,12 +285,11 @@ class Turtle(FUT.Futures):
 		'''
 		if self.emuRunCtrl is not None :
 			#在emulate或CTP模式。
-			
-			#doStatistics仅仅在交易日结束之后统计利润等数据，对moveToNextTick的工作流程
-			#没有任何影响，可以把它当作透明的
-			self.doStatistics(time, extra['price'], extra['direction'])
-			
 			if nextTick is not None:
+				#doStatistics仅仅在交易日结束之后统计利润等数据，对moveToNextTick的工作流程
+				#没有任何影响，可以把它当作透明的
+				self.doStatistics(time, extra['price'], extra['direction'])
+					
 				#对历史数据的模拟未结束，设置acted标志等待主线程调度
 				self.emuRunCtrl.setActed()
 			elif self.ctpPos is not None:
@@ -327,6 +326,15 @@ class Turtle(FUT.Futures):
 				sleep(0.5)
 				
 		return nextTick
+		
+	#hook函数，专门用于当系统tick落后于当前策略tick时统计盈利数据
+	def tickBehindHook (self,
+		time,		#当前策略tick
+		**extra		#参数（字典）
+		):
+		if self.emuRunCtrl is not None :
+			#print extra
+			self.doStatistics(time, self.data.getClose(time), extra['direction'])
 		
 	#是否有剩余仓位可用
 	def positionAvailable (self):
