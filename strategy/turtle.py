@@ -334,7 +334,12 @@ class Turtle(FUT.Futures):
 		):
 		if self.emuRunCtrl is not None :
 			#print extra
-			self.doStatistics(time, self.data.getClose(time), extra['direction'])
+			try:
+				price = self.data.getClose(time)
+			except:
+				price = 0.0
+			
+			self.doStatistics(time, price, extra['direction'])
 		
 	#是否有剩余仓位可用
 	def positionAvailable (self):
