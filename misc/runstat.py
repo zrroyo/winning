@@ -14,14 +14,21 @@ from tradecounter import *
 	-- 只适用于单合约统计
 '''
 class RunStat:
-	def __init__ (self, name=None):
+	def __init__ (self, 
+		name=None,
+		numInstruments = 1,	#并行执行的合约数量
+		):
 		self.name = name	#合约
 		self.maxOrderWin = 0	#最大盈利单
 		self.maxOrderLoss = 0	#最大止损单
 		self.maxBusProfit = 0	#单次完整交易最高盈利
 		self.minBusProfit = 0	#单次完整交易最低盈利
 		self.tradeCounter = TradingCounter()	#交易数据记录接口
-		self.regress = ProfitRegress()	#利润及回撤
+		
+		#利润及回撤
+		self.regress = ProfitRegress(debug = False, 
+					numInstruments = numInstruments
+					)
 		return
 	
 	def __exit__ (self):
@@ -111,7 +118,10 @@ class MarketRunStat(RunStat):
 		maxAllowedPos,	#最大允许的仓位(单位)
 		mute=False	#是否输出统计信息
 		):
-		RunStat.__init__(self)
+		RunStat.__init__(self,
+				name=None,
+				numInstruments = 2,
+				)
 		self.curFutCode = None			#当前合约
 		self.maxAllowedPos = maxAllowedPos	#最大允许的持仓数(加仓次数)
 		self.curPoses = 0			#当前对整个市场的持仓数（加仓次数）
