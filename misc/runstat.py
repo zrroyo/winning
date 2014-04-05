@@ -87,6 +87,7 @@ class RunStat:
 		):
 		self.updateOrderMaxWin(profit)
 		self.updateOrderMaxLoss(profit)
+		self.updateMaxMinProfit(profit, None)
 		self.updateProfitByOrder(profit)
 		
 	#固定格式输出
@@ -188,7 +189,10 @@ class MarketRunStat(RunStat):
 		profit,	#利润
 		):
 		self.lock.acquire()
-		RunStat.update(self, profit)
+		#RunStat.update(self, profit)
+		self.updateOrderMaxWin(profit)
+		self.updateOrderMaxLoss(profit)
+		self.updateProfitByOrder(profit)
 		self.lock.release()
 	
 	#更新单次完整交易的利润

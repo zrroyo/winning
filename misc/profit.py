@@ -39,7 +39,7 @@ class ProfitRegress:
 		):
 		self.lock.acquire()
 		if self.countTimes != self.numInstruments - 1:
-			self.dynamicProfit = profit
+			self.dynamicProfit += profit
 			self.countTimes += 1
 			self.lock.release()
 			return
@@ -68,17 +68,4 @@ class ProfitRegress:
 		):
 		#更新当前利润
 		self.profit += profit
-			
-		self.dbg('Current profit %s, profit %s, Max profit %s' % 
-					(self.profit - profit, profit, self.maxProfit))
-		
-		#更新盈利最高点
-		if self.profit > self.maxProfit:
-			self.maxProfit = self.profit
-			self.dbg('Max profit %s' % self.maxProfit)
-			
-		#更新盈利最低点
-		if self.profit < self.minProfit:
-			self.minProfit = self.profit
-			self.dbg('Min profit %s' % self.minProfit)
 		
