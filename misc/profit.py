@@ -69,3 +69,51 @@ class ProfitRegress:
 		#更新当前利润
 		self.profit += profit
 		
+'''
+一次完整交易的利润及回撤类
+'''
+class BusinessProfitRegress:
+	def __init__ (self,
+		debug = False,	#调试模式
+		):
+		self.debug = debug
+		self.lock = thread.allocate_lock()	#保护锁，保护整个数据结构
+		self.busProfit = 0			#当前交易的利润
+		self.maxBusProfit = 0			#单次完整交易最高盈利
+		self.minBusProfit = 0			#单次完整交易最低盈利
+	
+	#打印调试信息
+	def dbg (self,
+		dbgInfo,	#debug信息
+		):
+		if self.debug:
+			print '	BusinessProfitRegress: %s' % dbgInfo
+	
+	#累积利润
+	def addProfit (self,
+		profit,	#利润
+		):
+		self.lock.acquire()
+		self.busProfit += profit
+		self.lock.release()
+	
+	#利润清零
+	def clearProfit (self):
+		self.lock.acquire()
+		self.busProfit = 0
+		self.lock.release()
+		
+	#得到当前利润
+	def getBusProfit (self):
+		return self.busProfit
+		
+	#更新最大／最小利润
+	def updateBusMaxMinProfit (self):
+		#更新单次完整交易最高盈利
+		if self.busProfit > self.maxBusProfit:
+			self.maxBusProfit = self.busProfit
+			
+		#更新单次完整交易最低盈利
+		if self.busProfit < self.minBusProfit:
+			self.minBusProfit = self.busProfit
+			
