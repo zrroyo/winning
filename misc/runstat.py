@@ -19,8 +19,6 @@ class RunStat:
 		numInstruments = 1,	#并行执行的合约数量
 		):
 		self.name = name	#合约
-		self.maxOrderWin = 0	#最大盈利单
-		self.maxOrderLoss = 0	#最大止损单
 		self.tradeCounter = TradingCounter()	#交易数据记录接口
 		
 		#利润及回撤
@@ -30,21 +28,9 @@ class RunStat:
 		
 		#初始化完整交易利润及回撤接口
 		self.busRegress = BusinessProfitRegress(debug = False)
-		
-	#更新最大盈利单
-	def updateOrderMaxWin (self, 
-		profit,	#利润
-		):
-		if profit > self.maxOrderWin:
-			self.maxOrderWin = profit
+		#
+		self.orderRegress = OrderRegress(debug = True)
 	
-	#更新最大止损单
-	def updateOrderMaxLoss (self, 
-		profit,	#利润
-		):
-		if profit < self.maxOrderLoss:
-			self.maxOrderLoss = profit
-			
 	#更新单次完整交易的利润
 	def updateBusinessProfit (self, 
 		profit,	#利润
@@ -78,12 +64,17 @@ class RunStat:
 		):
 		self.regress.updateMaxMinProfit(profit, time)
 		
+	#更新最大报单赢利和亏损
+	def updateOrderMaxWinLoss (self, 
+		profit,	#利润
+		):
+		self.orderRegress.updateOrderMaxWinLoss(profit)
+		
 	#更新所有
 	def update (self, 
 		profit,	#利润
 		):
-		self.updateOrderMaxWin(profit)
-		self.updateOrderMaxLoss(profit)
+		self.updateOrderMaxWinLoss(profit)
 		self.updateMaxMinProfit(profit, None)
 		self.updateProfitByOrder(profit)
 		
@@ -98,8 +89,8 @@ class RunStat:
 	def showStat (self):
 		print "\n		* * * * * * * * * * * * * "
 		print "		Show Run Time Statistics for [ %s ]:" % self.name
-		self._formatPrint("      Max Order Win", self.maxOrderWin)
-		self._formatPrint("     Max Order Loss", self.maxOrderLoss)
+		self._formatPrint("      Max Order Win", self.orderRegress.maxOrderWin)
+		self._formatPrint("     Max Order Loss", self.orderRegress.maxOrderLoss)
 		self._formatPrint("Max Business Profit", self.busRegress.maxBusProfit)
 		self._formatPrint("Min Business Profit", self.busRegress.minBusProfit)
 		self._formatPrint("         Max Profit", self.regress.maxProfit)
@@ -181,9 +172,7 @@ class MarketRunStat(RunStat):
 		profit,	#利润
 		):
 		self.lock.acquire()
-		#RunStat.update(self, profit)
-		self.updateOrderMaxWin(profit)
-		self.updateOrderMaxLoss(profit)
+		self.updateOrderMaxWinLoss(profit)
 		self.updateProfitByOrder(profit)
 		self.lock.release()
 	
@@ -234,8 +223,8 @@ class MarketRunStat(RunStat):
 		
 		print "\n	* * * * * * * * * * * * * "
 		print "	Market Run Time Statistics:"
-		self._formatPrint("      Max Order Win", self.maxOrderWin)
-		self._formatPrint("     Max Order Loss", self.maxOrderLoss)
+		self._formatPrint("      Max Order Win", self.orderRegress.maxOrderWin)
+		self._formatPrint("     Max Order Loss", self.orderRegress.maxOrderLoss)
 		self._formatPrint("Max Business Profit", self.busRegress.maxBusProfit)
 		self._formatPrint("Min Business Profit", self.busRegress.minBusProfit)
 		self._formatPrint("         Max Profit", self.regress.maxProfit)

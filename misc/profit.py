@@ -117,3 +117,36 @@ class BusinessProfitRegress:
 		if self.busProfit < self.minBusProfit:
 			self.minBusProfit = self.busProfit
 			
+'''
+报单利润及回撤类
+'''
+class OrderRegress:
+	def __init__ (self,
+		debug = False,	#调试模式
+		):
+		self.debug = debug
+		self.lock = thread.allocate_lock()	#保护锁，保护整个数据结构
+		self.maxOrderWin = 0			#最大盈利单
+		self.maxOrderLoss = 0			#最大止损单
+		
+	#打印调试信息
+	def dbg (self,
+		dbgInfo,	#debug信息
+		):
+		if self.debug:
+			print '	OrderRegress: %s' % dbgInfo
+			
+	#更新最大报单赢利和亏损
+	def updateOrderMaxWinLoss (self, 
+		profit,	#利润
+		):
+		self.lock.acquire()
+		
+		if profit > self.maxOrderWin:
+			self.maxOrderWin = profit
+			
+		if profit < self.maxOrderLoss:
+			self.maxOrderLoss = profit
+			
+		self.lock.release()
+		
