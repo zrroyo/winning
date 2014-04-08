@@ -32,16 +32,16 @@ class RunStat:
 		self.orderRegress = OrderRegress(debug = True)
 	
 	#更新单次完整交易的利润
-	def updateBusinessProfit (self, 
+	def updateBusinessMaxMinWin (self, 
 		profit,	#利润
 		):
 		#更新单次完整交易最高盈利
-		if profit > self.busRegress.maxBusProfit:
-			self.busRegress.maxBusProfit = profit
+		if profit > self.busRegress.maxBusinessWin:
+			self.busRegress.maxBusinessWin = profit
 			
 		#更新单次完整交易最低盈利
-		if profit <  self.busRegress.minBusProfit:
-			self.busRegress.minBusProfit = profit
+		if profit <  self.busRegress.minBusinessWin:
+			self.busRegress.minBusinessWin = profit
 			
 	#更新利润(以交易单为单位)
 	def updateProfitByOrder (self, 
@@ -91,8 +91,8 @@ class RunStat:
 		print "		Show Run Time Statistics for [ %s ]:" % self.name
 		self._formatPrint("      Max Order Win", self.orderRegress.maxOrderWin)
 		self._formatPrint("     Max Order Loss", self.orderRegress.maxOrderLoss)
-		self._formatPrint("Max Business Profit", self.busRegress.maxBusProfit)
-		self._formatPrint("Min Business Profit", self.busRegress.minBusProfit)
+		self._formatPrint("   Max Business Win", self.busRegress.maxBusinessWin)
+		self._formatPrint("   Min Business Win", self.busRegress.minBusinessWin)
 		self._formatPrint("         Max Profit", self.regress.maxProfit)
 		self._formatPrint("         Min Profit", self.regress.minProfit)
 		self._formatPrint("       Total Profit", self.regress.profit)
@@ -177,31 +177,31 @@ class MarketRunStat(RunStat):
 		self.lock.release()
 	
 	#更新单次完整交易的利润
-	def updateBusinessProfit (self, 
+	def updateBusinessMaxMinWin (self, 
 		profit,	#利润
 		):
 		self.lock.acquire()
 		if self.curPoses != 0:
-			self.busRegress.addProfit(profit)
+			self.busRegress.addBusWin(profit)
 			self.lock.release()
 			return
 		'''
 		当前持仓数为0表明一次完整交易结束，应进行统计。
 		'''
 		
-		self.busRegress.addProfit(profit)
-		self.busRegress.updateBusMaxMinProfit()
+		self.busRegress.addBusWin(profit)
+		self.busRegress.updateBusinessMaxMinWin()
 		
 		#更新交易数据记录
-		if self.busRegress.getBusProfit() > 0:
+		if self.busRegress.getBusWin() > 0:
 			self.tradeCounter.incNumBusWin()
-		elif self.busRegress.getBusProfit() < 0:
+		elif self.busRegress.getBusWin() < 0:
 			self.tradeCounter.incNumBusLoss()
 		else:
 			self.tradeCounter.incNumBusFlat()
 			
 		#单次交易完成，当前利润清0
-		self.busRegress.clearProfit()
+		self.busRegress.clearBusWin()
 		self.lock.release()
 			
 	#固定格式输出
@@ -225,8 +225,8 @@ class MarketRunStat(RunStat):
 		print "	Market Run Time Statistics:"
 		self._formatPrint("      Max Order Win", self.orderRegress.maxOrderWin)
 		self._formatPrint("     Max Order Loss", self.orderRegress.maxOrderLoss)
-		self._formatPrint("Max Business Profit", self.busRegress.maxBusProfit)
-		self._formatPrint("Min Business Profit", self.busRegress.minBusProfit)
+		self._formatPrint("   Max Business Win", self.busRegress.maxBusinessWin)
+		self._formatPrint("   Min Business Win", self.busRegress.minBusinessWin)
 		self._formatPrint("         Max Profit", self.regress.maxProfit)
 		self._formatPrint("         Min Profit", self.regress.minProfit)
 		self._formatPrint("       Total Profit", self.regress.profit)

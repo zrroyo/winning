@@ -170,10 +170,10 @@ class Futures(STRT.Strategy):
 			self.showProfit()
 			# If need do runtime statistics, update status.
 			if self.runStat is not None:
-				self.runStat.updateBusinessProfit(self.profit)
+				self.runStat.updateBusinessMaxMinWin(self.profit)
 			
 			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-				self.emuRunCtrl.marRunStat.updateBusinessProfit(self.profit)
+				self.emuRunCtrl.marRunStat.updateBusinessMaxMinWin(self.profit)
 				self.emuRunCtrl.marRunStat.showMarRunStat()
 		
 		return price
@@ -223,10 +223,10 @@ class Futures(STRT.Strategy):
 			self.showProfit()
 			# If need do runtime statistics, update status.
 			if self.runStat is not None:
-				self.runStat.updateBusinessProfit(self.profit)
+				self.runStat.updateBusinessMaxMinWin(self.profit)
 			
 			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-				self.emuRunCtrl.marRunStat.updateBusinessProfit(self.profit)
+				self.emuRunCtrl.marRunStat.updateBusinessMaxMinWin(self.profit)
 				self.emuRunCtrl.marRunStat.showMarRunStat()
 				
 		return price
