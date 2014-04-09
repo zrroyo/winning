@@ -118,14 +118,14 @@ class BusinessWin:
 			self.minBusinessWin = self.busWin
 			
 '''
-报单利润及回撤类
+报单赢利类
 '''
-class OrderRegress:
+class OrderWin:
 	def __init__ (self,
 		debug = False,	#调试模式
 		):
 		self.debug = debug
-		self.lock = thread.allocate_lock()	#保护锁，保护整个数据结构
+		self.lock = thread.allocate_lock()	#保护锁
 		self.maxOrderWin = 0			#最大盈利单
 		self.maxOrderLoss = 0			#最大止损单
 		
@@ -134,7 +134,7 @@ class OrderRegress:
 		dbgInfo,	#debug信息
 		):
 		if self.debug:
-			print '	OrderRegress: %s' % dbgInfo
+			print '	OrderWin: %s' % dbgInfo
 			
 	#更新最大报单赢利和亏损
 	def updateOrderMaxWinLoss (self, 
