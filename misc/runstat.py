@@ -28,8 +28,8 @@ class RunStat:
 		
 		#初始化交易赢利接口
 		self.busWin = BusinessWin(debug = False)
-		#
-		self.orderRegress = OrderRegress(debug = True)
+		#初始化报单赢利接口
+		self.orderWin = OrderWin(debug = True)
 	
 	#更新单次完整交易的利润
 	def updateBusinessMaxMinWin (self, 
@@ -68,7 +68,7 @@ class RunStat:
 	def updateOrderMaxWinLoss (self, 
 		profit,	#利润
 		):
-		self.orderRegress.updateOrderMaxWinLoss(profit)
+		self.orderWin.updateOrderMaxWinLoss(profit)
 		
 	#更新所有
 	def update (self, 
@@ -89,8 +89,8 @@ class RunStat:
 	def showStat (self):
 		print "\n		* * * * * * * * * * * * * "
 		print "		Show Run Time Statistics for [ %s ]:" % self.name
-		self._formatPrint("      Max Order Win", self.orderRegress.maxOrderWin)
-		self._formatPrint("     Max Order Loss", self.orderRegress.maxOrderLoss)
+		self._formatPrint("      Max Order Win", self.orderWin.maxOrderWin)
+		self._formatPrint("     Max Order Loss", self.orderWin.maxOrderLoss)
 		self._formatPrint("   Max Business Win", self.busWin.maxBusinessWin)
 		self._formatPrint("   Min Business Win", self.busWin.minBusinessWin)
 		self._formatPrint("         Max Profit", self.regress.maxProfit)
@@ -223,8 +223,8 @@ class MarketRunStat(RunStat):
 		
 		print "\n	* * * * * * * * * * * * * "
 		print "	Market Run Time Statistics:"
-		self._formatPrint("      Max Order Win", self.orderRegress.maxOrderWin)
-		self._formatPrint("     Max Order Loss", self.orderRegress.maxOrderLoss)
+		self._formatPrint("      Max Order Win", self.orderWin.maxOrderWin)
+		self._formatPrint("     Max Order Loss", self.orderWin.maxOrderLoss)
 		self._formatPrint("   Max Business Win", self.busWin.maxBusinessWin)
 		self._formatPrint("   Min Business Win", self.busWin.minBusinessWin)
 		self._formatPrint("         Max Profit", self.regress.maxProfit)
