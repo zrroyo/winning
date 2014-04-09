@@ -70,24 +70,24 @@ class ProfitRegress:
 		self.profit += profit
 		
 '''
-一次完整交易的利润及回撤类
+交易赢利类
 '''
-class BusinessProfitRegress:
+class BusinessWin:
 	def __init__ (self,
 		debug = False,	#调试模式
 		):
 		self.debug = debug
-		self.lock = thread.allocate_lock()	#保护锁，保护整个数据结构
-		self.busWin = 0				#交易赢利，仅用于统计最大最小赢利
-		self.maxBusinessWin = 0			#单次完整交易最高盈利
-		self.minBusinessWin = 0			#单次完整交易最低盈利
+		self.lock = thread.allocate_lock()	#保护锁
+		self.busWin = 0				#交易赢利
+		self.maxBusinessWin = 0			#最高盈利
+		self.minBusinessWin = 0			#最低盈利
 	
 	#打印调试信息
 	def dbg (self,
 		dbgInfo,	#debug信息
 		):
 		if self.debug:
-			print '	BusinessProfitRegress: %s' % dbgInfo
+			print '	BusinessWin: %s' % dbgInfo
 	
 	#累积利润
 	def addBusWin (self,
@@ -107,13 +107,13 @@ class BusinessProfitRegress:
 	def getBusWin (self):
 		return self.busWin
 		
-	#更新最大／最小利润
+	#更新最值
 	def updateBusinessMaxMinWin (self):
-		#更新单次完整交易最高盈利
+		#更新最高盈利
 		if self.busWin > self.maxBusinessWin:
 			self.maxBusinessWin = self.busWin
 			
-		#更新单次完整交易最低盈利
+		#更新最低盈利
 		if self.busWin < self.minBusinessWin:
 			self.minBusinessWin = self.busWin
 			
