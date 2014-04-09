@@ -43,11 +43,11 @@ class RunStat:
 		if profit <  self.busRegress.minBusinessWin:
 			self.busRegress.minBusinessWin = profit
 			
-	#更新利润(以交易单为单位)
-	def updateProfitByOrder (self, 
+	#累积报单利润
+	def addProfit (self, 
 		profit,	#利润
 		):
-		self.regress.updateProfitByOrder(profit)
+		self.regress.addProfit(profit)
 			
 		#更新交易数据记录
 		if profit > 0:
@@ -76,7 +76,7 @@ class RunStat:
 		):
 		self.updateOrderMaxWinLoss(profit)
 		self.updateMaxMinProfit(profit, None)
-		self.updateProfitByOrder(profit)
+		self.addProfit(profit)
 		
 	#固定格式输出
 	def _formatPrint (self, 
@@ -173,7 +173,7 @@ class MarketRunStat(RunStat):
 		):
 		self.lock.acquire()
 		self.updateOrderMaxWinLoss(profit)
-		self.updateProfitByOrder(profit)
+		self.addProfit(profit)
 		self.lock.release()
 	
 	#更新单次完整交易的利润

@@ -22,7 +22,7 @@ class ProfitRegress:
 		self.numInstruments = numInstruments
 		
 		self.lock = thread.allocate_lock()	#保护锁，保护整个数据结构
-		self.dynamicProfit = 0	#动态利润统计
+		self.tmpProfit = 0	#临时利润累积
 		self.countTimes = 0	#已统计的合约数
 		
 	#打印调试信息
@@ -39,16 +39,16 @@ class ProfitRegress:
 		):
 		self.lock.acquire()
 		if self.countTimes != self.numInstruments - 1:
-			self.dynamicProfit += profit
+			self.tmpProfit += profit
 			self.countTimes += 1
 			self.lock.release()
 			return
 		
-		self.dynamicProfit += profit
-		newProfit = self.profit + self.dynamicProfit
+		self.tmpProfit += profit
+		newProfit = self.profit + self.tmpProfit
 		self.dbg('Time %s, newProfit %s, profit1 %s, profit2 %s, profit %s' % 
-				(time, newProfit, self.dynamicProfit - profit, profit, self.profit))
-		self.dynamicProfit = 0
+				(time, newProfit, self.tmpProfit - profit, profit, self.profit))
+		self.tmpProfit = 0
 		self.countTimes = 0
 		self.lock.release()
 		
@@ -62,8 +62,8 @@ class ProfitRegress:
 			self.minProfit = newProfit
 			self.dbg('Time %s, Min profit %s' % (time, self.minProfit))
 			
-	#更新利润(以交易单为单位)
-	def updateProfitByOrder (self, 
+	#累积报单利润
+	def addProfit (self, 
 		profit,	#利润
 		):
 		#更新当前利润
