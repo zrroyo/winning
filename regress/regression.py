@@ -47,6 +47,23 @@ def possibleRegressionTests (database):
 	db.close()
 	return regSet
 
+#解析合约参数
+def parseAttributes (
+	attrs,	#参数字串，用'，'分隔
+	):
+	args = attrs.split(',')
+
+	maxAddPos = int(args[0])
+	minPos = int(args[1])
+	priceUnit= int(args[3])
+	
+	if args[2] is '':
+		minPosIntv = None
+	else:
+		minPosIntv= int(args[2])
+		
+	return maxAddPos,minPos,minPosIntv,priceUnit
+	
 # Core function to do regression for @test with @strategy.
 def doRegression (options, database, test, strategy):
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
@@ -61,25 +78,15 @@ def doRegression (options, database, test, strategy):
 		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 	elif strategy == 'turt1':
 		if options.extra:
-			args = options.extra.split(',')
-			if len(args) == 4:
-				maxAddPos = int(args[0])
-				minPos = int(args[1])
-				priceUnit= int(args[3])
-				
-				if args[2] is '':
-					minPosIntv = None
-				else:
-					minPosIntv= int(args[2])
-					
-				print args
-			else:
+			try:
+				maxAddPos,minPos,minPosIntv,priceUnit = parseAttributes(options.extra)
+			except:
 				print "\nExtra imformation contains incomplete or wrong attributes for Turt strategy.\n"
 				exit()
 			
 		import strategy.turt1 as turt1	
 		runStat = RunStat(test)
-		strategy = turt1.Turt1(test, test, tradeRec, database, runStat)
+		strategy = turt1.Turt1(test, test, 'dummy', database, runStat)
 		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 	else:
 		print "\nUnknown strategy '%s'.\n" % options.strategy
