@@ -66,17 +66,7 @@ def parseAttributes (
 	
 # Core function to do regression for @test with @strategy.
 def doRegression (options, database, test, strategy):
-	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
-	maxAddPos = 3
-	minPos = 1
-	minPosIntv=40
-	priceUnit=10
-	
-	if strategy == 'turtle':
-		import strategy.turtle as turtle
-		strategy = turtle.Turtle(test, test, tradeRec, database)
-		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
-	elif strategy == 'turt1':
+	if strategy == 'turt1':
 		if options.extra:
 			try:
 				maxAddPos,minPos,minPosIntv,priceUnit = parseAttributes(options.extra)
