@@ -83,6 +83,20 @@ def doRegression (options, database, test, strategy):
 		runStat = RunStat(test)
 		strategy = Turt1(test, test, 'dummy', database, runStat)
 		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
+	
+	elif strategy == 'devstr':
+		if options.extra:
+			try:
+				maxAddPos,minPos,minPosIntv,priceUnit = parseAttributes(options.extra)
+			except:
+				debug.error("Extra imformation contains incomplete or wrong attributes for devstr strategy.")
+				exit()
+			
+		from strategy.devstr import DevStr
+		runStat = RunStat(test)
+		strategy = DevStr(test, test, 'dummy', database, runStat)
+		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
+		
 	else:
 		debug.error("Unknown strategy '%s'." % options.strategy)
 		exit()
