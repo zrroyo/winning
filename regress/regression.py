@@ -11,10 +11,23 @@ import string
 import db.mysqldb as sql
 import tick
 import thread
-from misc.runstat import RunStat
-from misc.runctrl import RunControl, RunCtrlSet
-from regress.emulate import CommonAttrs, emulationThreadStart, Emulate
-from misc.futcom import futcodeSetToDataTables, futcodeToDataTable, filtering
+from misc.runstat import *
+from misc.runctrl import *
+from regress.emulate import *
+from misc.futcom import *
+from misc.debug import *
+
+debug = Debug(False)    #默认关闭debug信息
+
+#打印错误
+def error (errInfo):
+        errStr = 'Regression: %s' % (errInfo)
+        debug.pr_err(errStr)
+
+#打印debug信息
+def dbg (dbgInfo):
+        dbgMsg = 'Regression: %s' % (dbgInfo)
+        debug.pr_debug(dbgMsg)
 
 # List all possible regression tests in database.
 def listFutureTables (database, filter):
@@ -62,6 +75,8 @@ def parseAttributes (
 	else:
 		minPosIntv= int(args[2])
 		
+	dbg('Parsed Atrributes: maxAddPos %s, minPos %s, minPosIntv %s, priceUnit %s' % 
+					(maxAddPos,minPos,minPosIntv,priceUnit))
 	return maxAddPos,minPos,minPosIntv,priceUnit
 	
 # Core function to do regression for @test with @strategy.
@@ -71,15 +86,15 @@ def doRegression (options, database, test, strategy):
 			try:
 				maxAddPos,minPos,minPosIntv,priceUnit = parseAttributes(options.extra)
 			except:
-				print "\nExtra imformation contains incomplete or wrong attributes for Turt strategy.\n"
+				error("Extra imformation contains incomplete or wrong attributes for Turt1 strategy.")
 				exit()
 			
-		import strategy.turt1 as turt1	
+		from strategy.turt1 import Turt1
 		runStat = RunStat(test)
-		strategy = turt1.Turt1(test, test, 'dummy', database, runStat)
+		strategy = Turt1(test, test, 'dummy', database, runStat)
 		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 	else:
-		print "\nUnknown strategy '%s'.\n" % options.strategy
+		error("Unknown strategy '%s'." % options.strategy)
 		exit()
 	
 	# Run regression test.
@@ -106,7 +121,7 @@ def doAllRegressions (options, database):
 # Do assistant provided by strategies.
 def strategyAssistant (options, database):
 	if options.extra is None or options.tables is None:
-		print "\nPlease specify extra information by '-e' and tables '-t'...\n"
+		error("Please specify extra information by '-e' and tables '-t'...")
 		exit()
 			
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
@@ -114,13 +129,13 @@ def strategyAssistant (options, database):
 	strategy = options.strategy
 	
 	if strategy == 'turtle':
-		import strategy.turtle as turtle
-		strategy = turtle.Turtle(table, table, tradeRec, database)
+		from strategy.turtle import Turtle
+		strategy = Turtle(table, table, tradeRec, database)
 	elif strategy == 'turt1':
-		import strategy.turt1 as turt1	
-		strategy = turt1.Turt1(table, table, tradeRec, database)
+		from strategy.turt1 import Turt1
+		strategy = Turt1(table, table, tradeRec, database)
 	else:
-		print "\nUnknown strategy '%s' to do assistant.\n" % strategy
+		error("Unknown strategy '%s' to do assistant." % strategy)
 		exit()
 		
 	strategy.assistant(options.extra)
@@ -130,7 +145,7 @@ def doEmulation(options, database):
 	# Check extra info is filled.
 	extra = options.extra.split(',')
 	if options.extra is None or len(extra) != 7:
-		print "\nPlease specify extra information by '-e' with format like 'maxAddPos,minPos,minPosIntv,priceUnit,maxAllowedPos,startTick1,startTick2'\n"
+		error("\nPlease specify extra information by '-e' with format like 'maxAddPos,minPos,minPosIntv,priceUnit,maxAllowedPos,startTick1,startTick2'\n")
 		exit()
 		
 	print extra
@@ -188,7 +203,7 @@ def doEmulation(options, database):
 # Regression subsystem option handler transfering options to actions.
 def regressionOptionsHandler (options, args):
 	if options.database is None:
-		print "\nPlease specify database using '-b'.\n"
+		error("Please specify database using '-b'.")
 		return
 	
 	database = options.database
@@ -198,7 +213,7 @@ def regressionOptionsHandler (options, args):
 		exit()
 
 	if options.strategy is None:
-		print "\nPlease specify a strategy to do regression using '-s'.\n"
+		error("Please specify a strategy to do regression using '-s'.")
 		return
 	
 	if options.mode == 'assis':
