@@ -318,8 +318,9 @@ class Futures(STRT.Strategy):
 		time,		#交易日
 		price,		#价格
 		direction,	#多空方向
+		action,		#是统计RunStat还是MarketRunStat
 		):
-		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
+		if self.emuRunCtrl and self.emuRunCtrl.marRunStat or self.runStat is not None:
 			profit = 0.0
 			numPoses = self.posMgr.numPositions()
 			while numPoses > 0:
@@ -334,5 +335,8 @@ class Futures(STRT.Strategy):
 				profit += interval
 				numPoses -= 1
 				
-			self.emuRunCtrl.marRunStat.updateMaxMinProfit(profit, time)
-				
+			if action == 'MarketRunStat':
+				self.emuRunCtrl.marRunStat.updateMaxMinProfit(profit, time)
+			elif action == 'RunStat':
+				self.runStat.updateMaxMinProfit(profit, time)
+		
