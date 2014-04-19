@@ -221,7 +221,8 @@ class Turtle(FUT.Futures):
 				else:
 					days += 1
 					if days <= 10:
-						time = self.moveToNextTick(lcDateSet)
+						#这里的price和direction均无实质意义，设置仅为了避开前十个交易日。
+						time = self.moveToNextTick(lcDateSet, price = 0, direction = 'long')
 						continue
 				
 				price = self.data.getClose(time)
