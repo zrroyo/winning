@@ -32,7 +32,7 @@ class Turt1(Turtle):
 			else:
 				minPosIntv = self.minPosIntv
 			
-			self.log("%s Hit Short Signal: Close %s, Lowest %s, minPosIntv %d" % (date, price, self.lowestBeforeDate(date, 20), minPosIntv))
+			self.log("%s Hit Short Signal: Close %s, Lowest %s, minPosIntv %d" % (date, price, self.data.lowestBeforeDate(date, 20), minPosIntv))
 			return True
 			
 		return False
@@ -47,7 +47,7 @@ class Turt1(Turtle):
 			else:
 				minPosIntv = self.minPosIntv
 				
-			self.log("%s Hit Long Signal: Close %s, Highest %s, minPosIntv %d" % (date, price, self.highestBeforeDate(date, 20), minPosIntv))
+			self.log("%s Hit Long Signal: Close %s, Highest %s, minPosIntv %d" % (date, price, self.data.highestBeforeDate(date, 20), minPosIntv))
 			return True
 			
 		return False
@@ -62,7 +62,7 @@ class Turt1(Turtle):
 		对于非CTP模式或CTP模式的拟合阶段，数据均来源于本地，都是稳定的。
 		'''
 		if self.ctpPosOn == False:
-			if price > self.highestBeforeDate(time, days):
+			if price > self.data.highestBeforeDate(time, days):
 				return True
 			else:
 				return False
@@ -71,7 +71,7 @@ class Turt1(Turtle):
 		在实盘阶段，如果连续指定次价格均为指定天数内最高价，则判定为稳定并返回真，否则为假。
 		'''
 		count = 0
-		while price > self.highestBeforeDate(time, days):
+		while price > self.data.highestBeforeDate(time, days):
 			self.log("Matching stable highest in past %d days, price %d, count %d" % (days, price, count))
 			if count < self.stableTriggerCount:
 				sleep(1)
@@ -93,7 +93,7 @@ class Turt1(Turtle):
 		对于非CTP模式或CTP模式的拟合阶段，数据均来源于本地，都是稳定的。
 		'''
 		if self.ctpPosOn == False:
-			if price < self.lowestBeforeDate(time, days):
+			if price < self.data.lowestBeforeDate(time, days):
 				return True
 			else:
 				return False
@@ -102,7 +102,7 @@ class Turt1(Turtle):
 		在实盘阶段，如果连续指定次价格均为指定天数内最低价，则判定为稳定并返回真，否则为假。
 		'''
 		count = 0
-		while price < self.lowestBeforeDate(time, days):
+		while price < self.data.lowestBeforeDate(time, days):
 			self.log("Matching stable lowest in past %d days, price %d, count %d" % (days, price, count))
 			if count < self.stableTriggerCount:
 				sleep(1)
@@ -276,13 +276,13 @@ class Turt1(Turtle):
 			
 			if self.stableHighestInPastDays(price, time, 10):
 				price = self.closeAllPostion(price, 'short')
-				self.log("	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.highestBeforeDate(time, 10)))
+				self.log("	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.data.highestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
 				
 			if not (cutLossMode or self.curPostion() == 1) and self.stableHigherThanM10(price, time):
 				cutLossMode = True
-				pLimitByM10 = self.lowestBeforeDate(time, 5)
+				pLimitByM10 = self.data.lowestBeforeDate(time, 5)
 				
 				mult = self.curPostion()*2/3
 				if mult == 0:
@@ -353,13 +353,13 @@ class Turt1(Turtle):
 			
 			if self.stableLowestInPastDays(price, time, 10):
 				price = self.closeAllPostion(price, 'long')
-				self.log("	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.lowestBeforeDate(time, 10)))
+				self.log("	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.data.lowestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				break
 				
 			if  not (cutLossMode or self.curPostion() == 1) and self.stableLowerThanM10(price, time):
 				cutLossMode = True
-				pLimitByM10 = self.highestBeforeDate(time, 5)
+				pLimitByM10 = self.data.highestBeforeDate(time, 5)
 					
 				mult = self.curPostion()*2/3
 				if mult == 0:

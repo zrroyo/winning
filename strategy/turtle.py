@@ -219,24 +219,6 @@ class Turtle(Futures):
 				self.endRun(mode)
 		except:
 			self.log('Exception on trading! Please check connection if working in CTP.')
-			#self.log('交易执行异常，请检查远端服务器链接')
-			return
-	
-	# Get the lowest value for a field within recent $days excluding $date.
-	def lowestBeforeDate (self, date, days, field='Close'):
-		return self.data.lowestBeforeDate(date, days, field)
-		
-	# Get the highest value for a field within recent $days excluding $date.
-	def highestBeforeDate (self, date, days, field='Close'):
-		return self.data.highestBeforeDate(date, days, field)
-	
-	# Return the lowest value in $days up to $date (including $date).
-	def lowestUpToDate (self, date, days, field='Close'):
-		return self.data.lowestUpToDate(date, days, field)
-	
-	# Return the highest value in $days up to $date (including $date).
-	def highestUpToDate (self, date, days, field='Close'):
-		return self.data.highestUpToDate(date, days, field)
 	
 	# Move to next tick (typically next day), and set acted if in emulation mode 
 	# noticing main thread actions have been taken for this tick.
