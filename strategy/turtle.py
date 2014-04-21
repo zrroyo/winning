@@ -2,16 +2,16 @@
 
 import sys
 sys.path.append("..")
-from time import sleep, strptime
-import trade
-import date as DATE
-import db.mysqldb as sql
-import futures as FUT
+
+from time import *
+from date import *
+from db.mysqldb import *
+from futures import *
 
 
 class TurtData:
 	def __init__ (self, database, table):
-		self.db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
+		self.db = MYSQL("localhost", 'win', 'winfwinf', database)
 		self.table = table
 		self.db.connect()
 		return
@@ -54,20 +54,18 @@ class TurtData:
 
 		return res[0]
 		
-class Turtle(FUT.Futures):
-	def __init__ (self, futName, dataTable, tradeTable, database='futures', runStat=None):
-		FUT.Futures.__init__(self, futName, dataTable, database, runStat)
+class Turtle(Futures):
+	def __init__ (self, 
+		futName, 
+		dataTable, 
+		tradeTable, 
+		database='futures', 
+		runStat=None,
+		):
+		Futures.__init__(self, futName, dataTable, database, runStat)
 		self.tradeTable = tradeTable
-		#self.tradeRec = trade.Trade(database, tradeTable)
 		self.workMode = None
 		self.turtData = None
-		
-		#print "Turtle initialized!"
-		return
-	
-	def __exit__ (self):
-		FUT.Futures.__exit__(self)
-		return
 	
 	# Below are helper functions used to update Tr and Atr, and only used locally.
 	def __updateTr (self, table, time, ltr):
@@ -81,7 +79,7 @@ class Turtle(FUT.Futures):
 		return turtDat.updateAtr(time, atr)
 	
 	def __updateAtrFromTo (self, table, tFrom, tTo, atr):
-		lcDateSet = DATE.Date(self.database, table)
+		lcDateSet = Date(self.database, table)
 		time = tFrom	
 		lcDateSet.setCurDate(tFrom)
 		
@@ -91,10 +89,10 @@ class Turtle(FUT.Futures):
 			
 		self.__updateAtr(table, tTo, atr)
 	
-	#def updateAtrFromTo (self, table, tFrom, tTo, atr):
-		#return self.__updateAtrFromTo (table, tFrom, tTo, atr)
-	
-	def tr (self, time):
+	#计算tr
+	def tr (self, 
+		time,	#交易时间
+		):
 		t = '%s' % (time)
 		if self.dateSet.isFirstDate(t):
 			#print self.data.getHighest(t), self.data.getLowest(t)
@@ -110,13 +108,14 @@ class Turtle(FUT.Futures):
 
 		return ltr
 		
+	#计算atr
 	def atr (self):
 		table = self.dataTable
 	
 		i = 0
 		atr = 0
 		prevAtr = 0
-		lcDateSet = DATE.Date(self.database, table)
+		lcDateSet = Date(self.database, table)
 		time = lcDateSet.firstDate()
 		firstDate = time
 		
@@ -142,12 +141,8 @@ class Turtle(FUT.Futures):
 			#print 'atr', atr
 			prevAtr = atr
 			time= lcDateSet.getSetNextDate()
-	
-		return
-	
-	def query (self):
-		return
-			
+		
+	#检查属性
 	def checkAttrs (self):
 		if self.maxAddPos is None:
 			return False
@@ -166,28 +161,45 @@ class Turtle(FUT.Futures):
 		
 		return True
 	
-	def doShort (self, dateSet, date):
+	#做空
+	def doShort (self, 
+		dateSet,	#时间集
+		date,		#开始日期
+		):
 		return
 		
-	def doLong (self, dateSet, date):
+	#做多
+	def doLong (self, 
+		dateSet,	#时间集
+		date,		#开始日期
+		):
 		return
 	
-	def hitShortSignal (self, date, price):
+	#命中做空信号
+	def hitShortSignal (self, 
+		dateSet,	#时间集
+		date,		#开始日期
+		):
 		return
 		
-	def hitLongSignal (self, date, price):
+	#命中做多信号
+	def hitLongSignal (self, 
+		dateSet,	#时间集
+		date,		#开始日期
+		):
 		return
 	
-	# End of a test run. Close all opened positions before stop test.
-	def endRun (self, mode):
+	#执行结束
+	def endRun (self, 
+		mode,	#结束时的趋势类型，'long'或'short'
+		):
 		if self.curPostion():
 			time = self.dateSet.lastDate()
 			price = self.data.getClose(time)
 			price = self.closeAllPostion(price, mode)
 			self.log("	[%s] [%s] Clear all! close %s" % (mode, time, price))
-			
-		return
 		
+	#执行
 	def run (self):
 		if self.checkAttrs() is False:
 			print """
@@ -201,7 +213,7 @@ class Turtle(FUT.Futures):
 		else:
 			self.log('\n\n	<<<<<<<<<<< Run %s >>>>>>>>>>>	\n\n' % self.futName)
 		
-		lcDateSet = DATE.Date(self.database, self.dataTable)
+		lcDateSet = Date(self.database, self.dataTable)
 		#lcDateSet = self.dateSet
 		time = lcDateSet.firstDate()
 		

@@ -3,11 +3,11 @@
 import sys
 sys.path.append("..")
 
-import strategy as STRT
-from dataMgr.data import Data, CtpData
-from date import Date
-from ctp.autopos import CtpAutoPosition
-from misc.posmgr import PositionMananger
+from strategy import *
+from dataMgr.data import *
+from date import *
+from ctp.autopos import *
+from misc.posmgr import *
 
 #
 # Futures strategy super class which defines the most common methods 
@@ -16,7 +16,7 @@ from misc.posmgr import PositionMananger
 # a certain strategy.
 #
 
-class Futures(STRT.Strategy):
+class Futures(Strategy):
 	def __init__ (self, 
 		futName, 		#合约代号
 		dataTable, 		#数据表名
@@ -48,11 +48,6 @@ class Futures(STRT.Strategy):
 		self.logPainterLine = 1	#该合约在CTP日志管理所分配到的描绘行
 		self.paintLogOn = False	#向终端窗口显示log
 		
-		return
-	
-	def __exit__ (self):
-		return
-	
 	# The core method to run the whole test or business. Each strategy 
 	# _MUST_ inherit this method and define your own one.
 	def run (self):
@@ -90,7 +85,9 @@ class Futures(STRT.Strategy):
 		self.profit = 0
 	
 	#开空
-	def openShortPosition (self, price):
+	def openShortPosition (self, 
+		price,	#开仓价格
+		):
 		if self.curPostion() >= self.maxAddPos:
 			return None
 		
@@ -108,7 +105,9 @@ class Futures(STRT.Strategy):
 		return price
 		
 	#开多
-	def openLongPosition (self, price):
+	def openLongPosition (self, 
+		price,	#开仓价格
+		):
 		if self.curPostion() >= self.maxAddPos:
 			return None
 		
@@ -254,7 +253,9 @@ class Futures(STRT.Strategy):
 			return self.closeLongPosition(price, poses)
 			
 	# Export any assistant/helper information to users here.
-	def assistant (self, extra):
+	def assistant (self, 
+		extra,	#附加参数
+		):
 		print '\nNo assistant found!\n'
 		return
 	
@@ -262,7 +263,9 @@ class Futures(STRT.Strategy):
 	# thread and needs to update typically run() method (or other methods, such 
 	# as, doShort, doLong, related to tick) to receive ticks from main thread 
 	# (emulate.py module) and then take all operations proposed in one tick.
-	def enableEmulate (self, runCtrl):
+	def enableEmulate (self, 
+		runCtrl,	#运行控制单元
+		):
 		self.emuRunCtrl = runCtrl
 	
 	#打开CTP模式
@@ -289,11 +292,16 @@ class Futures(STRT.Strategy):
 		self.logPainterLine = logPainterLine
 		
 	#开启日志记录.
-	def enableStoreLogs(self, logMgr):
+	def enableStoreLogs(self, 
+		logMgr,	#日志管理接口
+		):
 		self.logMgr = logMgr
 		
 	#日志（输出）统一接口
-	def log (self, logMsg, *args):
+	def log (self, 
+		logMsg,	#日志消息
+		*args	#参数
+		):
 		logs = logMsg % (args)
 		if self.emuRunCtrl:
 			logs = '<%s> | %s' % (self.futName, logs)
@@ -318,7 +326,7 @@ class Futures(STRT.Strategy):
 		time,		#交易日
 		price,		#价格
 		direction,	#多空方向
-		action,		#是统计RunStat还是MarketRunStat
+		action,		#是统计'RunStat'还是'MarketRunStat'
 		):
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat or self.runStat is not None:
 			profit = 0.0
