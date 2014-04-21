@@ -3,26 +3,24 @@
 import sys
 sys.path.append("..")
 
-import date as DATE
-import turtle
-#import futcom
-import db.mysqldb as sql
+from date import *
+from turtle import *
+from db.mysqldb import *
 from time import sleep
 
-class Turt1(turtle.Turtle):
+class Turt1(Turtle):
 	
 	stableTriggerCount = 3	#可判断为稳定的连续触发次数
 	
-	def __init__ (self, futName, dataTable, tradeTable, database='futures', runStat=None):
+	def __init__ (self, 
+		futName, 
+		dataTable, 
+		tradeTable, 
+		database='futures', 
+		runStat=None,
+		):
 		# Inherit all public methods and attributes from Turtle Class.
-		turtle.Turtle.__init__(self, futName, dataTable, tradeTable, database, runStat)
-		#self.test = turtle.Turtle.table
-		#print self.dataTable, self.tradeTable, self.database
-		return
-	
-	def __exit__ (self):
-		turtle.Turtle.__exit__(self)
-		return
+		Turtle.__init__(self, futName, dataTable, tradeTable, database, runStat)
 		
 	def hitShortSignal (self, 
 		date,	#交易日
@@ -414,7 +412,7 @@ class Turt1(turtle.Turtle):
 		date = extra[0]
 		price = int(extra[1])
 		
-		db = sql.MYSQL("localhost", 'win', 'winfwinf', self.database)
+		db = MYSQL("localhost", 'win', 'winfwinf', self.database)
 		db.connect()
 		
 		if db.ifRecordExist(table, 'Time', date):
@@ -441,22 +439,6 @@ class Turt1(turtle.Turtle):
 		db.close()
 		
 	def assistant (self, extra):
-		#extra = extra.split(',')
-		#if len(extra) < 3:
-			#print "\nTurt1 assistant requires extra imformation specified by '-e' with format 'table,date,price'.\n"
-			#return
-			
-		#table = futcom.futcodeToDataTable(extra[0])
-		#date = extra[1]
-		#price = int(extra[2])
-		
-		#if self.hitShortSignal(date, price):
-			#print "\n	Turt1: Hit [Short] signal!.\n"
-		#elif self.hitLongSignal(date, price):
-			#print "\n	Turt1: Hit [Long] signal!.\n"
-		#else:
-			#print "\n	Turt1: No condition matched. Do nothing\n"
-			
 		self._simulation(extra)
 			
 	
