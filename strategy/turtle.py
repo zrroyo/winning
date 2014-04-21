@@ -7,53 +7,9 @@ from time import *
 from date import *
 from db.mysqldb import *
 from futures import *
+from turtdata import *
 
-
-class TurtData:
-	def __init__ (self, database, table):
-		self.db = MYSQL("localhost", 'win', 'winfwinf', database)
-		self.table = table
-		self.db.connect()
-		return
-		
-	def __exit__ (self):
-		self.db.close()
-		return
-		
-	def updateTr (self, time, ltr):
-		cond = 'Time=\'%s\'' % (time)
-		value = 'Tr=%s' % (ltr)
-		#print cond, value
-		self.db.update(self.table, cond, value)
-		return
-	
-	def updateAtr (self, time, atr):
-		cond = 'Time=\'%s\'' %(time)
-		value = 'Atr=%s' % (atr)
-		#print cond, value
-		self.db.update(self.table, cond, value)
-		return
-		
-	# Check whether 'Atr' field in data table are all calculated.
-	def checkAtr (self):
-		cond = 'Atr is NULL'
-		
-		res = self.db.search (self.table, cond)
-		if res > 0:
-			return False
-		else:
-			return True
-		
-	# Get the 'Atr' filed for a record specified by @time
-	def getAtr (self, time):
-		cond = 'Time=\'%s\'' % (time)
-		
-		self.db.search (self.table, cond, 'Atr')
-		res = self.db.fetch(0)
-		#print res
-
-		return res[0]
-		
+#海龟策略类
 class Turtle(Futures):
 	def __init__ (self, 
 		futName, 
