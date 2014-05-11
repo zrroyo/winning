@@ -17,17 +17,7 @@ from regress.emulate import *
 from misc.futcom import *
 from misc.debug import *
 
-debug = Debug(False)    #默认关闭debug信息
-
-#打印错误
-def error (errInfo):
-        errStr = 'Regression: %s' % (errInfo)
-        debug.pr_err(errStr)
-
-#打印debug信息
-def dbg (dbgInfo):
-        dbgMsg = 'Regression: %s' % (dbgInfo)
-        debug.pr_debug(dbgMsg)
+debug = Debug('Regression', False)    #默认关闭debug信息
 
 # List all possible regression tests in database.
 def listFutureTables (database, filter):
@@ -75,7 +65,7 @@ def parseAttributes (
 	else:
 		minPosIntv= int(args[2])
 		
-	dbg('Parsed Atrributes: maxAddPos %s, minPos %s, minPosIntv %s, priceUnit %s' % 
+	debug.dbg('Parsed Atrributes: maxAddPos %s, minPos %s, minPosIntv %s, priceUnit %s' % 
 					(maxAddPos,minPos,minPosIntv,priceUnit))
 	return maxAddPos,minPos,minPosIntv,priceUnit
 	
@@ -86,7 +76,7 @@ def doRegression (options, database, test, strategy):
 			try:
 				maxAddPos,minPos,minPosIntv,priceUnit = parseAttributes(options.extra)
 			except:
-				error("Extra imformation contains incomplete or wrong attributes for Turt1 strategy.")
+				debug.error("Extra imformation contains incomplete or wrong attributes for Turt1 strategy.")
 				exit()
 			
 		from strategy.turt1 import Turt1
@@ -94,7 +84,7 @@ def doRegression (options, database, test, strategy):
 		strategy = Turt1(test, test, 'dummy', database, runStat)
 		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 	else:
-		error("Unknown strategy '%s'." % options.strategy)
+		debug.error("Unknown strategy '%s'." % options.strategy)
 		exit()
 	
 	# Run regression test.
@@ -121,7 +111,7 @@ def doAllRegressions (options, database):
 # Do assistant provided by strategies.
 def strategyAssistant (options, database):
 	if options.extra is None or options.tables is None:
-		error("Please specify extra information by '-e' and tables '-t'...")
+		debug.error("Please specify extra information by '-e' and tables '-t'...")
 		exit()
 			
 	tradeRec = 'dummy'	# Currently, does not support Trade Recording.
@@ -135,7 +125,7 @@ def strategyAssistant (options, database):
 		from strategy.turt1 import Turt1
 		strategy = Turt1(table, table, tradeRec, database)
 	else:
-		error("Unknown strategy '%s' to do assistant." % strategy)
+		debug.error("Unknown strategy '%s' to do assistant." % strategy)
 		exit()
 		
 	strategy.assistant(options.extra)
@@ -145,7 +135,7 @@ def doEmulation(options, database):
 	# Check extra info is filled.
 	extra = options.extra.split(',')
 	if options.extra is None or len(extra) != 7:
-		error("\nPlease specify extra information by '-e' with format like 'maxAddPos,minPos,minPosIntv,priceUnit,maxAllowedPos,startTick1,startTick2'\n")
+		debug.error("\nPlease specify extra information by '-e' with format like 'maxAddPos,minPos,minPosIntv,priceUnit,maxAllowedPos,startTick1,startTick2'\n")
 		exit()
 		
 	print extra
@@ -203,7 +193,7 @@ def doEmulation(options, database):
 # Regression subsystem option handler transfering options to actions.
 def regressionOptionsHandler (options, args):
 	if options.database is None:
-		error("Please specify database using '-b'.")
+		debug.error("Please specify database using '-b'.")
 		return
 	
 	database = options.database
@@ -213,7 +203,7 @@ def regressionOptionsHandler (options, args):
 		exit()
 
 	if options.strategy is None:
-		error("Please specify a strategy to do regression using '-s'.")
+		debug.error("Please specify a strategy to do regression using '-s'.")
 		return
 	
 	if options.mode == 'assis':

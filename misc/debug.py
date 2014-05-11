@@ -3,7 +3,6 @@
 
 '''
 Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
-        Wu Zhangjin <wuzhangjin@gmail.com>
 Start: 2014年 03月 19日 星期三 10:55:06 CST
 
 This program is provided under the Gnu General Public License (GPL)
@@ -12,8 +11,8 @@ version 2 ONLY.
 
 import sys
 
-#Debug类
-class Debug:
+#原生Debug类
+class RawDebug:
 	def __init__ (self,
 		verbose,	#是否显示debug信息
 		):
@@ -36,14 +35,41 @@ class Debug:
 		if self.verbose:
 			print "DBG: %s" % str
 		
+#Debug类
+class Debug:
+	def __init__ (self,
+		prompt,			#打印提示
+		verbose = False,	#是否显示debug信息
+		):
+		self.prompt = prompt
+		self.debug = RawDebug(verbose)
+		
+	#打印错误
+	def error (self, 
+		errInfo,	#错误信息
+		):
+		errStr = '%s: %s' % (self.prompt, errInfo)
+		self.debug.pr_err(errStr)
+	
+	#打印debug信息
+	def dbg (self, 
+		dbgInfo,	#调试信息
+		):
+		dbgMsg = '%s: %s' % (self.prompt, dbgInfo)
+		self.debug.pr_debug(dbgMsg)
+		
 ##测试		
 #def doTest ():
-	#dbg = Debug(1)
+	#dbg = RawDebug(1)
 	#dbg.pr_err('Hello world!')
 	#dbg.pr_info('Hello world!')
 	#dbg.pr_log('Hello world!')
 	#dbg.pr_raw('Hello world!')
 	#dbg.pr_debug('Hello world!')
-			
+	
+	#dbg = Debug('test', 1)
+	#dbg.error('Test debug error.')
+	#dbg.dbg('Test debug dbg.')
+	
 #if __name__ == '__main__':
 	#doTest()
