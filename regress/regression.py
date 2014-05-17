@@ -16,6 +16,7 @@ from misc.runctrl import *
 from regress.emulate import *
 from misc.futcom import *
 from misc.debug import *
+from misc.dev import *
 
 debug = Debug('Regression', False)    #默认关闭debug信息
 
@@ -93,7 +94,8 @@ def doRegression (options, database, test, strategy):
 				exit()
 			
 		from strategy.devstr import DevStr
-		runStat = RunStat(test)
+		devStat = DevStat(debug = True)
+		runStat = RunStat(test, devStat = devStat)
 		strategy = DevStr(test, test, 'dummy', database, runStat)
 		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
 		

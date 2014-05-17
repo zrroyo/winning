@@ -17,13 +17,15 @@ class RunStat:
 	def __init__ (self, 
 		name=None,
 		numInstruments = 1,	#并行执行的合约数量
+		devStat = None,		#
 		):
 		self.name = name	#合约
 		self.tradeCounter = TradingCounter()	#交易数据记录接口
 		
 		#利润及回撤
 		self.regress = ProfitRegress(debug = True, 
-					numInstruments = numInstruments
+					numInstruments = numInstruments,
+					devStat = devStat,
 					)
 		
 		#初始化交易赢利接口
@@ -104,11 +106,13 @@ class RunStat:
 class MarketRunStat(RunStat):
 	def __init__ (self, 
 		maxAllowedPos,	#最大允许的仓位(单位)
-		mute=False	#是否输出统计信息
+		mute=False,	#是否输出统计信息
+		devStat = None,		#
 		):
 		RunStat.__init__(self,
 				name=None,
 				numInstruments = 2,
+				devStat = devStat,
 				)
 		self.curFutCode = None			#当前合约
 		self.maxAllowedPos = maxAllowedPos	#最大允许的持仓数(加仓次数)

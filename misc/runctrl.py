@@ -225,8 +225,11 @@ class RunCtrlSet:
 			i += 1
 			
 	# Enable doing statistics for a market.
-	def enableMarketRunStat(self, mute=False):
-		marRunStat = MarketRunStat(self.maxAllowedPos, mute)
+	def enableMarketRunStat(self, 
+		mute = False,	#
+		devStat = None,	#
+		):
+		marRunStat = MarketRunStat(self.maxAllowedPos, mute, devStat)
 		i = 0
 		while (i < self.num):
 			self.set[i].marRunStat = marRunStat

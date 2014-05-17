@@ -16,6 +16,7 @@ class ProfitRegress:
 	def __init__ (self,
 		debug = False,		#调试模式
 		numInstruments = 2,	#并行执行的合约数量
+		devStat = None,		#
 		):
 		self.debug = Debug('ProfitRegress', debug)	#调试接口
 		self.profit = 0		#当前利润
@@ -26,6 +27,8 @@ class ProfitRegress:
 		self.lock = thread.allocate_lock()	#保护锁，保护整个数据结构
 		self.tmpProfit = 0	#临时利润累积
 		self.countTimes = 0	#已统计的合约数
+		
+		self.devStat = devStat	#
 		
 	#更新最大最小利润
 	def updateMaxMinProfit (self, 
