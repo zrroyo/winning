@@ -22,7 +22,7 @@ class RunStat:
 		self.tradeCounter = TradingCounter()	#交易数据记录接口
 		
 		#利润及回撤
-		self.regress = ProfitRegress(debug = False, 
+		self.regress = ProfitRegress(debug = True, 
 					numInstruments = numInstruments
 					)
 		

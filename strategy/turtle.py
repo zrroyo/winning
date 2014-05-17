@@ -233,7 +233,7 @@ class Turtle(Futures):
 		if self.runStat is not None:
 			if nextTick is not None:
 				#print extra
-				self.doStatistics(self.futName, extra['price'], extra['direction'], 'RunStat')
+				self.doStatistics(time, extra['price'], extra['direction'], 'RunStat')
 				
 		'''
 		nextTick为None说明模拟已经结束，无论是Emulation或CTP模式，都不能直接设置acted
