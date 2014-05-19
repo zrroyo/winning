@@ -67,6 +67,13 @@ class ProfitRegress:
 		#更新当前利润
 		self.profit += profit
 		
+	#
+	def devStatAssist (self):
+		if self.devStat is None:
+			return
+		
+		self.devStat.statHighestLowest(self.maxProfit, self.minProfit)
+		
 '''
 交易赢利类
 '''
