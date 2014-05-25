@@ -154,6 +154,10 @@ class Turtle(Futures):
 			price = self.data.getClose(time)
 			price = self.closeAllPostion(price, mode)
 			self.log("	[%s] [%s] Clear all! close %s" % (mode, time, price))
+			
+			#
+			self.doStatistics(time, price, mode, 'RunStat')
+			self.runStat.regress.devStatAssist()
 		
 	#执行
 	def run (self):

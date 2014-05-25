@@ -60,20 +60,23 @@ class ProfitRegress:
 			self.minProfit = newProfit
 			self.debug.dbg('Time %s, Min profit %s' % (time, self.minProfit))
 			
+		#
+		self.devStat.statUpdateMaxMinDayProfit(profit, time)
+			
 	#累积报单利润
 	def addProfit (self, 
 		profit,	#利润
 		):
 		#更新当前利润
 		self.profit += profit
+		self.devStat.statAddProfit(profit)
 		
 	#
 	def devStatAssist (self):
-		if self.devStat is None:
-			return
-		
-		self.devStat.statHighestLowest(self.maxProfit, self.minProfit)
-		
+		try:
+			self.devStat.clear()
+		except:
+			''
 '''
 交易赢利类
 '''
