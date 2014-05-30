@@ -71,7 +71,7 @@ def parseAttributes (
 	return maxAddPos,minPos,minPosIntv,priceUnit
 	
 # Core function to do regression for @test with @strategy.
-def doRegression (options, database, test, strategy):
+def doRegression (options, database, test, strategy, devStat):
 	if strategy == 'turt1':
 		if options.extra:
 			try:
@@ -94,7 +94,6 @@ def doRegression (options, database, test, strategy):
 				exit()
 			
 		from strategy.devstr import DevStr
-		devStat = DevStat(debug = True)
 		runStat = RunStat(test, devStat = devStat)
 		strategy = DevStr(test, test, 'dummy', database, runStat)
 		strategy.setAttrs(maxAddPos, minPos, minPosIntv, priceUnit)
@@ -120,9 +119,10 @@ def doAllRegressions (options, database):
 	if options.filter:
 		regSet = filtering(regSet, options.filter)
 		
+	devStat = DevStat(debug = True)
 	#print regSet
 	for test in regSet:
-		doRegression(options, database, test, options.strategy)
+		doRegression(options, database, test, options.strategy, devStat)
 			
 # Do assistant provided by strategies.
 def strategyAssistant (options, database):
