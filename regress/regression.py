@@ -123,7 +123,9 @@ def doAllRegressions (options, database):
 	#print regSet
 	for test in regSet:
 		doRegression(options, database, test, options.strategy, devStat)
-			
+		
+	devStat.showStat()
+	
 # Do assistant provided by strategies.
 def strategyAssistant (options, database):
 	if options.extra is None or options.tables is None:

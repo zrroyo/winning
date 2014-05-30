@@ -30,7 +30,7 @@ class DevStat:
 		):
 		self.highest.append(high)
 		self.highCount += 1
-		self.lowest.append(high)
+		self.lowest.append(low)
 		self.lowCount += 1
 		self.debug.dbg('High %s highCount %s, Low %s lowCount %s' % 
 				(high, self.highCount, low, self.lowCount))
@@ -65,4 +65,14 @@ class DevStat:
 		self.maxDayProfit = -1000000
 		self.minDayProfit = 1000000
 		
+	#
+	def showStat (self):
+		print self.highest
+		
+		high = [h for h in self.highest if h != 0]
+		print high
+		
+		print self.lowest
+		low = [l for l in self.lowest if l != 0]
+		print low
 	
