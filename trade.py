@@ -10,7 +10,7 @@ class Trade:
 		self.useTable(table)
 		return
 	
-	def __exit__ (self):
+	def __del__ (self):
 		self.db.close()
 		return
 	

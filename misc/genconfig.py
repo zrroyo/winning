@@ -14,9 +14,6 @@ class GenConfig:
 		self.sectionList = self.config.sections()
 		pass
 	
-	#def __exit__ (self):
-		#pass
-	
 	#def validSection (self):
 		#return True
 	

@@ -9,14 +9,6 @@ import importer as IMPORT
 import date
 
 class WenhuaImport(IMPORT.Import):
-	def __init__ (self, database='futures'):
-		IMPORT.Import.__init__(self, database)
-		return
-	
-	def __exit__ (self):
-		IMPORT.Import.__exit__(self)
-		return
-	
 	# Support 2 types of time formats, "yyyy-mm-dd" and "mm/dd/yyyy", in data files, 
 	# but only "yyyy-mm-dd" is allowed to insert into database.
 	def _formatTime (self, time):

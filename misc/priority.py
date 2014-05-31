@@ -13,9 +13,6 @@ class Priority:
 		self.priorityDict = {}
 		self.level = 0
 		return
-	
-	def __exit__ (self):
-		return
 		
 	# Relevel priority level.
 	def _reLevel (self):

@@ -93,11 +93,7 @@ class Emulate:
 		self.futList = futList
 		self.threadStart = threadStart
 		self.extraArgs = extraArgs
-		return
 	
-	def __exit__ (self):
-		return
-			
 	# Core method to run a emulation.
 	def run (self):
 		# At the first beginning, no thread is running, so directly set current tick with no lockings.

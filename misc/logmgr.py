@@ -24,7 +24,7 @@ class Log:
 			return
 		return
 	
-	def __exit__ (self):
+	def __del__ (self):
 		self.logObj.close()
 		return
 	
