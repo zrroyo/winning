@@ -10,7 +10,7 @@ class Strategy:
 	def __init__ (self):
 		return
 	
-	def __exit__ (self):
+	def __del__ (self):
 		return
 	
 	def query (self):

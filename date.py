@@ -19,7 +19,7 @@ class Date:
 		self.extra = None	#无特殊意义，用途视特定场合而定
 		return
 	
-	def __exit__ (self):
+	def __del__ (self):
 		self.db.close()
 		return
 	

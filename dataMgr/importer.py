@@ -13,9 +13,8 @@ class Import:
 		self.database = database
 		return
 	
-	def __exit__ (self):
+	def __del__ (self):
 		self.db.close()
-		return
 	
 	# Prepare to import records from $dataFile to $dataTable.
 	# If dataTable does not exist, create it using template.

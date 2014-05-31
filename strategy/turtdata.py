@@ -15,7 +15,7 @@ class TurtData:
 		self.table = table
 		self.db.connect()
 		
-	def __exit__ (self):
+	def __del__ (self):
 		self.db.close()
 		
 	def updateTr (self, 

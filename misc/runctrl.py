@@ -92,9 +92,6 @@ class RunCtrlSet:
 		self.priMgr = Priority()
 		return
 	
-	def __exit__ (self):
-		return
-	
 	def nrRunCtrl (self):
 		return len(self.set)
 		
