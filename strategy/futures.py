@@ -84,9 +84,10 @@ class Futures(Strategy):
 		self.posMgr.emptyPosition()
 		self.profit = 0
 	
-	#开空
-	def openShortPosition (self, 
-		price,	#开仓价格
+	#开仓
+	def __openPosition (self, 
+		price,		#开仓价格
+		direction,	#方向
 		):
 		if self.curPostion() >= self.maxAddPos:
 			return None
@@ -98,142 +99,106 @@ class Futures(Strategy):
 		
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
 		if self.ctpPosOn == True:
-			price = self.ctpPos.openShortPosition(self.futName, price, self.minPos)
+			if direction == 'short':
+				price = self.ctpPos.openShortPosition(self.futName, price, self.minPos)
+			else:
+				price = self.ctpPos.openLongPosition(self.futName, price, self.minPos)
 		
 		self.posMgr.pushPosition(price)
 		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
 		return price
+	
+	#开空
+	def openShortPosition (self, 
+		price,	#开仓价格
+		):
+		return self.__openPosition(price = price, direction = 'short')
 		
 	#开多
 	def openLongPosition (self, 
 		price,	#开仓价格
 		):
-		if self.curPostion() >= self.maxAddPos:
-			return None
+		return self.__openPosition(price = price, direction = 'long')
+		
+	#平仓
+	def __closePosition (self, 
+		price,		#平仓价格
+		poses,		#仓数
+		direction,	#方向
+		):
+		if self.curPostion() < poses:
+			print 'close position error'
+			return
 		
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-			if not self.emuRunCtrl.marRunStat.openPosition():
-				self.log("	@-.-@ Market max allowed positions are full!")
-				return None
+			if not self.emuRunCtrl.marRunStat.closePosition(poses):
+				return
 			
 		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
 		if self.ctpPosOn == True:
-			price = self.ctpPos.openLongPosition(self.futName, price, self.minPos)
+			if direction == 'short':
+				price = self.ctpPos.closeShortPosition(self.futName, price, self.minPos * poses)
+			else:
+				price = self.ctpPos.closeLongPosition(self.futName, price, self.minPos * poses)
 			
-		self.posMgr.pushPosition(price)
-		self.log("		-->> Open: %s, poses %s <<--" % (price, self.curPostion()))
+		profit = 0
+		while poses > 0:
+			'''
+			从仓位记录队列中移除，并统计每一单的赢利
+			'''
+			pos = self.posMgr.popPosition()
+			if direction == 'short':
+				orderProfit = pos.price - price
+			else:
+				orderProfit = price - pos.price
+			
+			orderProfit *= self.minPos
+			orderProfit *= self.priceUnit
+			poses -= 1
+			profit += orderProfit
+			
+			# If need do runtime statistics, update status.
+			if self.runStat is not None:
+				self.runStat.update(orderProfit)
+				
+			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
+				self.emuRunCtrl.marRunStat.update(orderProfit)
+			
+			self.log("		<<-- Close: profit %s, poses %s -->>" % (orderProfit, self.curPostion()+1))
+			
+		self.profit += profit
+		self.totalProfit += profit
+			
+		if self.curPostion() == 0:
+			self.showProfit()
+			# If need do runtime statistics, update status.
+			if self.runStat is not None:
+				self.runStat.updateBusinessMaxMinWin(self.profit)
+			
+			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
+				self.emuRunCtrl.marRunStat.updateBusinessMaxMinWin(self.profit)
+				self.emuRunCtrl.marRunStat.showMarRunStat()
+		
 		return price
 		
 	#平空头仓位
 	def closeShortPosition (self, 
 		price,	#平仓价格
-		poses	#仓数
+		poses,	#仓数
 		):
-		if self.curPostion() < poses:
-			print 'close short position error'
-			return
-		
-		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-			if not self.emuRunCtrl.marRunStat.closePosition(poses):
-				return
-			
-		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
-		if self.ctpPosOn == True:
-			price = self.ctpPos.closeShortPosition(self.futName, price, self.minPos * poses)
-			
-		profit = 0
-		while poses > 0:
-			'''
-			从仓位记录队列中移除，并统计每一单的赢利
-			'''
-			pos = self.posMgr.popPosition()
-			orderProfit = pos.price - price
-			orderProfit *= self.minPos
-			orderProfit *= self.priceUnit
-			poses -= 1
-			profit += orderProfit
-			
-			# If need do runtime statistics, update status.
-			if self.runStat is not None:
-				self.runStat.update(orderProfit)
-				
-			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-				self.emuRunCtrl.marRunStat.update(orderProfit)
-			
-			self.log("		<<-- Close: profit %s, poses %s -->>" % (orderProfit, self.curPostion()+1))
-			
-		self.profit += profit
-		self.totalProfit += profit
-			
-		if self.curPostion() == 0:
-			self.showProfit()
-			# If need do runtime statistics, update status.
-			if self.runStat is not None:
-				self.runStat.updateBusinessMaxMinWin(self.profit)
-			
-			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-				self.emuRunCtrl.marRunStat.updateBusinessMaxMinWin(self.profit)
-				self.emuRunCtrl.marRunStat.showMarRunStat()
-		
-		return price
+		return self.__closePosition(price = price, poses = poses, direction = 'short')
 	
 	#平多头仓位
 	def closeLongPosition (self, 
 		price,	#平仓价格
-		poses	#仓数
+		poses,	#仓数
 		):
-		if self.curPostion() < poses:
-			print 'close long position error'
-			return
-		
-		if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-			if not self.emuRunCtrl.marRunStat.closePosition(poses):
-				return
-		
-		#如果CTP启动开关被触发说明进入当前交易日，应进行实盘操作。
-		if self.ctpPosOn == True:
-			price = self.ctpPos.closeLongPosition(self.futName, price, self.minPos * poses)
-			
-		profit = 0
-		while poses > 0:
-			'''
-			从仓位记录队列中移除，并统计每一单的赢利
-			'''
-			pos = self.posMgr.popPosition()
-			orderProfit = price - pos.price
-			orderProfit *= self.minPos
-			orderProfit *= self.priceUnit
-			poses -= 1
-			profit += orderProfit
-			
-			# If need do runtime statistics, update status.
-			if self.runStat is not None:
-				self.runStat.update(orderProfit)
-				
-			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-				self.emuRunCtrl.marRunStat.update(orderProfit)
-			
-			self.log("		<<-- Close: profit %s, poses %s -->>" % (orderProfit, self.curPostion()+1))
-				
-		self.profit += profit
-		self.totalProfit += profit
-				
-		if self.curPostion() == 0:
-			self.showProfit()
-			# If need do runtime statistics, update status.
-			if self.runStat is not None:
-				self.runStat.updateBusinessMaxMinWin(self.profit)
-			
-			if self.emuRunCtrl and self.emuRunCtrl.marRunStat:
-				self.emuRunCtrl.marRunStat.updateBusinessMaxMinWin(self.profit)
-				self.emuRunCtrl.marRunStat.showMarRunStat()
-				
-		return price
+		return self.__closePosition(price = price, poses = poses, direction = 'long')
 		
 	#平掉所有仓位	
 	def closeAllPostion (self, 
 		price,	#平仓价格
-		short	#多空标志
+		short,	#多空标志
 		):
 		poses = self.curPostion()
 		if short is 'short':
