@@ -72,9 +72,11 @@ class ProfitRegress:
 		self.devStat.statAddProfit(profit)
 		
 	#
-	def devStatAssist (self):
+	def devStatAssist (self,
+		profit,	#
+		):
 		try:
-			self.devStat.clear()
+			self.devStat.clear(profit)
 		except:
 			''
 '''

@@ -157,7 +157,7 @@ class Turtle(Futures):
 			
 			#
 			self.doStatistics(time, price, mode, 'RunStat')
-			self.runStat.regress.devStatAssist()
+			self.runStat.regress.devStatAssist(self.profit)
 		
 	#执行
 	def run (self):

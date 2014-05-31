@@ -8,32 +8,28 @@ from debug import *
 
 #
 class DevStat:
-	
-	highest = []	#
-	highCount = 0	#
-	lowest = []	#
-	lowCount = 0	#
-	
-	profit = 0	#
-	maxDayProfit = -1000000	#
-	minDayProfit = 1000000	#
-	
 	def __init__ (self,
 		debug = False,		#调试模式
 		):
 		self.debug = Debug('DevStat', debug)	#调试接口
 		
+		self.result = []	#
+		self.count = 0	#
+		
+		self.profit = 0	#
+		self.maxDayProfit = -1000000	#
+		self.minDayProfit = 1000000	#
+		
 	#
-	def statHighestLowest (self, 
+	def storeResult (self, 
 		high,	#
 		low,	#
+		profit,	#
 		):
-		self.highest.append(high)
-		self.highCount += 1
-		self.lowest.append(low)
-		self.lowCount += 1
-		self.debug.dbg('High %s highCount %s, Low %s lowCount %s' % 
-				(high, self.highCount, low, self.lowCount))
+		self.result.append((high, low, profit))
+		self.count += 1
+		self.debug.dbg('High %s, Low %s, Profit %s, Count %s' % 
+				(high, low, profit, self.count))
 	
 	#
 	def statAddProfit (self, 
@@ -59,20 +55,24 @@ class DevStat:
 			self.debug.dbg('Time %s, Min-day-profit %s' % (time, self.minDayProfit))
 		
 	#
-	def clear (self):
+	def clear (self,
+		profit,	#
+		):
+		self.storeResult(self.maxDayProfit, self.minDayProfit, profit)
 		self.profit = 0
-		self.statHighestLowest(self.maxDayProfit, self.minDayProfit)
 		self.maxDayProfit = -1000000
 		self.minDayProfit = 1000000
 		
 	#
 	def showStat (self):
-		print self.highest
+		print self.result
 		
-		high = [h for h in self.highest if h != 0]
+		high = [r[0] for r in self.result if r[0] != 0]
 		print high
 		
-		print self.lowest
-		low = [l for l in self.lowest if l != 0]
-		print low
+		avg = sum(high)/len(high)
+		print 'Avg highest %.2f' % avg
+		higherAvgProfit = [(r[0], r[2]) for r in self.result if r[0] >= avg]
+		print higherAvgProfit, len(higherAvgProfit)
+		
 	

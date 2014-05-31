@@ -30,7 +30,7 @@ class DevStr (Turt1):
 				self.log("	[Short] [%s] Hit Highest in 10 days: Clear all! %d days:	open %s,  close %s, highest %d" % (time, days, self.data.getClose(date), price, self.data.highestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				self.doStatistics(time, price, 'short', 'RunStat')
-				self.runStat.regress.devStatAssist()
+				self.runStat.regress.devStatAssist(self.profit)
 				break
 				
 			if self.stableToAddShortPosition(time, pLastAddPrice, price, minPosIntv):
@@ -70,7 +70,7 @@ class DevStr (Turt1):
 				self.log("	[Long] [%s] Hit Lowest in 10 days: Clear all! %d days:	open %s,  close %s, lowest %d" % (time, days, self.data.getClose(date), price, self.data.lowestBeforeDate(time, 10)))
 				#time = dateSet.getSetNextDate()
 				self.doStatistics(time, price, 'long', 'RunStat')
-				self.runStat.regress.devStatAssist()
+				self.runStat.regress.devStatAssist(self.profit)
 				break
 			
 			if self.stableToAddLongPosition(time, pLastAddPrice, price, minPosIntv):
