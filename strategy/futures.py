@@ -296,8 +296,9 @@ class Futures(Strategy):
 		if self.emuRunCtrl and self.emuRunCtrl.marRunStat or self.runStat is not None:
 			profit = 0.0
 			numPoses = self.posMgr.numPositions()
-			while numPoses > 0:
-				pos = self.posMgr.getPositionByNum(numPoses)
+			posIdx = 1
+			while posIdx <= numPoses:
+				pos = self.posMgr.getPositionByNum(posIdx)
 				if direction == 'long':
 					interval = price - pos.price
 				else:
@@ -306,7 +307,7 @@ class Futures(Strategy):
 				interval *= self.minPos
 				interval *= self.priceUnit
 				profit += interval
-				numPoses -= 1
+				posIdx += 1
 				
 			if action == 'MarketRunStat':
 				self.emuRunCtrl.marRunStat.updateMaxMinProfit(profit, time)
