@@ -143,6 +143,12 @@ class Futures(Strategy):
 			
 		profit = 0
 		while poses > 0:
+			try:
+				posNum = self.posMgr.numPositions()
+				self.runStat.regress.devStat.orderStat.statPosition(posNum)
+			except:
+				''
+			
 			'''
 			从仓位记录队列中移除，并统计每一单的赢利
 			'''
@@ -297,6 +303,7 @@ class Futures(Strategy):
 			profit = 0.0
 			numPoses = self.posMgr.numPositions()
 			posIdx = 1
+			profitList = []
 			while posIdx <= numPoses:
 				pos = self.posMgr.getPositionByNum(posIdx)
 				if direction == 'long':
@@ -306,6 +313,7 @@ class Futures(Strategy):
 					
 				interval *= self.minPos
 				interval *= self.priceUnit
+				profitList.append(interval)
 				profit += interval
 				posIdx += 1
 				
@@ -313,4 +321,8 @@ class Futures(Strategy):
 				self.emuRunCtrl.marRunStat.updateMaxMinProfit(profit, time)
 			elif action == 'RunStat':
 				self.runStat.updateMaxMinProfit(profit, time)
+				try:
+					self.runStat.regress.statOrders(profitList)
+				except:
+					print 'statOrders error'
 		

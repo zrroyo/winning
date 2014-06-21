@@ -20,6 +20,9 @@ class DevStat:
 		self.maxDayProfit = -1000000	#
 		self.minDayProfit = 1000000	#
 		
+		#
+		self.orderStat = OrderStat(debug)
+		
 	#
 	def storeResult (self, 
 		high,	#
@@ -75,4 +78,70 @@ class DevStat:
 		higherAvgProfit = [(r[0], r[2]) for r in self.result if r[0] >= avg]
 		print higherAvgProfit, len(higherAvgProfit)
 		
+		print 'Order Statistics:'
+		self.orderStat.showOrderStat()
 	
+#
+class OrderStat:
+	
+	pos1 = []	#
+	pos2 = []
+	pos3 = []
+	pos4 = []
+	pos5 = []
+	pos6 = []
+	
+	current = [0, 0, 0, 0, 0, 0]	#
+	#current = []	
+	#current[0:5] = 0
+	
+	def __init__ (self,
+		debug = False,		#调试模式
+		):
+		self.debug = Debug('OrderStat', debug)	#调试接口
+		
+	#
+	def doStatForOrders (self,
+		profitList,	#
+		):
+		self.debug.dbg('profitList %s' % profitList)
+		
+		idx = 0
+		bound = len(profitList)
+		
+		while idx < bound:
+			if profitList[idx] > self.current[idx]:
+				self.current[idx] = profitList[idx]
+			
+			idx += 1
+		
+		self.debug.dbg('Current %s' % self.current)
+
+	#
+	def statPosition (self,
+		posNum,	#
+		):
+		if posNum == 1:
+			self.pos1.append(self.current[posNum - 1])
+		elif posNum == 2:
+			self.pos2.append(self.current[posNum - 1])
+		elif posNum == 3:
+			self.pos3.append(self.current[posNum - 1])
+		elif posNum == 4:
+			self.pos4.append(self.current[posNum - 1])
+		elif posNum == 5:
+			self.pos5.append(self.current[posNum - 1])
+		elif posNum == 6:
+			self.pos6.append(self.current[posNum - 1])
+		
+		self.current[posNum - 1] = 0
+		
+	#
+	def showOrderStat (self):
+		print self.pos1, len(self.pos1)
+		print self.pos2, len(self.pos2)
+		print self.pos3, len(self.pos3)
+		print self.pos4, len(self.pos4)
+		print self.pos5, len(self.pos5)
+		print self.pos6, len(self.pos6)
+		

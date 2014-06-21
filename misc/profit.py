@@ -79,6 +79,16 @@ class ProfitRegress:
 			self.devStat.clear(profit)
 		except:
 			''
+	
+	#
+	def statOrders (self, 
+		profitList,	#
+		):
+		try:
+			self.devStat.orderStat.doStatForOrders(profitList)
+		except:
+			''
+	
 '''
 交易赢利类
 '''
