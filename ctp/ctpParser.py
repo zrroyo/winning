@@ -22,7 +22,7 @@ from regress.tick import Tick
 from futconfig import TradingConfig, CtpConfig
 from misc.painter import Painter
 from misc.futcom import tempNameSuffix
-from misc.dateTime import formatDatetime, nowDatetimeFormat
+from misc.dateTime import *
 
 #CTP交易（模拟）执行线程入口
 def ctpExecutionThreadStart (
@@ -270,35 +270,35 @@ def ctpOptionsHandler (options, args):
 	if options.endTime is not None:
 		etList = options.endTime.split(':')
 		if len(etList) == 3:
-			timeFormat = '%H:%M:%S'
+			endTimeFormat = '%H:%M:%S'
 		elif len(etList) == 6:
-			timeFormat = '%Y:%m:%d:%H:%M:%S'
+			endTimeFormat = '%Y:%m:%d:%H:%M:%S'
 		else:
 			print "\n指定的交易结束时间错误，退出.\n"
 			return
 		
-		endTime = formatDatetime(timeFormat, options.endTime)
+		endTime = strToDatetime(options.endTime, endTimeFormat)
 		
 	#如果指定了开始时间则需要解析，并有可能等待
 	if options.beginTime is not None:
 		btList = options.beginTime.split(':')
 		if len(btList) == 3:
-			timeFormat = '%H:%M:%S'
+			beginTimeFormat = '%H:%M:%S'
 		elif len(btList) == 6:
-			timeFormat = '%Y:%m:%d:%H:%M:%S'
+			beginTimeFormat = '%Y:%m:%d:%H:%M:%S'
 		else:
 			print "\n指定的时间交易错误，退出.\n"
 			return
 				
-		beginTime = formatDatetime(timeFormat, options.beginTime)
+		beginTime = strToDatetime(options.beginTime, beginTimeFormat)
 		
 		#等待开始
 		if beginTime is not None:
-			timeNow = nowDatetimeFormat(timeFormat)
+			timeNow = nowDatetime(beginTimeFormat)
 			while timeNow < beginTime:
-				timeNow = nowDatetimeFormat(timeFormat)
 				#print timeNow, beginTime
 				time.sleep(10)
+				timeNow = nowDatetime(beginTimeFormat)
 				continue
 				
 	#确定可执行合约列表
@@ -413,7 +413,7 @@ def ctpOptionsHandler (options, args):
 		#等待结束
 		while 1:
 			if options.endTime is not None:
-				timeNow = nowDatetimeFormat(timeFormat)
+				timeNow = nowDatetime(endTimeFormat)
 				if timeNow >= endTime:
 					try:
 						painter.destroy()
