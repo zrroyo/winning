@@ -58,6 +58,13 @@ class Debug:
 		dbgMsg = '%s: %s' % (self.prompt, dbgInfo)
 		self.debug.pr_debug(dbgMsg)
 		
+	#打印信息
+	def info (self, 
+		msg,	#打印信息
+		):
+		infoMsg = '%s' % (msg)
+		self.debug.pr_info(infoMsg)
+		
 ##测试		
 #def doTest ():
 	#dbg = RawDebug(1)
