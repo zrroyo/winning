@@ -123,10 +123,15 @@ class CheckData:
 #入口
 if __name__ == '__main__':
 	#doTest()
-	if len(sys.argv) != 5:
-		print '使用: ./checkdata.py current FG501_dayk FG501.txt 15'
+	if len(sys.argv) != 5 and len(sys.argv) != 6:
+		print '使用: tools/checkdata.py current FG501_dayk FG501.txt 15'
 		exit(1)
 		
-	cd = CheckData(sys.argv[1], sys.argv[2], sys.argv[3])
+	if len(sys.argv) == 5:
+		dbgMode = False
+	else:
+		dbgMode = True
+		
+	cd = CheckData(sys.argv[1], sys.argv[2], sys.argv[3], debug = dbgMode)
 	print cd.startChecking(int(sys.argv[4]))
 	
