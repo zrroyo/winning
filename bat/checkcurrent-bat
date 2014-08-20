@@ -1,0 +1,34 @@
+CURRENT01=/media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current01
+CURRENT05=/media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current05
+CURRENT09=/media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current09
+
+# 09/10
+tools/checkdata.py current rb1410_dayk ${CURRENT09}/rb1410.txt 10
+tools/checkdata.py current TA409_dayk ${CURRENT09}/TA409.txt 10
+tools/checkdata.py current m1409_dayk ${CURRENT09}/m1409.txt 10
+tools/checkdata.py current p1409_dayk ${CURRENT09}/p1409.txt 10
+tools/checkdata.py current FG409_dayk ${CURRENT09}/FG409.txt 10
+tools/checkdata.py current RM409_dayk ${CURRENT09}/RM409.txt 10
+tools/checkdata.py current SR409_dayk ${CURRENT09}/SR409.txt 10
+tools/checkdata.py current jd1409_dayk ${CURRENT09}/jd1409.txt 10
+
+# 01 
+tools/checkdata.py current FG501_dayk ${CURRENT01}/FG501.txt 10
+tools/checkdata.py current TA501_dayk ${CURRENT01}/TA501.txt 10
+tools/checkdata.py current m1501_dayk ${CURRENT01}/m1501.txt 10
+tools/checkdata.py current p1501_dayk ${CURRENT01}/p1501.txt 10
+tools/checkdata.py current rb1501_dayk ${CURRENT01}/rb1501.txt 10
+tools/checkdata.py current RM501_dayk ${CURRENT01}/RM501.txt 10
+tools/checkdata.py current SR501_dayk ${CURRENT01}/SR501.txt 10
+tools/checkdata.py current jd1501_dayk ${CURRENT01}/jd1501.txt 10
+
+# 05 
+#tools/checkdata.py current rb1405_dayk ${CURRENT05}/rb1405.txt 10
+#tools/checkdata.py current m1405_dayk ${CURRENT05}/m1405.txt 10
+#tools/checkdata.py current p1405_dayk ${CURRENT05}/p1405.txt 10
+#tools/checkdata.py current SR405_dayk ${CURRENT05}/SR405.txt 10
+#tools/checkdata.py current TA405_dayk ${CURRENT05}/TA405.txt 10
+#tools/checkdata.py current FG405_dayk ${CURRENT05}/FG405.txt 10
+#tools/checkdata.py current RM405_dayk ${CURRENT05}/RM405.txt 10
+#tools/checkdata.py current jd1505_dayk ${CURRENT05}/jd1505.txt 10
+
