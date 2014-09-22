@@ -92,33 +92,57 @@ class CheckData:
 		else:
 			return False
 	
-	#开始核对
-	def startChecking (self,
+	#核对数据表内容
+	def checkContent (self,
 		days,	#核对天数
 		):
 		self.debug.dbg('Last Date %s' % self.date.lastDate())
 		self.date.setCurDate(self.date.lastDate())
 		
 		status = True
+		endMatching = False
 		while days > 0:
 			curDate = self.date.curDate()
+			if self.date.isFirstDate(curDate):
+				#匹配从表尾向表头进行，匹配到表头结束。
+				endMatching = True
+			
 			ddu = self.__dataToDataUnion(curDate)
 			fdu = self.__fileToDataUnion(curDate)
 			if self.__compDataUnion(ddu, fdu):
-				self.debug.info('%s: match' % curDate)
+				self.debug.dbg('%s: match' % curDate)
 			else:
 				self.debug.info('%s: dismatch' % curDate)
 				status = False
+				
+			if endMatching:
+				self.debug.info('%s: End of table!' % curDate)
+				break
 			
 			self.date.getSetPrevDate()
 			days -= 1
 		
 		return status
+			
+	#核对表头（第一行）
+	def checkHead (self):
+		self.shell.execCmd("sed -n '$p' %s" % self.datfile)
+		record = self.shell.getOutput().split(',')
+		dtime = strToDatetime(record[0], "%m/%d/%Y")
+		fDate = datetimeToStr(dtime, "%Y-%m-%d")
+		
+		tDate = self.date.lastDate()
+		self.debug.dbg('file date %s, table date %s' % (fDate, tDate))
+		
+		if tDate == fDate:
+			return True
+		else:
+			return False
 		
 ##测试
 #def doTest ():
 	#cd = CheckData('current', 'FG501_dayk', '../tmp/current01/FG501.txt', debug = False)
-	#cd.startChecking(15)
+	#cd.checkContent(15)
 	
 #入口
 if __name__ == '__main__':
@@ -133,5 +157,6 @@ if __name__ == '__main__':
 		dbgMode = True
 		
 	cd = CheckData(sys.argv[1], sys.argv[2], sys.argv[3], debug = dbgMode)
-	print cd.startChecking(int(sys.argv[4]))
+	print 'Head:    %s' % cd.checkHead()
+	print 'Content: %s' % cd.checkContent(int(sys.argv[4]))
 	
