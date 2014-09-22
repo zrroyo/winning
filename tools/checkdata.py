@@ -100,15 +100,24 @@ class CheckData:
 		self.date.setCurDate(self.date.lastDate())
 		
 		status = True
+		endMatching = False
 		while days > 0:
 			curDate = self.date.curDate()
+			if self.date.isFirstDate(curDate):
+				#匹配从表尾向表头进行，匹配到表头结束。
+				endMatching = True
+			
 			ddu = self.__dataToDataUnion(curDate)
 			fdu = self.__fileToDataUnion(curDate)
 			if self.__compDataUnion(ddu, fdu):
-				self.debug.info('%s: match' % curDate)
+				self.debug.dbg('%s: match' % curDate)
 			else:
 				self.debug.info('%s: dismatch' % curDate)
 				status = False
+				
+			if endMatching:
+				self.debug.info('%s: End of table!' % curDate)
+				break
 			
 			self.date.getSetPrevDate()
 			days -= 1
