@@ -40,7 +40,9 @@ def listAllTables (database):
 def importerOptionsHandler (options, args):
 	imp = None
 	if options.database:
-		imp = IMPORT.WenhuaImport(options.database)
+		#imp = IMPORT.WenhuaImport(options.database)
+		import whHacker
+		imp = whHacker.WenhuaHackImporter(options.database)
 	else:
 		print "\nPlease specify database using '-b'.\n"
 		return
