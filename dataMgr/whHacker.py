@@ -28,12 +28,19 @@ class WenhuaHackImporter(Import):
 		
 		for line in fileinput.input(file):
 			time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
+			#略过所有已同步数据
 			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, '%m/%d/%Y'):
 				continue
 			
+			time = datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
+			if self.db.ifRecordExist(table, 'Time', time):
+				print "Found duplicate record: %s" % time
+				#退出前关闭文件序列
+				fileinput.close()
+				break
+			
 			self.debug.dbg('Found new record: %s' % line.rstrip('\n'))
 			
-			time = datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
 			values = "'%s',%s,%s,%s,%s,0,%s,%s,Null,Null" % (time,open,highest,lowest,close,sellVol,buyVol)
 			self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
