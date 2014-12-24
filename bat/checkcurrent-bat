@@ -1,34 +1,31 @@
-CURRENT01=/media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current01
-CURRENT05=/media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current05
-CURRENT09=/media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/wenhua/dayk/current09
+CURRENT=/media/Data/ubuntu/Virtualbox/shareDir/Data/Futures/whhack
 
-# 09/10
-#tools/checkdata.py current rb1410_dayk ${CURRENT09}/rb1410.txt 100
-#tools/checkdata.py current TA409_dayk ${CURRENT09}/TA409.txt 100
-#tools/checkdata.py current m1409_dayk ${CURRENT09}/m1409.txt 100
-#tools/checkdata.py current p1409_dayk ${CURRENT09}/p1409.txt 100
-#tools/checkdata.py current FG409_dayk ${CURRENT09}/FG409.txt 100
-#tools/checkdata.py current RM409_dayk ${CURRENT09}/RM409.txt 100
-#tools/checkdata.py current SR409_dayk ${CURRENT09}/SR409.txt 100
-#tools/checkdata.py current jd1409_dayk ${CURRENT09}/jd1409.txt 100
+# 09/100
+#tools/checkdata.py current rb1410_dayk ${CURRENT}/螺纹1410.txt 100
+#tools/checkdata.py current TA409_dayk "${CURRENT}/PTA1409\ .txt" 100
+#tools/checkdata.py current m1409_dayk ${CURRENT}/豆粕1409.txt 100
+#tools/checkdata.py current p1409_dayk ${CURRENT}/棕榈1409.txt 100
+#tools/checkdata.py current FG409_dayk ${CURRENT}/玻璃1409.txt 100
+#tools/checkdata.py current RM409_dayk ${CURRENT}/菜粕1409.txt 100
+#tools/checkdata.py current SR409_dayk ${CURRENT}/白糖1409.txt 100
+#tools/checkdata.py current jd1409_dayk ${CURRENT}/鸡蛋1409.txt 100
 
 # 01 
-tools/checkdata.py current FG501_dayk ${CURRENT01}/FG501.txt 100
-tools/checkdata.py current TA501_dayk ${CURRENT01}/TA501.txt 100
-tools/checkdata.py current m1501_dayk ${CURRENT01}/m1501.txt 100
-tools/checkdata.py current p1501_dayk ${CURRENT01}/p1501.txt 100
-tools/checkdata.py current rb1501_dayk ${CURRENT01}/rb1501.txt 100
-tools/checkdata.py current RM501_dayk ${CURRENT01}/RM501.txt 100
-tools/checkdata.py current SR501_dayk ${CURRENT01}/SR501.txt 100
-tools/checkdata.py current jd1501_dayk ${CURRENT01}/jd1501.txt 100
+tools/checkdata.py current FG501_dayk ${CURRENT}/玻璃1501.txt 100
+tools/checkdata.py current TA501_dayk "${CURRENT}/PTA1501\ .txt" 100
+tools/checkdata.py current m1501_dayk ${CURRENT}/豆粕1501.txt 100
+tools/checkdata.py current p1501_dayk ${CURRENT}/棕榈1501.txt 100
+tools/checkdata.py current rb1501_dayk ${CURRENT}/螺纹1501.txt 100
+tools/checkdata.py current RM501_dayk ${CURRENT}/菜粕1501.txt 100
+tools/checkdata.py current SR501_dayk ${CURRENT}/白糖1501.txt 100
+tools/checkdata.py current jd1501_dayk ${CURRENT}/鸡蛋1501.txt 100
 
 # 05 
-tools/checkdata.py current rb1505_dayk ${CURRENT05}/rb1505.txt 100
-tools/checkdata.py current m1505_dayk ${CURRENT05}/m1505.txt 100
-tools/checkdata.py current p1505_dayk ${CURRENT05}/p1505.txt 100
-tools/checkdata.py current SR505_dayk ${CURRENT05}/SR505.txt 100
-tools/checkdata.py current TA505_dayk ${CURRENT05}/TA505.txt 100
-tools/checkdata.py current FG505_dayk ${CURRENT05}/FG505.txt 100
-tools/checkdata.py current RM505_dayk ${CURRENT05}/RM505.txt 100
-tools/checkdata.py current jd1505_dayk ${CURRENT05}/jd1505.txt 100
-
+tools/checkdata.py current rb1505_dayk ${CURRENT}/螺纹1505.txt 100
+tools/checkdata.py current m1505_dayk ${CURRENT}/豆粕1505.txt 100
+tools/checkdata.py current p1505_dayk ${CURRENT}/棕榈1505.txt 100
+tools/checkdata.py current SR505_dayk ${CURRENT}/白糖1505.txt 100
+tools/checkdata.py current TA505_dayk "${CURRENT}/PTA1505\ .txt" 100
+tools/checkdata.py current FG505_dayk ${CURRENT}/玻璃1505.txt 100
+tools/checkdata.py current RM505_dayk ${CURRENT}/菜粕1505.txt 100
+tools/checkdata.py current jd1505_dayk ${CURRENT}/鸡蛋1505.txt 100
