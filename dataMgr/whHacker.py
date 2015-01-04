@@ -18,6 +18,19 @@ class WenhuaHackImporter(Import):
 	#调试接口
 	debug = Debug('WenhuaHackImporter', True)
 	
+	#将文件数据记录转换成字段列表
+	def __fileRecordToColumns (self,
+		line,	#待转换的行（数据文件中的每一行）
+		):
+		time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
+		return time,open,highest,lowest,close,sellVol,buyVol
+	
+	#格式化时间
+	def __formatTime (self,
+		time,	#待格式化的时间
+		):
+		return datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
+	
 	#从数据文件中追加数据
 	def appendRecordsFromFile (self, 
 		file,	#数据文件
@@ -83,3 +96,20 @@ class WenhuaHackImporter(Import):
 			self.debug.dbg(file)
 			self.appendRecordsFromFile(file, table)
 	
+	#新导入一个数据表
+	def newImport (self, 
+		file,	#待导入的数据文件
+		table,	#目标数据表
+		):
+		self.prepareImport(table)
+		
+		for line in fileinput.input(file):
+			time,open,highest,lowest,close,sellVol,buyVol = self.__fileRecordToColumns(line)
+			
+			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
+			
+			time = self.__formatTime(time)
+			values = "'%s',%s,%s,%s,%s,0,%s,%s,Null,Null" % (time,open,highest,lowest,close,sellVol,buyVol)
+			#self.debug.dbg('Insert values %s' % values)
+			self.db.insert(table, values)
+		
