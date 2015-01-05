@@ -23,7 +23,8 @@ class WenhuaHackImporter(Import):
 		line,	#待转换的行（数据文件中的每一行）
 		):
 		time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
-		return time,open,highest,lowest,close,sellVol,buyVol
+		avg = 0
+		return time,open,highest,lowest,close,avg,sellVol,buyVol
 	
 	#格式化时间
 	def __formatTime (self,
@@ -40,12 +41,12 @@ class WenhuaHackImporter(Import):
 		lastDate = dateSet.lastDate()
 		
 		for line in fileinput.input(file):
-			time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
+			time,open,highest,lowest,close,avg,sellVol,buyVol = self.__fileRecordToColumns(line)
 			#略过所有已同步数据
 			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, '%m/%d/%Y'):
 				continue
 			
-			time = datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
+			time = self.__formatTime(time)
 			if self.db.ifRecordExist(table, 'Time', time):
 				print "Found duplicate record: %s" % time
 				#退出前关闭文件序列
@@ -54,7 +55,8 @@ class WenhuaHackImporter(Import):
 			
 			self.debug.dbg('Found new record: %s' % line.rstrip('\n'))
 			
-			values = "'%s',%s,%s,%s,%s,0,%s,%s,Null,Null" % (time,open,highest,lowest,close,sellVol,buyVol)
+			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
+						time,open,highest,lowest,close,avg,sellVol,buyVol)
 			self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
 	
@@ -104,12 +106,13 @@ class WenhuaHackImporter(Import):
 		self.prepareImport(table)
 		
 		for line in fileinput.input(file):
-			time,open,highest,lowest,close,sellVol,buyVol = self.__fileRecordToColumns(line)
+			time,open,highest,lowest,close,avg,sellVol,buyVol = self.__fileRecordToColumns(line)
 			
 			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
 			
 			time = self.__formatTime(time)
-			values = "'%s',%s,%s,%s,%s,0,%s,%s,Null,Null" % (time,open,highest,lowest,close,sellVol,buyVol)
+			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
+						time,open,highest,lowest,close,avg,sellVol,buyVol)
 			#self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
 		
