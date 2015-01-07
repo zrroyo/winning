@@ -1,14 +1,30 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
+
+'''
+导入数据接口
+
+将文华等行情软件下载的数据文件导入数据库。
+'''
 
 import os
 import sys
 sys.path.append("..")
-import db.mysqldb as sql
-import date
+import fileinput
+
+from date import *
+from db.mysqldb import *
+from misc.debug import *
+from misc.dateTime import *
 
 class Import:
-	def __init__ (self, database='futures'):
-		self.db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
+	
+	#调试接口
+	debug = Debug('Import', False)
+	
+	def __init__ (self, 
+		database='futures'
+		):
+		self.db = MYSQL("localhost", 'win', 'winfwinf', database)
 		self.db.connect()
 		self.database = database
 		return
@@ -27,9 +43,69 @@ class Import:
 			
 		self.db.createTableTemplate(table, template)
 		
-	# Newly import data records from $dataFile to $dataTable
-	def newImport (self, dataFile, dataTable):
-		return
+	#格式化时间
+	def formatTime (self,
+		time,	#待格式化的时间
+		):
+		return datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
+	
+	#将文件数据记录转换成字段列表
+	def fileRecordToColumns (self,
+		line,	#待转换的行（数据文件中的每一行）
+		):
+		time,open,highest,lowest,close,avg,sellVol,buyVol = line.rstrip('\r\n').split(',')
+		return time,open,highest,lowest,close,avg,sellVol,buyVol
+	
+	#新导入一个数据表
+	def newImport (self, 
+		file,	#待导入的数据文件
+		table,	#目标数据表
+		):
+		self.prepareImport(table)
+		
+		for line in fileinput.input(file):
+			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
+			
+			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
+			time = self.formatTime(time)
+			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
+						time,open,highest,lowest,close,avg,sellVol,buyVol)
+			self.debug.dbg('Insert values %s' % values)
+			self.db.insert(table, values)
+	
+	#从数据文件中追加数据
+	def appendRecordsFromFile (self, 
+		file,	#数据文件
+		table,	#数据表
+		):
+		dateSet = Date(self.database, table)
+		lastDate = dateSet.lastDate()
+		
+		for line in fileinput.input(file):
+			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
+			#略过所有已同步数据
+			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, '%m/%d/%Y'):
+				continue
+			
+			time = self.formatTime(time)
+			if self.db.ifRecordExist(table, 'Time', time):
+				print "Found duplicate record: %s" % time
+				#退出前关闭文件序列
+				fileinput.close()
+				break
+			
+			self.debug.dbg('Found new record: %s' % line.rstrip('\n'))
+			
+			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
+						time,open,highest,lowest,close,avg,sellVol,buyVol)
+			self.debug.dbg('Insert values %s' % values)
+			self.db.insert(table, values)
+	
+	#从目录下的数据文件中导入数据
+	def appendRecordsFromDir (self, 
+		diretory,	#数据文件目录
+		):
+		pass
 	
 	# Reimport a part of records between date $Tfrom to date $tTo from 
 	# tableFrom to new tableTo
@@ -166,7 +242,7 @@ class Import:
 			print '\n	Month "%s" is out of range [1~12]\n' % month
 			return
 		
-		lcDateSet = date.Date(self.database, dataTable)
+		lcDateSet = Date(self.database, dataTable)
 		year = yearStart
 		
 		while year >= yearEnd:
