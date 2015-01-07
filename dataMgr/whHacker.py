@@ -19,7 +19,8 @@ class WenhuaHackImporter(Import):
 	debug = Debug('WenhuaHackImporter', True)
 	
 	#将文件数据记录转换成字段列表
-	def __fileRecordToColumns (self,
+	#override
+	def fileRecordToColumns (self,
 		line,	#待转换的行（数据文件中的每一行）
 		):
 		time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
@@ -27,38 +28,11 @@ class WenhuaHackImporter(Import):
 		return time,open,highest,lowest,close,avg,sellVol,buyVol
 	
 	#格式化时间
-	def __formatTime (self,
+	#override
+	def formatTime (self,
 		time,	#待格式化的时间
 		):
 		return datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
-	
-	#从数据文件中追加数据
-	def appendRecordsFromFile (self, 
-		file,	#数据文件
-		table,	#数据表
-		):
-		dateSet = Date(self.database, table)
-		lastDate = dateSet.lastDate()
-		
-		for line in fileinput.input(file):
-			time,open,highest,lowest,close,avg,sellVol,buyVol = self.__fileRecordToColumns(line)
-			#略过所有已同步数据
-			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, '%m/%d/%Y'):
-				continue
-			
-			time = self.__formatTime(time)
-			if self.db.ifRecordExist(table, 'Time', time):
-				print "Found duplicate record: %s" % time
-				#退出前关闭文件序列
-				fileinput.close()
-				break
-			
-			self.debug.dbg('Found new record: %s' % line.rstrip('\n'))
-			
-			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
-						time,open,highest,lowest,close,avg,sellVol,buyVol)
-			self.debug.dbg('Insert values %s' % values)
-			self.db.insert(table, values)
 	
 	#把数据文件转换为数据表名
 	def __fileToTableName (self,
@@ -97,22 +71,4 @@ class WenhuaHackImporter(Import):
 			file = diretory.rstrip('/') + '/' + f
 			self.debug.dbg(file)
 			self.appendRecordsFromFile(file, table)
-	
-	#新导入一个数据表
-	def newImport (self, 
-		file,	#待导入的数据文件
-		table,	#目标数据表
-		):
-		self.prepareImport(table)
-		
-		for line in fileinput.input(file):
-			time,open,highest,lowest,close,avg,sellVol,buyVol = self.__fileRecordToColumns(line)
-			
-			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
-			
-			time = self.__formatTime(time)
-			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
-						time,open,highest,lowest,close,avg,sellVol,buyVol)
-			#self.debug.dbg('Insert values %s' % values)
-			self.db.insert(table, values)
 		
