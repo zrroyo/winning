@@ -89,16 +89,20 @@ def importerOptionsHandler (options, args):
 		
 		file = options.dataFile
 		table = options.dataTable
+		extra = options.extra
 		directory = options.directory
 		
 		if table is not None and file is not None:
 			print "\nAppending records to '%s' from file '%s' ...\n" % (table, file)
 			
-			return imp.appendRecordsFromFile(file, table)
+			return imp.appendRecordsFromFile(file = file, 
+							table = table, 
+							endTime = extra)
 		elif directory is not None:
 			print "\nAppending records from directory '%s' ...\n" % (directory)
 			
-			return imp.appendRecordsFromDir(directory)
+			return imp.appendRecordsFromDir(directory = directory, 
+							endTime = extra)
 		else:
 			print "\nPlease specify -f 'dataFile' and -t 'dataTable' to append from file, or -d 'directory' to import from a directory.\n"
 			

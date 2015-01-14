@@ -75,14 +75,22 @@ class Import:
 	
 	#从数据文件中追加数据
 	def appendRecordsFromFile (self, 
-		file,	#数据文件
-		table,	#数据表
+		file,		#数据文件
+		table,		#数据表
+		endTime = None,	#截止时间
 		):
 		dateSet = Date(self.database, table)
 		lastDate = dateSet.lastDate()
 		
 		for line in fileinput.input(file):
 			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
+			
+			#忽略所有大于endTime的数据，并结束
+			if endTime is not None and strToDatetime(time, '%m/%d/%Y') > strToDatetime(endTime, '%Y-%m-%d'):
+				self.debug.dbg('Appended all data until %s' % endTime)
+				fileinput.close()
+				return
+			
 			#略过所有已同步数据
 			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, '%m/%d/%Y'):
 				continue
@@ -103,7 +111,8 @@ class Import:
 	
 	#从目录下的数据文件中导入数据
 	def appendRecordsFromDir (self, 
-		diretory,	#数据文件目录
+		directory,	#数据文件目录
+		endTime = None,	#截止时间
 		):
 		pass
 	
