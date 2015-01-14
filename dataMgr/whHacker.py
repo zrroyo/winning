@@ -63,12 +63,13 @@ class WenhuaHackImporter(Import):
 	
 	#从目录下的数据文件中导入数据
 	def appendRecordsFromDir (self, 
-		diretory,	#数据文件目录
+		directory,	#数据文件目录
+		endTime = None,	#截止时间
 		):
-		files = os.listdir(diretory)
+		files = os.listdir(directory)
 		for f in files:
 			table = self.__fileToTableName(f)
-			file = diretory.rstrip('/') + '/' + f
+			file = directory.rstrip('/') + '/' + f
 			self.debug.dbg(file)
-			self.appendRecordsFromFile(file, table)
+			self.appendRecordsFromFile(file, table, endTime)
 		
