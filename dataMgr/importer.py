@@ -32,9 +32,11 @@ class Import:
 	def __del__ (self):
 		self.db.close()
 	
-	# Prepare to import records from $dataFile to $dataTable.
-	# If dataTable does not exist, create it using template.
-	def prepareImport(self, table, tableType='dayk'):
+	#准备导入，如果数据表不存在则使用模版导入
+	def __prepareImport(self, 
+		table,			#数据表名
+		tableType='dayk',	#数据表类型
+		):
 		if self.db.ifTableExist(table):
 			return True
 		
@@ -58,13 +60,30 @@ class Import:
 	
 	#新导入一个数据表
 	def newImport (self, 
-		file,	#待导入的数据文件
-		table,	#目标数据表
+		file,			#待导入的数据文件
+		table,			#目标数据表
+		timeFilters = None,	#过滤间期
 		):
-		self.prepareImport(table)
+		self.__prepareImport(table)
+		
+		#如过滤间期有效则只导入指定区间的数据
+		if timeFilters is not None:
+			startTime,endTime = timeFilters.split(',')
 		
 		for line in fileinput.input(file):
 			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
+			
+			if timeFilters is not None:
+				#忽略所有早于开始日期的数据
+				if strToDatetime(time, '%m/%d/%Y') < strToDatetime(startTime, '%Y-%m-%d'):
+					#self.debug.dbg('Ignore %s' % time)
+					continue
+				
+				#已到截止日期，操作完成
+				if strToDatetime(time, '%m/%d/%Y') > strToDatetime(endTime, '%Y-%m-%d'):
+					#self.debug.dbg('Up to the end date %s' % endTime)
+					fileinput.close()
+					return
 			
 			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
 			time = self.formatTime(time)
@@ -122,7 +141,7 @@ class Import:
 		if self.db.ifTableExist(tableFrom) == False:
 			return
 		
-		self.prepareImport(tableTo)
+		self.__prepareImport(tableTo)
 		
 		if (tTo is None):
 			sqls = 'insert %s (select * from %s where Time >= \'%s\' order by Time asc)' % (tableTo, tableFrom, tFrom)
