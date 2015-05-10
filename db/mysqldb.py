@@ -1,33 +1,54 @@
-#! /usr/bin/python
-# coding=gbk
+#-*- coding:utf-8 -*-
 
 '''
-Core MySQL Interface
+Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
 
-This class defines a basic framework to access MySQL database, which makes 
-access database much easilier. 
+MySQL数据库访问接口
 '''
 
 import sys
+sys.path.append('..')
+
 import types
 import MySQLdb as sql
-import db
 import exc
+from db import *
+from misc.debug import *
 
-class MYSQL(db.DB):
-	# Initialize the connection to MySQL database.
-	def connect (self):
-		self.conn = sql.connect(self.host, self.user, self.passwd, self.db)
+#MySQL数据库接口
+class MYSQL(DB):
+	
+	debug = Debug('MYSQL', False)	#调试接口
+	
+	#连接数据库
+	def connect (self,
+		database = None,	#将要连接的数据库
+		):
+		if database is not None:
+			db = database
+		elif self.db is not None:
+			db = self.db
+		else:
+			self.debug.error("Found database is None, invalid!")
+			return
+		
+		self.conn = sql.connect(self.host, self.user, self.passwd, db)
 		self.cursor = self.conn.cursor()
 		return True
-			
-	# Set @table as default table.
-	def setDefTable (self, table):
+	
+	#设置默认数据表
+	def setDefTable (self, 
+		table,	#数据表
+		):
 		self.table = table
 		return True
-			
-	# Execute SQL sentence.
-	def execSql (self, sqls):
+	
+	#执行SQL语句
+	def execSql (self, 
+		sqls,	#SQL语句
+		):
+		self.debug.dbg(sqls)
+		
 		if self.cursor == None:
 			return None
 		try:
@@ -36,11 +57,13 @@ class MYSQL(db.DB):
 		except :
 			exc.logExcSql()
 	
-	# Fetch all searched results, and it is only used following execSql() if needed.
-	def fetch (self, line=0):
+	#取出查询结果，通常紧跟在execSql()之后
+	def fetch (self, 
+		line = 0,	#默认取出第一行
+		):
 		if self.cursor == None:
 			return None
-			
+	
 		res = self.cursor.fetchall()
 			
 		if line == 'all':
@@ -50,9 +73,12 @@ class MYSQL(db.DB):
 		else:
 			return None
 	
-	# Do a simple search. Search condition and returned fields must be pointed out 
-	# by @cond and @field.
-	def search (self, table, cond, field="*"):
+	#查询（搜索）数据库
+	def search (self, 
+		table,		#数据表
+		cond = None, 	#查询条件
+		field = "*",	#所要查询的字段
+		):
 		if self.cursor == None:
 			return None
 	
@@ -64,8 +90,11 @@ class MYSQL(db.DB):
 		res = self.execSql(sqls)
 		return res
 	
-	# Insert a new record filled by @values into @table 
-	def insert (self, table, values):
+	#插入记录
+	def insert (self,
+		table,	#数据表
+		values,	#记录值
+		):
 		if self.cursor == None:
 			return None
 		
@@ -73,17 +102,24 @@ class MYSQL(db.DB):
 		res = self.execSql(sqls)
 		return res
 	
-	# Update a record matching @cond using @values to @table.
-	def update (self, table, cond, values):
+	#更新记录
+	def update (self,
+		table,	#数据表
+		cond, 	#查询条件
+		values,	#记录值
+		):
 		if self.cursor == None:
 			return None
-				
+		
 		sqls = "update %s set %s where %s" % (table, values, cond)
 		res = self.execSql(sqls)
 		return res
-			
-	# Remove a record matching @cond from @table.
-	def remove (self, table, cond):
+	
+	#移除记录
+	def remove (self, 
+		table,	#数据表
+		cond, 	#查询条件
+		):
 		if self.cursor == None:
 			return None
 		
@@ -91,20 +127,24 @@ class MYSQL(db.DB):
 		res = self.execSql(sqls)
 		return res
 	
-	# Close a connection to database.
+	#关闭数据连接
 	def close (self):
 		self.cursor.close()
 		self.conn.close()
-		return
 		
-	# Drop a table from database.
-	def drop (self, table):
+	#删除数据表
+	def drop (self, 
+		table,	#数据表
+		):
 		sqls = 'drop table %s' % table
 		res = self.execSql(sqls)
 		return res
 	
-	# Set the primary keys for a table.
-	def attrSetPrimary (self, table, field):
+	#设置数据表主键
+	def attrSetPrimary (self, 
+		table,	#数据表
+		field,	#主键字段
+		):
 		sqls = 'alter table %s add primary key(%s)' % (table, field)
 		res = self.execSql(sqls)
 		return res
@@ -112,8 +152,10 @@ class MYSQL(db.DB):
 	#def attrSetNotNull (self, table, field):
 		#return
 		
-	# Return if a table existed in database.
-	def ifTableExist (self, table):
+	#返回是否数据表已存在
+	def ifTableExist (self, 
+		table,	#数据表
+		):
 		sqls = 'show tables like \'%s\'' % (table)
 		res = self.execSql(sqls)
 		if res == 1:
@@ -121,8 +163,11 @@ class MYSQL(db.DB):
 		else:
 			return False
 		
-	# Create a data table using template.
-	def createTableTemplate (self, table, template):
+	#用数据表模版创建新表
+	def createTableTemplate (self, 
+		table, 		#数据表
+		template,	#表模版
+		):
 		if self.ifTableExist(table):
 			return
 			
@@ -130,8 +175,12 @@ class MYSQL(db.DB):
 		res = self.execSql(sqls)
 		return res
 	
-	# Return if a record already exists in a data table.
-	def ifRecordExist (self, table, primaryKey, value):
+	#返回数据记录是否存在
+	def ifRecordExist (self, 
+		table, 		#数据表
+		primaryKey, 	#主键
+		value,		#主键值
+		):
 		sqls = 'select * from %s where %s = "%s"' % (table, primaryKey, value)
 		res = self.execSql(sqls)
 		

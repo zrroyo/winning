@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 class DB ():
-	def __init__ (self, host, user, passwd, db):
+	def __init__ (self, host, user, passwd, db = None):
 		self.host=host
 		self.user=user
 		self.passwd=passwd
 		self.db=db
-		return
 	
 	def __del__ (self):
 		return
