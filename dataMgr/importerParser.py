@@ -1,183 +1,262 @@
 #-*- coding:utf-8 -*-
 
 '''
+Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
+
 数据导入子系统命令行处理模块
 '''
 
 import sys
 sys.path.append('..')
+import os
 
 from optparse import OptionParser
+from db.sql import *
+from misc.debug import *
 
-import dataMgr.whImporter as IMPORT
-import db.mysqldb as sql
+debug = Debug('Import', True)	#调试接口
 
-# Drops all Future tables listed in @tables.
-def dropFutureTables (imp, tables):
+#删除数据表
+def doDropTables (
+	imp, 	#数据导入接口（IMPORTER）
+	tables,	#数据表，以逗号分隔
+	):
 	tableSet = tables.split(',')
 	
 	for table in tableSet:
-		imp.dropFutureTable(table)
+		imp.dropDataTable(table)
 		print "Dropped '%s'. " % table
 
-# List all tables in database.
-def listAllTables (database):
-	db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
-	db.connect()
+#列出可用的数据表
+def doListTables (
+	database,	#数据库
+	):
+	db = SQL()
+	db.connect(database)
 	
-	sqls = 'show tables'
-	db.execSql(sqls)
+	strSql = 'show tables'
+	db.execSql(strSql)
 	
 	res = list(db.fetch('all'))
 	
 	print "\nAll tables in '%s:'\n" % database
 	for test in res:
 		print test[0]
-		
-	db.close()	
+	
+	db.close()
 
-# Importer subsystem option handler transfering options to actions.
-def importerOptionsHandler (options, args):
-	imp = None
-	if options.database:
-		#imp = IMPORT.WenhuaImport(options.database)
-		import whHacker
-		imp = whHacker.WenhuaHackImporter(options.database)
+#返回指定的数据导入接口
+def getImpoter (
+	type,		#待导入的数据记录类型
+	database,	#待导入的数据库
+	):
+	#默认类型
+	import whHacker
+	imp = whHacker.WenhuaHackImporter(database)
+	
+	if type == 'wh':
+		return imp
+	elif type == 'tb':
+		import tb
+		imp = tb.TBImporter(database)
 	else:
-		print "\nPlease specify database using '-b'.\n"
+		debug.dbg("Unsupported data format!")
+	
+	return imp
+
+#返回数据的类型（文件或目录）
+def getSourceType (
+	path,	#路径
+	):
+	if os.path.isfile(path):
+		return 'file'
+	elif os.path.isdir(path):
+		return 'directory'
+	else:
+		return 'Unknown'
+
+#需要数据源
+def requireSource (
+	source,	#数据源
+	):
+	if not source:
+		debug.error("Date records source is required, '-s file|dir'.")
+		return True
+	
+	return False
+
+#需要数据表
+def requireTable (
+	table,	#数据表
+	):
+	if not table:
+		debug.error("Destination table is required, '-t table1'.")
+		return True
+	
+	return False
+
+#需要附加参数
+def requireExtra (
+	extra,	#数据表
+	):
+	if not table:
+		debug.error("Extra info is required, '-e 5/8/2015'.")
+		return True
+	
+	return False
+
+#IMPORTER子系统命令行选项解析主函数
+def importerOptionsHandler (
+	options,	#命令选项
+	args,		#命令参数
+	):
+	
+	#数据库名不能为空
+	if options.database is None:
+		debug.error("Please specify database using '-b'.")
 		return
 	
-	if options.dropTable:
-		print "\nDropping '%s' from database '%s'...\n" % (options.dropTable, options.database)
-		dropFutureTables(imp, options.dropTable)
-		
+	#得到与数据类型对应的导入接口
+	imp = getImpoter(options.type, options.database)
+	if imp is None:
+		return
+	
+	#依指定删除数据表
+	if options.drop:
+		debug.dbg("Dropping '%s' from database '%s'..." % (options.drop, options.database))
+		doDropTables(imp, options.drop)
+	
+	#列出可用数据库
 	if options.list:
-		listAllTables (options.database)
+		doListTables (options.database)
 		return
 	
-	if options.mode == 'dir':
-		# 'directory' mode, import data records from a data directory to data table.
-		
-		directory = options.directory
-		table = options.dataTable
-		if not directory or not table:
-			print "\nPlease specify 'directory' and 'dataTable'\n"
+	'''
+	依工作模式完成不同操作
+	'''
+	
+	source = options.source
+	table = options.table
+	extra = options.extra
+	
+	if options.mode == 'new':
+		'''
+		从数据文件导入新表
+		'''
+		#数据源和目的数据表必须指定
+		if (requireSource(source) or requireTable(table)):
 			return
-			
-		if options.raw:
-			imp.processRawRecords(directory)
-			
-		print "\nImporting new records from '%s' to '%s'...\n" % (directory, table)
 		
-		return imp.importFromDir(directory, table)
-		
-	elif options.mode == 'new':
-		#从数据文件导入一个新数据表
-		file = options.dataFile
-		table = options.dataTable
-		if not file or not table:
-			print "\nPlease specify 'dataFile' and 'dataTable'\n"
+		#数据源必须为文件
+		if getSourceType(source) != 'file':
+			debug.error("A data records file is required.")
 			return
-			
-		print "\nImporting new records from '%s' to '%s'...\n" % (file, table)
 		
-		return imp.newImport(file = file, 
+		print "\nImporting records from '%s' to '%s'...\n" % (source, table)
+		
+		#调用导入接口导入数据
+		return imp.newImport(file = source, 
 					table = table, 
-					timeFilters = options.extra)
+					timeFilters = extra)
 		
 	elif options.mode == 'append':
-		# 'append' mode, only append data records from a data file at the end of data table.
+		'''
+		从数据文件或目录追加数据
+		'''
+		#数据源必须指定
+		if (requireSource(source)):
+			return
 		
-		file = options.dataFile
-		table = options.dataTable
-		extra = options.extra
-		directory = options.directory
-		
-		if table is not None and file is not None:
-			print "\nAppending records to '%s' from file '%s' ...\n" % (table, file)
+		#不同的数据源对应不同模式
+		sourceType = getSourceType(source)
+		if sourceType == 'file':
+			#数据表必须指定
+			if (requireTable(table)):
+				return
 			
-			return imp.appendRecordsFromFile(file = file, 
+			return imp.appendRecordsFromFile(file = source, 
 							table = table, 
 							endTime = extra)
-		elif directory is not None:
-			print "\nAppending records from directory '%s' ...\n" % (directory)
-			
-			return imp.appendRecordsFromDir(directory = directory, 
+		elif sourceType == 'directory':
+			return imp.appendRecordsFromDir(directory = source, 
 							endTime = extra)
 		else:
-			print "\nPlease specify -f 'dataFile' and -t 'dataTable' to append from file, or -d 'directory' to import from a directory.\n"
-			
+			debug.error("Found bad source type, only a file or directory is valid.")
 			return
 		
 	elif options.mode == 'update':
-		# 'update' mode, update the old records in data table and append the new records at 
-		# the end of data talbe using the records in data file.
+		'''
+		依数据文件记录更新数据表
+		'''
+		#数据源和目的数据表必须指定
+		if (requireSource(source) or requireTable(table)):
+			return
 		
-		file = options.dataFile
-		table = options.dataTable
-		if not file or not table:
-			print "\nPlease specify 'dataFile' and 'dataTable'\n"
+		#数据源必须为文件
+		if getSourceType(source) != 'file':
+			debug.error("A data records file is required.")
 			return
 			
-		print "\nUpdating and inserting records to '%s'...\n" % (table)
+		print "\nUpdating records to '%s'...\n" % (table)
 		
+		#调用导入接口导入数据
 		return imp.updateRecordsFromFile(file, table)
 		
-	elif options.mode == 'export':
-		file = options.dataFile
-		table = options.dataTable
-		if not options.dataTable or not options.extra:
-			print "\nPlease specify 'dataTable' and 'extra'\n"
+	elif options.mode == 'subtable':
+		'''
+		从数据表中提取部分数据生成新表
+		'''
+		#开始（截止时间）必须指定
+		if (requireExtra(extra)):
+			debug.error("The time to start (and end) must be given with option '-e'.")
 			return
 		
-		time = options.extra.split(',')
-		table = options.dataTable.split(',')
-		endDate = 'Now'
+		#数据表（源表、目的表）必须指定
+		if (requireTable(table)):
+			return
 		
-		#print time, table
-		
+		table = options.table.split(',')
 		if len(table) == 1:
-			print "\nPlease specify two data tables like '-t m09,m1309'\n"
+			debug.error("Please specify two data tables like '-t m09,m1309'.")
 			return
 			
+		time = extra.split(',')
+		endDate = None
 		if len(time) == 2:
 			endDate = time[1]
-
-		print "\nExporting '%s' to '%s' from '%s' to '%s'...\n" % (table[0], table[1], time[0], endDate)
 		
-		if endDate == 'Now':
-			imp.partReimport(table[0], table[1], time[0])
-		else:
-			imp.partReimport(table[0], table[1], time[0], endDate)
+		debug.dbg('%s, %s' % (time, table))
+		
+		print "\nExporting '%s' to '%s' from '%s' to '%s'...\n" % (
+				table[0], table[1], time[0], endDate if endDate else 'Now' )
+		
+		#调用导入接口导入数据
+		imp.partReimport(table[0], table[1], time[0], endDate)
 		
 	elif options.mode is None:
-		return
+		debug.error("Import mode is required here. ")
 	else:
-		print "\nUn-Supported mode '%s'\n" % options.mode
+		debug.error("Found unkonwn mode '%s'" % options.mode)
 
 # Importer subsystem Option Parser.
 def importerOptionsParser (parser):
 	parser.add_option('-b', '--database', dest='database', 
 			help='The database in which operations need to be done.')
-	parser.add_option('-f', '--dataFile', dest='dataFile', 
-			help='The data file from which to import data records.')
-	parser.add_option('-t', '--dataTable', dest='dataTable', 
+	parser.add_option('-s', '--source', dest='source', 
+			help='The source (file or directory) to import records from.')
+	parser.add_option('-t', '--table', dest='table', 
 			help='The data table to which to import data records.')
-	parser.add_option('-d', '--directory', dest='directory', 
-			help='The directory from which to import data records.')
-	parser.add_option('-r', '--raw', action="store_true", dest='raw', 
-			help='Only used with "-d" if the records are raw in directory.')
-	#parser.add_option('-u', action="store_false", dest='appendUpdate', 
-			#help='Append records and update the old records to data table.')
 	parser.add_option('-m', '--mode', dest='mode', 
-			help='Working mode. "dir", "new", "append", "update", etc.')
-	parser.add_option('-D', '--dropTable', dest='dropTable', 
+			help='Importer mode: new, append, update, subtable, etc.')
+	parser.add_option('-D', '--drop', dest='drop', 
 			help='Drop a table from database.')
+	parser.add_option('-T', '--type', dest='type', 
+			help='The type of the data records to be imported.')
 	parser.add_option('-e', '--extra', dest='extra', 
-			help='extra informaton, contains details used with other options if needed.')
+			help='Extra contains details used with other options if needed.')
 	parser.add_option('-l', '--list', action="store_true", dest='list', 
 			help='List all tables in database.')
-			
+	
 	(options, args) = parser.parse_args()
 
 	importerOptionsHandler(options, args)
