@@ -1,6 +1,8 @@
 #-*- coding:utf-8 -*-
 
 '''
+Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
+
 导入数据接口
 
 将文华等行情软件下载的数据文件导入数据库。
@@ -12,7 +14,7 @@ sys.path.append("..")
 import fileinput
 
 from date import *
-from db.mysqldb import *
+from db.sql import *
 from misc.debug import *
 from misc.dateTime import *
 
@@ -24,34 +26,39 @@ class Import:
 	def __init__ (self, 
 		database='futures'
 		):
-		self.db = MYSQL("localhost", 'win', 'winfwinf', database)
-		self.db.connect()
+		self.db = SQL()
+		self.db.connect(database)
 		self.database = database
-		return
 	
 	def __del__ (self):
 		self.db.close()
 	
 	#准备导入，如果数据表不存在则使用模版导入
 	def __prepareImport(self, 
-		table,			#数据表名
-		tableType='dayk',	#数据表类型
+		table,				#数据表名
+		template = 'templateDayk',	#数据表类型（模版）
 		):
 		if self.db.ifTableExist(table):
 			return True
 		
-		if tableType == 'dayk':
-			template = 'templateDayk'
-			
 		self.db.createTableTemplate(table, template)
-		
+	
 	#格式化时间
+	#MUST_OVERRIDE
 	def formatTime (self,
 		time,	#待格式化的时间
 		):
-		return datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
+		return datetimeToStr(strToDatetime(time, self.strTimeFormat()), self.strTimeFormat())
+	
+	#时间格式字符串
+	#MUST_OVERRIDE
+	def strTimeFormat (self):
+		#必须指定为数据文件中的时间格式，如不同于如下
+		#格式需要在子类中重载，重要！
+		return '%m/%d/%Y'
 	
 	#将文件数据记录转换成字段列表
+	#MUST_OVERRIDE
 	def fileRecordToColumns (self,
 		line,	#待转换的行（数据文件中的每一行）
 		):
@@ -60,11 +67,12 @@ class Import:
 	
 	#新导入一个数据表
 	def newImport (self, 
-		file,			#待导入的数据文件
-		table,			#目标数据表
-		timeFilters = None,	#过滤间期
+		file,				#待导入的数据文件
+		table,				#目标数据表
+		timeFilters = None,		#过滤间期
+		template = 'templateDayk',	#数据表类型（模版）
 		):
-		self.__prepareImport(table)
+		self.__prepareImport(table, template)
 		
 		#如过滤间期有效则只导入指定区间的数据
 		if timeFilters is not None:
@@ -74,13 +82,14 @@ class Import:
 			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
 			
 			if timeFilters is not None:
+				timeRecord = strToDatetime(time, self.strTimeFormat())
 				#忽略所有早于开始日期的数据
-				if strToDatetime(time, '%m/%d/%Y') < strToDatetime(startTime, '%Y-%m-%d'):
+				if timeRecord < strToDatetime(startTime, self.strTimeFormat()):
 					#self.debug.dbg('Ignore %s' % time)
 					continue
 				
 				#已到截止日期，操作完成
-				if strToDatetime(time, '%m/%d/%Y') > strToDatetime(endTime, '%Y-%m-%d'):
+				if timeRecord > strToDatetime(endTime, self.strTimeFormat()):
 					#self.debug.dbg('Up to the end date %s' % endTime)
 					fileinput.close()
 					return
@@ -105,13 +114,13 @@ class Import:
 			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
 			
 			#忽略所有大于endTime的数据，并结束
-			if endTime is not None and strToDatetime(time, '%m/%d/%Y') > strToDatetime(endTime, '%Y-%m-%d'):
+			if endTime is not None and strToDatetime(time, self.strTimeFormat()) > strToDatetime(endTime, self.strTimeFormat()):
 				self.debug.dbg('Appended all data until %s' % endTime)
 				fileinput.close()
 				return
 			
 			#略过所有已同步数据
-			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, '%m/%d/%Y'):
+			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, self.strTimeFormat()):
 				continue
 			
 			time = self.formatTime(time)
