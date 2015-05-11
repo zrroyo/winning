@@ -141,12 +141,25 @@ class Import:
 			self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
 	
+	#把数据文件转换为数据表名
+	#MUST_OVERRIDE
+	def recordsFileToTable (self,
+		file,	#数据文件
+		):
+		#如果不同于以下格式，则必须重载此函数
+		return '%s_dayk' % file
+	
 	#从目录下的数据文件中导入数据
 	def appendRecordsFromDir (self, 
 		directory,	#数据文件目录
 		endTime = None,	#截止时间
 		):
-		pass
+		files = os.listdir(directory)
+		for f in files:
+			table = self.recordsFileToTable(f)
+			file = directory.rstrip('/') + '/' + f
+			self.debug.dbg(file)
+			self.appendRecordsFromFile(file, table, endTime)
 	
 	# Reimport a part of records between date $Tfrom to date $tTo from 
 	# tableFrom to new tableTo

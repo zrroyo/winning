@@ -35,7 +35,7 @@ class WenhuaHackImporter(Import):
 		return datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
 	
 	#把数据文件转换为数据表名
-	def __fileToTableName (self,
+	def recordsFileToTable (self,
 		file,	#数据文件
 		):
 		file = file.rstrip('.txt').rstrip(' ')
@@ -60,16 +60,4 @@ class WenhuaHackImporter(Import):
 			
 		ret += '_dayk'
 		return ret
-	
-	#从目录下的数据文件中导入数据
-	def appendRecordsFromDir (self, 
-		directory,	#数据文件目录
-		endTime = None,	#截止时间
-		):
-		files = os.listdir(directory)
-		for f in files:
-			table = self.__fileToTableName(f)
-			file = directory.rstrip('/') + '/' + f
-			self.debug.dbg(file)
-			self.appendRecordsFromFile(file, table, endTime)
 		
