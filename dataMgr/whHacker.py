@@ -18,32 +18,21 @@ class WenhuaHackImporter(Import):
 	#调试接口
 	debug = Debug('WenhuaHackImporter', True)
 	
-	#从数据文件中追加数据
-	def appendRecordsFromFile (self, 
-		file,	#数据文件
-		table,	#数据表
+	#将文件数据记录转换成字段列表
+	#override
+	def fileRecordToColumns (self,
+		line,	#待转换的行（数据文件中的每一行）
 		):
-		dateSet = Date(self.database, table)
-		lastDate = dateSet.lastDate()
-		
-		for line in fileinput.input(file):
-			time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
-			#略过所有已同步数据
-			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, '%m/%d/%Y'):
-				continue
-			
-			time = datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
-			if self.db.ifRecordExist(table, 'Time', time):
-				print "Found duplicate record: %s" % time
-				#退出前关闭文件序列
-				fileinput.close()
-				break
-			
-			self.debug.dbg('Found new record: %s' % line.rstrip('\n'))
-			
-			values = "'%s',%s,%s,%s,%s,0,%s,%s,Null,Null" % (time,open,highest,lowest,close,sellVol,buyVol)
-			self.debug.dbg('Insert values %s' % values)
-			self.db.insert(table, values)
+		time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
+		avg = 0
+		return time,open,highest,lowest,close,avg,sellVol,buyVol
+	
+	#格式化时间
+	#override
+	def formatTime (self,
+		time,	#待格式化的时间
+		):
+		return datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
 	
 	#把数据文件转换为数据表名
 	def __fileToTableName (self,
@@ -74,12 +63,13 @@ class WenhuaHackImporter(Import):
 	
 	#从目录下的数据文件中导入数据
 	def appendRecordsFromDir (self, 
-		diretory,	#数据文件目录
+		directory,	#数据文件目录
+		endTime = None,	#截止时间
 		):
-		files = os.listdir(diretory)
+		files = os.listdir(directory)
 		for f in files:
 			table = self.__fileToTableName(f)
-			file = diretory.rstrip('/') + '/' + f
+			file = directory.rstrip('/') + '/' + f
 			self.debug.dbg(file)
-			self.appendRecordsFromFile(file, table)
-	
+			self.appendRecordsFromFile(file, table, endTime)
+		

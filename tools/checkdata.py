@@ -59,20 +59,17 @@ class CheckData:
 	
 	#转换时间为数据文件中的格式
 	def __convertDateAsFile (self,
-		date,	#时间
+		date,   #时间
 		):
 		dtime = strToDatetime(date, "%Y-%m-%d")
-		self.debug.dbg('dtime %s' % dtime)
+		#self.debug.dbg('dtime %s' % dtime)
 		return datetimeToStr(dtime, "%m/%d/%Y")
 	
 	#从数据文件中提取记录
 	def __fileToDataUnion (self,
-		date,	#时间
+		lineNum,	#行号
 		):
-		fDate = self.__convertDateAsFile(date)
-		fDate = fDate.replace('/', '\/')
-		self.debug.dbg('fDate %s' % fDate)
-		self.shell.execCmd("sed -n '/%s/p' %s" % (fDate, self.datfile))
+		self.shell.execCmd("sed -n '%sp' %s" % (lineNum, self.datfile))
 		self.debug.dbg(self.shell.getOutput())
 		info = self.shell.getOutput().split(',')
 		
@@ -92,53 +89,79 @@ class CheckData:
 		else:
 			return False
 	
+	#得到交易时间所在的行号
+	def __dateToLineNum (self,
+		date,	#交易时间
+		):
+		dateTmp = self.__convertDateAsFile(date)
+		dateTmp = dateTmp.replace('/', '\/')
+		self.shell.execCmd("sed -n '/%s/{=;q}' %s" % (dateTmp, self.datfile))
+		lineNum = int(self.shell.getOutput())
+		self.debug.dbg('dateTmp %s, lineNum %s' % (dateTmp, lineNum))
+		return lineNum
+	
 	#核对数据表内容
 	def checkContent (self,
 		days,	#核对天数
+		date,	#核对的开始日期
 		):
-		self.debug.dbg('Last Date %s' % self.date.lastDate())
-		self.date.setCurDate(self.date.lastDate())
-		
-		status = True
-		endMatching = False
-		while days > 0:
-			curDate = self.date.curDate()
-			if self.date.isFirstDate(curDate):
-				#匹配从表尾向表头进行，匹配到表头结束。
-				endMatching = True
+		try:
+			self.debug.dbg('Last Date %s' % date)
+			self.date.setCurDate(date)
+			startLine = self.__dateToLineNum(date)
 			
-			ddu = self.__dataToDataUnion(curDate)
-			fdu = self.__fileToDataUnion(curDate)
-			if self.__compDataUnion(ddu, fdu):
-				self.debug.dbg('%s: match' % curDate)
-			else:
-				self.debug.info('%s: dismatch' % curDate)
-				status = False
+			status = True
+			endMatching = False
+			while days > 0:
+				curDate = self.date.curDate()
+				if self.date.isFirstDate(curDate):
+					#匹配从表尾向表头进行，匹配到表头结束。
+					endMatching = True
 				
-			if endMatching:
-				self.debug.info('%s: End of table!' % curDate)
-				break
+				ddu = self.__dataToDataUnion(curDate)
+				fdu = self.__fileToDataUnion(startLine)
+				if self.__compDataUnion(ddu, fdu):
+					self.debug.dbg('%s: match' % curDate)
+				else:
+					self.debug.info('%s: dismatch' % curDate)
+					status = False
+					
+				if endMatching:
+					self.debug.info('%s: End of table!' % curDate)
+					break
+				
+				#行号减一，继续上一天
+				startLine -= 1
+				if startLine == 0:
+					self.debug.info('%s: End of file!' % curDate)
+					break
+				
+				self.date.getSetPrevDate()
+				days -= 1
 			
-			self.date.getSetPrevDate()
-			days -= 1
-		
-		return status
+			return status
+		except:
+			return False
 			
 	#核对表头（第一行）
-	def checkHead (self):
-		self.shell.execCmd("sed -n '$p' %s" % self.datfile)
-		record = self.shell.getOutput().split(',')
-		dtime = strToDatetime(record[0], "%m/%d/%Y")
-		fDate = datetimeToStr(dtime, "%Y-%m-%d")
+	def checkHead (self,
+		date,	#核对的开始日期
+		):
+		try:
+			ddu = self.__dataToDataUnion(date)
+			startLine = self.__dateToLineNum(date)
+			fdu = self.__fileToDataUnion(startLine)
+			if self.__compDataUnion(ddu, fdu):
+				self.debug.dbg('%s: head match' % date)
+				status = True
+			else:
+				self.debug.info('%s: head dismatch' % date)
+				status = False
+		except:
+			status = False
 		
-		tDate = self.date.lastDate()
-		self.debug.dbg('file date %s, table date %s' % (fDate, tDate))
-		
-		if tDate == fDate:
-			return True
-		else:
-			return False
-		
+		return status
+
 ##测试
 #def doTest ():
 	#cd = CheckData('current', 'FG501_dayk', '../tmp/current01/FG501.txt', debug = False)
@@ -147,16 +170,19 @@ class CheckData:
 #入口
 if __name__ == '__main__':
 	#doTest()
-	if len(sys.argv) != 5 and len(sys.argv) != 6:
-		print '使用: tools/checkdata.py current FG501_dayk FG501.txt 15'
+	if len(sys.argv) != 6 and len(sys.argv) != 7:
+		print '使用: tools/checkdata.py current FG501_dayk FG501.txt 15 2015-1-28'
 		exit(1)
 		
-	if len(sys.argv) == 5:
+	if len(sys.argv) == 6:
 		dbgMode = False
 	else:
 		dbgMode = True
-		
+	
+	#转换时间格式，确保时间能被date模块正确匹配
+	date = datetimeToStr(strToDatetime(sys.argv[5], '%Y-%m-%d'), '%Y-%m-%d')
+	
 	cd = CheckData(sys.argv[1], sys.argv[2], sys.argv[3], debug = dbgMode)
-	print 'Head:    %s' % cd.checkHead()
-	print 'Content: %s' % cd.checkContent(int(sys.argv[4]))
+	print 'Head:    %s' % cd.checkHead(date = date)
+	print 'Content: %s' % cd.checkContent(days = int(sys.argv[4]), date = date)
 	

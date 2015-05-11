@@ -1,7 +1,7 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
 
 '''
-This is the core framework to import data records to data tables.
+数据导入子系统命令行处理模块
 '''
 
 import sys
@@ -71,9 +71,8 @@ def importerOptionsHandler (options, args):
 		
 		return imp.importFromDir(directory, table)
 		
-	elif options.mode == 'file':
-		# 'file' mode, import data records from a data file to data table.
-		
+	elif options.mode == 'new':
+		#从数据文件导入一个新数据表
 		file = options.dataFile
 		table = options.dataTable
 		if not file or not table:
@@ -82,23 +81,29 @@ def importerOptionsHandler (options, args):
 			
 		print "\nImporting new records from '%s' to '%s'...\n" % (file, table)
 		
-		return imp.newImport(file, table)
+		return imp.newImport(file = file, 
+					table = table, 
+					timeFilters = options.extra)
 		
 	elif options.mode == 'append':
 		# 'append' mode, only append data records from a data file at the end of data table.
 		
 		file = options.dataFile
 		table = options.dataTable
+		extra = options.extra
 		directory = options.directory
 		
 		if table is not None and file is not None:
 			print "\nAppending records to '%s' from file '%s' ...\n" % (table, file)
 			
-			return imp.appendRecordsFromFile(file, table)
+			return imp.appendRecordsFromFile(file = file, 
+							table = table, 
+							endTime = extra)
 		elif directory is not None:
 			print "\nAppending records from directory '%s' ...\n" % (directory)
 			
-			return imp.appendRecordsFromDir(directory)
+			return imp.appendRecordsFromDir(directory = directory, 
+							endTime = extra)
 		else:
 			print "\nPlease specify -f 'dataFile' and -t 'dataTable' to append from file, or -d 'directory' to import from a directory.\n"
 			
@@ -165,7 +170,7 @@ def importerOptionsParser (parser):
 	#parser.add_option('-u', action="store_false", dest='appendUpdate', 
 			#help='Append records and update the old records to data table.')
 	parser.add_option('-m', '--mode', dest='mode', 
-			help='Working mode. "dir", "file", "append", "update", etc.')
+			help='Working mode. "dir", "new", "append", "update", etc.')
 	parser.add_option('-D', '--dropTable', dest='dropTable', 
 			help='Drop a table from database.')
 	parser.add_option('-e', '--extra', dest='extra', 

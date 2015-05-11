@@ -1,14 +1,30 @@
-#! /usr/bin/python
+#-*- coding:utf-8 -*-
+
+'''
+导入数据接口
+
+将文华等行情软件下载的数据文件导入数据库。
+'''
 
 import os
 import sys
 sys.path.append("..")
-import db.mysqldb as sql
-import date
+import fileinput
+
+from date import *
+from db.mysqldb import *
+from misc.debug import *
+from misc.dateTime import *
 
 class Import:
-	def __init__ (self, database='futures'):
-		self.db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
+	
+	#调试接口
+	debug = Debug('Import', False)
+	
+	def __init__ (self, 
+		database='futures'
+		):
+		self.db = MYSQL("localhost", 'win', 'winfwinf', database)
 		self.db.connect()
 		self.database = database
 		return
@@ -16,9 +32,11 @@ class Import:
 	def __del__ (self):
 		self.db.close()
 	
-	# Prepare to import records from $dataFile to $dataTable.
-	# If dataTable does not exist, create it using template.
-	def prepareImport(self, table, tableType='dayk'):
+	#准备导入，如果数据表不存在则使用模版导入
+	def __prepareImport(self, 
+		table,			#数据表名
+		tableType='dayk',	#数据表类型
+		):
 		if self.db.ifTableExist(table):
 			return True
 		
@@ -27,9 +45,95 @@ class Import:
 			
 		self.db.createTableTemplate(table, template)
 		
-	# Newly import data records from $dataFile to $dataTable
-	def newImport (self, dataFile, dataTable):
-		return
+	#格式化时间
+	def formatTime (self,
+		time,	#待格式化的时间
+		):
+		return datetimeToStr(strToDatetime(time, '%m/%d/%Y'), '%Y-%m-%d')
+	
+	#将文件数据记录转换成字段列表
+	def fileRecordToColumns (self,
+		line,	#待转换的行（数据文件中的每一行）
+		):
+		time,open,highest,lowest,close,avg,sellVol,buyVol = line.rstrip('\r\n').split(',')
+		return time,open,highest,lowest,close,avg,sellVol,buyVol
+	
+	#新导入一个数据表
+	def newImport (self, 
+		file,			#待导入的数据文件
+		table,			#目标数据表
+		timeFilters = None,	#过滤间期
+		):
+		self.__prepareImport(table)
+		
+		#如过滤间期有效则只导入指定区间的数据
+		if timeFilters is not None:
+			startTime,endTime = timeFilters.split(',')
+		
+		for line in fileinput.input(file):
+			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
+			
+			if timeFilters is not None:
+				#忽略所有早于开始日期的数据
+				if strToDatetime(time, '%m/%d/%Y') < strToDatetime(startTime, '%Y-%m-%d'):
+					#self.debug.dbg('Ignore %s' % time)
+					continue
+				
+				#已到截止日期，操作完成
+				if strToDatetime(time, '%m/%d/%Y') > strToDatetime(endTime, '%Y-%m-%d'):
+					#self.debug.dbg('Up to the end date %s' % endTime)
+					fileinput.close()
+					return
+			
+			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
+			time = self.formatTime(time)
+			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
+						time,open,highest,lowest,close,avg,sellVol,buyVol)
+			self.debug.dbg('Insert values %s' % values)
+			self.db.insert(table, values)
+	
+	#从数据文件中追加数据
+	def appendRecordsFromFile (self, 
+		file,		#数据文件
+		table,		#数据表
+		endTime = None,	#截止时间
+		):
+		dateSet = Date(self.database, table)
+		lastDate = dateSet.lastDate()
+		
+		for line in fileinput.input(file):
+			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
+			
+			#忽略所有大于endTime的数据，并结束
+			if endTime is not None and strToDatetime(time, '%m/%d/%Y') > strToDatetime(endTime, '%Y-%m-%d'):
+				self.debug.dbg('Appended all data until %s' % endTime)
+				fileinput.close()
+				return
+			
+			#略过所有已同步数据
+			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, '%m/%d/%Y'):
+				continue
+			
+			time = self.formatTime(time)
+			if self.db.ifRecordExist(table, 'Time', time):
+				print "Found duplicate record: %s" % time
+				#退出前关闭文件序列
+				fileinput.close()
+				break
+			
+			self.debug.dbg('Found new record: %s' % line.rstrip('\n'))
+			
+			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
+						time,open,highest,lowest,close,avg,sellVol,buyVol)
+			self.debug.dbg('Insert values %s' % values)
+			self.db.insert(table, values)
+	
+	#从目录下的数据文件中导入数据
+	def appendRecordsFromDir (self, 
+		directory,	#数据文件目录
+		endTime = None,	#截止时间
+		):
+		pass
 	
 	# Reimport a part of records between date $Tfrom to date $tTo from 
 	# tableFrom to new tableTo
@@ -37,7 +141,7 @@ class Import:
 		if self.db.ifTableExist(tableFrom) == False:
 			return
 		
-		self.prepareImport(tableTo)
+		self.__prepareImport(tableTo)
 		
 		if (tTo is None):
 			sqls = 'insert %s (select * from %s where Time >= \'%s\' order by Time asc)' % (tableTo, tableFrom, tFrom)
@@ -166,7 +270,7 @@ class Import:
 			print '\n	Month "%s" is out of range [1~12]\n' % month
 			return
 		
-		lcDateSet = date.Date(self.database, dataTable)
+		lcDateSet = Date(self.database, dataTable)
 		year = yearStart
 		
 		while year >= yearEnd:
