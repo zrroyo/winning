@@ -62,8 +62,8 @@ class Import:
 	def fileRecordToColumns (self,
 		line,	#待转换的行（数据文件中的每一行）
 		):
-		time,open,highest,lowest,close,avg,sellVol,buyVol = line.rstrip('\r\n').split(',')
-		return time,open,highest,lowest,close,avg,sellVol,buyVol
+		time,open,high,low,close,avg,Volume,OpenInterest = line.rstrip('\r\n').split(',')
+		return time,open,high,low,close,avg,Volume,OpenInterest
 	
 	#新导入一个数据表
 	def newImport (self, 
@@ -83,7 +83,7 @@ class Import:
 				endTime = tf[1]
 		
 		for line in fileinput.input(file):
-			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
+			time,open,high,low,close,avg,Volume,OpenInterest = self.fileRecordToColumns(line)
 			
 			if timeFilters:
 				timeRecord = strToDatetime(time, self.strTimeFormat())
@@ -101,7 +101,7 @@ class Import:
 			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
 			time = self.formatTime(time)
 			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
-						time,open,highest,lowest,close,avg,sellVol,buyVol)
+						time,open,high,low,close,avg,Volume,OpenInterest)
 			self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
 	
@@ -115,7 +115,7 @@ class Import:
 		lastDate = dateSet.lastDate()
 		
 		for line in fileinput.input(file):
-			time,open,highest,lowest,close,avg,sellVol,buyVol = self.fileRecordToColumns(line)
+			time,open,high,low,close,avg,Volume,OpenInterest = self.fileRecordToColumns(line)
 			
 			#忽略所有大于endTime的数据，并结束
 			if endTime and strToDatetime(time, self.strTimeFormat()) > strToDatetime(endTime, self.strTimeFormat()):
@@ -137,7 +137,7 @@ class Import:
 			self.debug.dbg('Found new record: %s' % line.rstrip('\n'))
 			
 			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
-						time,open,highest,lowest,close,avg,sellVol,buyVol)
+						time,open,high,low,close,avg,Volume,OpenInterest)
 			self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
 	

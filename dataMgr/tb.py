@@ -16,16 +16,16 @@ from misc.debug import *
 class TBImporter(Import):
 	
 	#调试接口
-	debug = Debug('TBImporter', True)
+	debug = Debug('TBImporter', False)
 	
 	#将文件数据记录转换成字段列表
 	#OVERRIDE
 	def fileRecordToColumns (self,
 		line,	#待转换的行（数据文件中的每一行）
 		):
-		time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
+		time,open,high,low,close,Volume,OpenInterest = line.rstrip('\r\n').split(',')
 		avg = 0
-		return time,open,highest,lowest,close,avg,sellVol,buyVol
+		return time,open,high,low,close,avg,Volume,OpenInterest
 	
 	#时间格式字符串
 	#OVERRIDE

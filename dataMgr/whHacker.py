@@ -23,9 +23,9 @@ class WenhuaHackImporter(Import):
 	def fileRecordToColumns (self,
 		line,	#待转换的行（数据文件中的每一行）
 		):
-		time,open,highest,lowest,close,sellVol,buyVol = line.rstrip('\r\n').split(',')
+		time,open,high,low,close,Volume,OpenInterest = line.rstrip('\r\n').split(',')
 		avg = 0
-		return time,open,highest,lowest,close,avg,sellVol,buyVol
+		return time,open,high,low,close,avg,Volume,OpenInterest
 	
 	#格式化时间
 	#override
