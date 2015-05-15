@@ -27,6 +27,9 @@ class RawDebug:
 	def pr_log (self, str):
 		print "LOG: %s" % str
 	
+	def pr_warn (self, str):
+		print "WARN: %s" % str
+	
 	def pr_raw (self, str):
 		sys.stdout.write(str)
 		sys.stdout.flush()
@@ -46,26 +49,33 @@ class Debug:
 		
 	#打印错误
 	def error (self, 
-		errInfo,	#错误信息
+		msg,	#错误信息
 		):
-		errStr = '%s: %s' % (self.prompt, errInfo)
-		self.debug.pr_err(errStr)
+		output = '%s: %s' % (self.prompt, msg)
+		self.debug.pr_err(output)
 	
 	#打印debug信息
 	def dbg (self, 
-		dbgInfo,	#调试信息
+		msg,	#调试信息
 		):
-		dbgMsg = '%s: %s' % (self.prompt, dbgInfo)
-		self.debug.pr_debug(dbgMsg)
+		output = '%s: %s' % (self.prompt, msg)
+		self.debug.pr_debug(output)
 		
+	#打印信息
+	def warn (self, 
+		msg,	#打印信息
+		):
+		output = '%s: %s' % (self.prompt, msg)
+		self.debug.pr_warn(output)
+	
 	#打印信息
 	def info (self, 
 		msg,	#打印信息
 		):
-		infoMsg = '%s' % (msg)
-		self.debug.pr_info(infoMsg)
-		
-##测试		
+		output = '%s' % (msg)
+		self.debug.pr_info(output)
+	
+##测试
 #def doTest ():
 	#dbg = RawDebug(1)
 	#dbg.pr_err('Hello world!')
