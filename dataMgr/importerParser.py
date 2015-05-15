@@ -61,7 +61,7 @@ def getImpoter (
 		import tb
 		imp = tb.TBImporter(database, debug = dbgMode)
 	else:
-		debug.dbg("Unsupported data format!")
+		debug.warn("Unsupported data format!")
 	
 	return imp
 
@@ -131,6 +131,7 @@ def importerOptionsHandler (
 	if options.drop:
 		debug.dbg("Dropping '%s' from database '%s'..." % (options.drop, options.database))
 		doDropTables(imp, options.drop)
+		return
 	
 	#列出可用数据库
 	if options.list:
