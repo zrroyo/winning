@@ -14,7 +14,7 @@ from optparse import OptionParser
 from db.sql import *
 from misc.debug import *
 
-debug = Debug('Import', True)	#调试接口
+debug = None	#调试接口
 
 #删除数据表
 def doDropTables (
@@ -49,16 +49,17 @@ def doListTables (
 def getImpoter (
 	type,		#待导入的数据记录类型
 	database,	#待导入的数据库
+	dbgMode = False	#是否调试
 	):
 	#默认类型
 	import whHacker
-	imp = whHacker.WenhuaHackImporter(database)
+	imp = whHacker.WenhuaHackImporter(database, debug = dbgMode)
 	
 	if type == 'wh':
 		return imp
 	elif type == 'tb':
 		import tb
-		imp = tb.TBImporter(database)
+		imp = tb.TBImporter(database, debug = dbgMode)
 	else:
 		debug.dbg("Unsupported data format!")
 	
@@ -110,6 +111,9 @@ def importerOptionsHandler (
 	options,	#命令选项
 	args,		#命令参数
 	):
+	#调试接口
+	global debug
+	debug = Debug('Import', options.debug)
 	
 	#数据库名不能为空
 	if options.database is None:
@@ -117,7 +121,9 @@ def importerOptionsHandler (
 		return
 	
 	#得到与数据类型对应的导入接口
-	imp = getImpoter(options.type, options.database)
+	imp = getImpoter(type = options.type, 
+			database = options.database,
+			dbgMode = options.debug)
 	if imp is None:
 		return
 	
@@ -248,7 +254,7 @@ def importerOptionsParser (parser):
 			help='The data table to which to import data records.')
 	parser.add_option('-m', '--mode', dest='mode', 
 			help='Importer mode: new, append, update, subtable, etc.')
-	parser.add_option('-D', '--drop', dest='drop', 
+	parser.add_option('-d', '--drop', dest='drop', 
 			help='Drop a table from database.')
 	parser.add_option('-T', '--type', dest='type', 
 			help='The type of the data records to be imported.')
@@ -256,6 +262,8 @@ def importerOptionsParser (parser):
 			help='Extra contains details used with other options if needed.')
 	parser.add_option('-l', '--list', action="store_true", dest='list', 
 			help='List all tables in database.')
+	parser.add_option('-D', '--debug', action="store_true", dest='debug', default=False,
+			help='Extra contains details used with other options if needed.')
 	
 	(options, args) = parser.parse_args()
 

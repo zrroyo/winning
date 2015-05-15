@@ -19,16 +19,14 @@ from misc.debug import *
 from misc.dateTime import *
 
 class Import:
-	
-	#调试接口
-	debug = Debug('Import', False)
-	
 	def __init__ (self, 
-		database='futures'
+		database = 'futures',	#默认连接数据库
+		debug = False,		#是否调试
 		):
 		self.db = SQL()
 		self.db.connect(database)
 		self.database = database
+		self.debug = Debug('Import', debug)	#调试接口
 	
 	def __del__ (self):
 		self.db.close()
@@ -129,7 +127,7 @@ class Import:
 			
 			time = self.formatTime(time)
 			if self.db.ifRecordExist(table, 'Time', time):
-				print "Found duplicate record: %s" % time
+				self.debug.dbg("Found duplicate record: %s" % time)
 				#退出前关闭文件序列
 				fileinput.close()
 				break
@@ -140,6 +138,8 @@ class Import:
 						time,open,high,low,close,avg,Volume,OpenInterest)
 			self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
+			
+		print "%s is OK" % table
 	
 	#把数据文件转换为数据表名
 	#MUST_OVERRIDE

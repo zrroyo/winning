@@ -15,9 +15,6 @@ from misc.debug import *
 #h文华hack版数据导入接口
 class WenhuaHackImporter(Import):
 	
-	#调试接口
-	debug = Debug('WenhuaHackImporter', True)
-	
 	#将文件数据记录转换成字段列表
 	#override
 	def fileRecordToColumns (self,

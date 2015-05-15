@@ -15,9 +15,6 @@ from misc.debug import *
 #TB版数据导入接口
 class TBImporter(Import):
 	
-	#调试接口
-	debug = Debug('TBImporter', False)
-	
 	#将文件数据记录转换成字段列表
 	#OVERRIDE
 	def fileRecordToColumns (self,
