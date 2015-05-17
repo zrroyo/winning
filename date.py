@@ -1,160 +1,195 @@
+#! /usr/bin/python
 #-*- coding:utf-8 -*-
 
 '''
-This is the core framework to manage all records in Time field for a data table.
+Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
 
-Fetch all Time records from a data table at initialization, then directly use them 
-without accesssing database again and again, this brings convenience and improves 
-performance.
+交易时间管理模块
 '''
 
-import db.mysqldb as sql
+from db.sql import *
+from db.tbldesc import *
+from misc.debug import *
 
+#交易时间管理接口
 class Date:
+	
+	debug = Debug('Date', False)	#调试接口
+	
 	def __init__ (self, database, table):
-		self.db = sql.MYSQL("localhost", 'win', 'winfwinf', database)
-		self.db.connect()
+		self.db = SQL()
+		self.db.connect(database)
 		self.fillDates(table)
-		
-		self.extra = None	#无特殊意义，用途视特定场合而定
-		return
+		self.table = table
+		self.current = self.firstDate()
 	
 	def __del__ (self):
 		self.db.close()
+	
+	#无意义，仅用于往后兼容性支持
+	def fillDates (self, 
+		table,
+		):
 		return
 	
-	# Fill dateset using the records stored in Time field of a data table.
-	def fillDates (self, table):
-		sqls = 'select Time from %s order by %s asc' % (table, 'Time')
-		#self.db.search(table, None, 'Day')
-		self.db.execSql(sqls)
-		self.dateSet = self.db.fetch('all')
-		self.dateIndex = 0
-		self.indexBound = len(self.dateSet)
-		#print self.indexBound
-		#print self.dateSet
-		return
+	#把数据库时间转换成字符串
+	def __dateToString (self, 
+		date,	#数据库时间
+		):
+		return '%s' % date
 	
-	# Transfer a date value to a string.
-	def _dateToString (self, date):
-		retDate = '%s' % date
-		return retDate
-	
-	# Return the current date referred by current index in dateset.
+	#返回当前交易时间
 	def curDate (self):
-		if self.dateIndex >= 0 and self.dateIndex < self.indexBound:
-			return self._dateToString(self.dateSet[self.dateIndex][0])
-		return None
+		return self.current
 	
-	# Return the first date in dateset.
+	#返回数据表里的第一个交易时间
 	def firstDate (self):
-		return self._dateToString(self.dateSet[0][0])
+		strSql = 'select %s from %s order by %s asc limit 1' % (
+				F_TIME, self.table, F_TIME)
+		self.db.execSql(strSql)
+		time = self.db.fetch(0)[FN_TIME]
+		self.debug.dbg("firstDate %s" % time)
+		return self.__dateToString(time)
 	
-	# Return the last date in dateset.
+	#返回数据表里的最后一个交易时间
 	def lastDate (self):
-		return self._dateToString(self.dateSet[self.indexBound-1][0])
+		strSql = "select %s from %s order by %s desc limit 1" % (
+				F_TIME, self.table, F_TIME)
+		self.db.execSql(strSql)
+		time = self.db.fetch(0)[FN_TIME]
+		self.debug.dbg("lastDate %s" % time)
+		return self.__dateToString(time)
 	
-	# Return if @date is the first date in dateset.
-	def isFirstDate (self, date):
-		if self._dateToString(self.dateSet[0][0]) == date:
-			return True
-		else:
-			return False
+	#是否是第一个交易时间
+	def isFirstDate (self, 
+		date,	#交易时间
+		):
+		return True if date == self.firstDate() else False
 	
-	# Return if @date is the last date in dateset.
-	def isLastDate (self, date):
-		if self._dateToString(self.dateSet[self.indexBound-1][0]) == date:
-			return True
-		else:
-			return False
+	#是否是最后一个交易时间
+	def isLastDate (self, 
+		date,	#交易时间
+		):
+		return True if date == self.lastDate() else False
 	
-	# Return the next date behind passed @date.
-	def nextDate (self, date):
-		i = 0
-		while i < self.indexBound:
-			if self._dateToString(self.dateSet[i][0]) == date:
-				if i+1 < self.indexBound:
-					return self._dateToString(self.dateSet[i+1][0])
-				else:
-					return None
-			i = i + 1
-
-		return None
+	#返回当前交易时间后的下一个交易时间
+	def nextDate (self):
+		return self.getNexNumDate(self.current, 1)
 	
-	# Return the previous date before passed @date.
-	def prevDate (self, date):
-		i = 0
-		while i < self.indexBound:
-			if self._dateToString(self.dateSet[i][0]) == date:
-				if i-1 >= 0:
-					return self._dateToString(self.dateSet[i-1][0])
-				else:
-					return None	
-			i = i + 1
-
-		return None
-		
-	# Set @date as current date.
-	def setCurDate (self, date):
-		#print date
-		#time = '%s' % (self.dateSet[0][0])
-		#print time
-		i = 0
-		while i < self.indexBound:
-			if self._dateToString(self.dateSet[i][0]) == date:
-				self.dateIndex = i
-				return i
-			i = i + 1
-			
-		return None
+	#返回当前交易时间前的上一个交易时间
+	def prevDate (self):
+		return self.getPrevNumDate(self.current, 1)
 	
-	# Return current date and set next date as current date.
+	#设置当前交易时间
+	def setCurDate (self, 
+		date,	#交易时间
+		):
+		#不做检验真的好吗？？
+		self.current = date
+	
+	#设置下一交易时间为当前交易时间，并返回
 	def getSetNextDate (self):
-		if self.dateIndex + 1 < self.indexBound:
-			self.dateIndex = self.dateIndex + 1
-			return self._dateToString(self.dateSet[self.dateIndex][0])
-		else:
-			return None
+		self.current = self.nextDate()
+		return self.current
 	
-	# Return current date and set previous date as current date.
+	#设置上一交易时间为当前交易时间，并返回
 	def getSetPrevDate (self):
-		if self.dateIndex - 1 >= 0:
-			self.dateIndex = self.dateIndex - 1
-			return self._dateToString(self.dateSet[self.dateIndex][0])
+		self.current = self.prevDate()
+		return self.current
+	
+	#检验交易时间是否有效
+	def __validDate (self,
+		date,	#交易时间
+		):
+		if date is None:
+			return False
+		else:
+			return True
+	
+	#返回传入交易时间后的第某个交易时间
+	def getNexNumDate (self, 
+		date,	#交易时间
+		limit,	#限制数目
+		):
+		strSql = "select %s from %s where %s > '%s' order by %s asc limit %s" % (
+				F_TIME, self.table, F_TIME, date, F_TIME, limit)
+		self.db.execSql(strSql)
+		res = self.db.fetch('all')
+		
+		#只有返回数量够数才表明查找成功
+		if len(res) == limit:
+			time = res[limit-1][FN_TIME]
+		else:
+			time = None
+		
+		self.debug.dbg("getNexNumDate %s" % time)
+		
+		if self.__validDate(time):
+			return self.__dateToString(time)
 		else:
 			return None
 	
-	# Get the date behind @date by @days days.
-	def getDateNextDays (self, date, days):
-		i = 0
-		retDate = None
-		while i < self.indexBound:
-			if self._dateToString(self.dateSet[i][0]) == date:
-				if i + days < self.indexBound:
-					retDate =  self._dateToString(self.dateSet[i+days][0])
-				break
-			elif self._dateToString(self.dateSet[i][0]) > date:
-				if i + days - 1 < self.indexBound:
-					retDate =  self._dateToString(self.dateSet[i + days - 1][0])
-				break
-			i += 1
-
-		return retDate
-			
-	# Get the date before @date by @days days.
-	def getDatePrevDays (self, date, days):
-		i = self.indexBound - 1
-		retDate = None
-		while i >= 0:
-			if self._dateToString(self.dateSet[i][0]) == date:
-				if i - days >= 0:
-					retDate =  self._dateToString(self.dateSet[i-days][0])
-				break
-			elif self._dateToString(self.dateSet[i][0]) < date:
-				if i - days + 1 >= 0:
-					retDate =  self._dateToString(self.dateSet[i - days + 1][0])
-				break
-			i -= 1
-
-		return retDate
+	#返回传入交易时间前的第某个交易时间
+	def getPrevNumDate (self, 
+		date,	#交易时间
+		limit,	#限制数目
+		):
+		strSql = "select %s from %s where %s < '%s' order by %s desc limit %s" % (
+				F_TIME, self.table, F_TIME, date, F_TIME, limit)
+		self.db.execSql(strSql)
+		res = self.db.fetch('all')
 		
+		#只有返回数量够数才表明查找成功
+		if len(res) == limit:
+			time = res[limit-1][FN_TIME]
+		else:
+			time = None
+		
+		self.debug.dbg("getPrevNumDate %s" % time)
+		
+		if self.__validDate(time):
+			return self.__dateToString(time)
+		else:
+			return None
+	
+#测试
+def doTest ():
+	date = Date('history2', 'p1601_mink')
+	print "First Date %s" % date.firstDate()
+	print "Last Date %s" % date.lastDate()
+	time = '2015-01-19 10:56:00'
+	date.setCurDate(time)
+	print "Current Time %s" % date.curDate()
+	print "Prev Date %s" % date.prevDate()
+	print "Next Date %s" % date.nextDate()
+	date.getSetNextDate()
+	print "Current Time %s" % date.curDate()
+	date.getSetPrevDate()
+	print "Current Time %s" % date.curDate()
+	print date.getPrevNumDate(time, 10)
+	print date.getNexNumDate(time, 10)
+	print date.isFirstDate("2015-01-16 21:00:00")
+	print date.isLastDate('2015-05-08 11:29:00')
+	print date.isFirstDate('2015-05-09 11:29:00')
+	print date.isLastDate('2015-05-09 11:29:00')
+	
+	#测试结果
+	'''
+	First Date 2015-01-16 21:00:00
+	Last Date 2015-05-08 11:29:00
+	Current Time 2015-01-19 10:56:00
+	Prev Date 2015-01-19 10:53:00
+	Next Date 2015-01-19 11:01:00
+	Current Time 2015-01-19 11:01:00
+	Current Time 2015-01-19 10:56:00
+	2015-01-19 09:08:00
+	2015-01-19 13:49:00
+	True
+	True
+	False
+	False
+	'''
+
+if __name__ == '__main__':
+	doTest()
+	
