@@ -33,6 +33,7 @@ class MYSQL(DB):
 			return
 		
 		self.conn = sql.connect(self.host, self.user, self.passwd, db)
+		self.conn.autocommit(1)
 		self.cursor = self.conn.cursor()
 		return True
 	
@@ -51,11 +52,9 @@ class MYSQL(DB):
 		
 		if self.cursor == None:
 			return None
-		try:
-			res = self.cursor.execute(sqls)
-			return res
-		except :
-			exc.logExcSql()
+		
+		res = self.cursor.execute(sqls)
+		return res
 	
 	#取出查询结果，通常紧跟在execSql()之后
 	def fetch (self, 
