@@ -30,3 +30,16 @@ FN_VOLUME	= 6
 FN_OPENINTEREST	= 7
 FN_TR		= 8
 FN_ATR		= 9
+
+#交易单统计（Order Stat）Dump表字段
+OSD_F_ID		= 'DumpID'
+OSD_F_CONTRACT		= 'Contract'
+OSD_F_TICK_OPEN		= 'TickOpen'
+OSD_F_OPEN		= 'OpenPrice'
+OSD_F_TICK_CLOSE	= 'TickClose'
+OSD_F_CLOSE		= 'ClosePrice'
+OSD_F_DIRECTION		= 'Direction'
+OSD_F_VOLUME		= 'Volume'
+OSD_F_PROFIT		= 'Profit'
+
+
