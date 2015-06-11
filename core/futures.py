@@ -37,23 +37,24 @@ class Futures:
 		database, 	#数据库名
 		debug = False,	#是否调试
 		):
+		self.dbgMode = debug
 		self.contract = contract
 		self.database = database
 		self.table = table
 		self.debug = Debug('Futures', debug)	#调试接口
 		self.data = Data(database, table)	#数据接口
-		self.cs = ContractStat(contract, debug)	#数据统计接口
-
+	
 	'''
 	属性方法
 	'''
 	
 	#设置属性
 	def setAttrs (self, 
-		maxPosAllowed,	#最大允许持仓／加仓（单位）数量
-		numPosToAdd,	#每次加仓（单位）数量
-		priceVariation,	#加仓条件触发价格差
-		muliplier,	#合约乘数
+		maxPosAllowed,		#最大允许持仓单位数
+		numPosToAdd,		#每加仓单位所代表的手数
+		priceVariation,		#触发加仓条件的价格差
+		muliplier,		#合约乘数
+		dumpName = None,	#统计信息Dump名
 		):
 		self.attrs.set(maxPosAllowed = maxPosAllowed,
 				numPosToAdd = numPosToAdd,
@@ -62,7 +63,9 @@ class Futures:
 		
 		#初始化持仓管理接口
 		self.posMgr = PositionMananger(maxPosAllowed)
-		
+		#数据统计接口
+		self.cs = ContractStat(self.contract, dumpName, self.dbgMode)
+
 	#检查属性
 	def checkAttrs (self):
 		#默认属性无误
@@ -134,7 +137,7 @@ class Futures:
 			orderProfit *= self.attrs.muliplier
 			
 			#更新平仓利润信息
-			self.cs.update(orderProfit)
+			self.cs.update(tick, price, pos, orderProfit)
 			
 			self.log("		<<-- Close: open %s, close %s, profit %s -->>" % (
 							pos.price, price, orderProfit))
@@ -281,7 +284,7 @@ class Futures:
 						tick, price, volume, direction))
 		
 		#开仓
-		self.openPositions(tick, price, volume, direction)
+		self.openPositions(tick, price, direction, volume)
 		
 	#止损
 	#MUST_OVERRIDE
