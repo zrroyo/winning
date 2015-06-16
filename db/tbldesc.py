@@ -31,7 +31,7 @@ FN_OPENINTEREST	= 7
 FN_TR		= 8
 FN_ATR		= 9
 
-#交易单统计（Order Stat）Dump表字段
+#交易单统计（Order Stat Dump）表字段
 OSD_F_ID		= 'DumpID'
 OSD_F_CONTRACT		= 'Contract'
 OSD_F_TICK_OPEN		= 'TickOpen'
@@ -42,4 +42,13 @@ OSD_F_DIRECTION		= 'Direction'
 OSD_F_VOLUME		= 'Volume'
 OSD_F_PROFIT		= 'Profit'
 
-
+#利润统计（Profit Stat Dump）表字段
+PSD_F_ID		= 'DumpID'
+PSD_F_CONTRACT		= 'Contract'
+PSD_F_TICK_START	= 'StartTick'
+PSD_F_TICK_END		= 'EndTick'
+PSD_F_MAX		= 'Max'
+PSD_F_MAX_TICK		= 'MaxFloatTick'
+PSD_F_MIN		= 'Min'
+PSD_F_MIN_TICK		= 'MinFloatTick'
+PSD_F_FINAL		= 'Final'
