@@ -118,7 +118,7 @@ class Futures:
 		):
 		#如果仓位不足，不允许操作
 		if numPos > self.curPositions():
-			self.debug.error("Required %s, but only %s in Position Manager!" % (
+			self.debug.error("closePositions: require %s, but only %s left!" % (
 						numPos, self.curPositions()))
 			return False
 		
@@ -127,15 +127,7 @@ class Futures:
 		while i < numPos:
 			#移除仓位并计算利润
 			pos = self.posMgr.popPosition(1)
-			if direction == SIG_TRADE_SHORT:
-				orderProfit = pos.price - price
-			else:
-				orderProfit = price - pos.price
-			
-			#单价获利x每单手数x合约乘数
-			orderProfit *= self.attrs.numPosToAdd
-			orderProfit *= self.attrs.muliplier
-			
+			orderProfit = self.__orderProfit(direction, pos.price, price)
 			#更新平仓利润信息
 			self.cs.update(tick, price, pos, orderProfit)
 			
@@ -145,18 +137,25 @@ class Futures:
 			i += 1
 		
 		#如果平仓后仓位为０说明本次交易结束。打印统计信息并重置。
-		if self.curPositions() == 0:	
-			self.__reset()
+		if self.curPositions() == 0:
+			self.__reset(tick, direction)
 		
 		return True
 	
 	#打印统计信息,并重置利润
-	def __reset (self):
-		self.log("		++++++ Business profit %s ++++++" % (
-							self.cs.profit.getCurrent()))
-		self.log("		****** Total profit %s ******" % (
+	def __reset (self,
+		tick,		#交易时间
+		direction,	#方向
+		):
+		self.log("              ++++++ Business profit %s ++++++" % (
+							self.cs.profit.getFinal()))
+		self.log("              ****** Total profit %s ******" % (
 							self.cs.profit.getSum()))
-		self.cs.profit.reset()
+		#仓位清空代表一次交易结束，需要在交易数据
+		#清零之前巡航更新统计数据。
+		self.__navigate(tick, direction)
+		#完成本次交易统计
+		self.cs.end(tick)
 	
 	'''
 	交易方法
@@ -223,8 +222,11 @@ class Futures:
 		startTick,	#开始交易时间
 		signal,		#交易信号／方向
 		):
-		self.debug.dbg("Start Trading: [%s][%s]" % (
+		self.debug.dbg("tradeStart: Start Trading: [%s][%s]" % (
 					self.__signalToDirection(signal), startTick))
+		
+		#开始交易数据统计
+		self.cs.start(startTick)
 		
 		#使用独立交易时间管理接口，保持独立性，避免互相影响。
 		tick = Ticks(self.database, self.table)
@@ -232,13 +234,13 @@ class Futures:
 		#交易信号已经触发，先入仓
 		self.tradeAddPositions(startTick, signal)
 		#得到tick中的下一交易时间
-		nextTick = self.tradeNextTick(tick, startTick)
+		nextTick = self.tradeNextTick(tick, startTick, signal)
 
 		#除非到数据表结尾或交易退出，否则一直交易
 		while nextTick is not None:
 			if self.signalEndTrading(nextTick, signal):
 				#触发退出交易信号
-				self.debug.dbg("End Trading: [%s][%s]" % (
+				self.debug.dbg("tradeStart: End Trading: [%s][%s]" % (
 							self.__signalToDirection(signal), nextTick))
 				self.tradeEnd(nextTick, signal)
 				#返回触发退出信号的当前tick
@@ -246,7 +248,7 @@ class Futures:
 				
 			elif self.signalCutLoss(nextTick, signal):
 				#触发止损信号
-				self.debug.dbg("Cut Loss: [%s][%s]" % (
+				self.debug.dbg("tradeStart: Cut Loss: [%s][%s]" % (
 							self.__signalToDirection(signal), nextTick))
 				self.tradeCutLoss(nextTick, signal)
 				#如果止损后仓位为０，说明交易结束，返回当前tick
@@ -255,18 +257,18 @@ class Futures:
 				
 			elif self.signalAddPosition(nextTick, signal):
 				#触发加仓信号
-				self.debug.dbg("Add Position: [%s][%s]" % (
+				self.debug.dbg("tradeStart: Add Position: [%s][%s]" % (
 							self.__signalToDirection(signal), nextTick))
 				self.tradeAddPositions(nextTick, signal)
 				
 			elif self.signalStopProfit(nextTick, signal):
 				#触发止赢信号
-				self.debug.dbg("Stop Profit: [%s][%s]" % (
+				self.debug.dbg("tradeStart: Stop Profit: [%s][%s]" % (
 							self.__signalToDirection(signal), nextTick))
 				self.tradeStopProfit(nextTick, signal)
 			
 			#下一tick继续
-			nextTick = self.tradeNextTick(tick, nextTick)
+			nextTick = self.tradeNextTick(tick, nextTick, signal)
 		
 		#正常应该以交易结束返回对应tick，如果nextTick为
 		#None说明执行到表尾，返回None
@@ -280,7 +282,7 @@ class Futures:
 		price = self.data.getClose(tick)
 		volume = self.attrs.numPosToAdd
 		
-		self.debug.dbg("Add position tick %s, price %s, volume %s, direction %s" % (
+		self.debug.dbg("tradeAddPositions: tick %s, price %s, volume %s, direction %s" % (
 						tick, price, volume, direction))
 		
 		#开仓
@@ -338,18 +340,68 @@ class Futures:
 				break
 				
 			#返回tick不为空，则继续下一tick
-			curTick = self.tradeNextTick(tick, endTick)
+			curTick = self.tradeNextTick(tick, endTick, signal)
 		
 		#结束交易，清空仓位
 		self.tradeEnd(tick.lastTick(), signal)
 		#执行结束，显示统计信息
 		self.cs.show()
 	
+	#计算仓位利润
+	def __orderProfit (self,
+		direction,	#方向
+		open,		#开仓价
+		price,		#当前价
+		):
+		orderProfit = 0
+		if direction == SIG_TRADE_SHORT:
+			orderProfit = open - price
+		else:
+			orderProfit = price - open
+		
+		#单价获利x每单手数x合约乘数
+		orderProfit *= self.attrs.numPosToAdd
+		orderProfit *= self.attrs.muliplier
+		return orderProfit
+	
+	#计算浮动利润
+	def __floatingProfit (self,
+		direction,	#方向
+		price,		#当前价
+		):
+		ret = 0
+		idx = 1
+		while idx <= self.curPositions():
+			pos = self.posMgr.getPosition(idx)
+			ret += self.__orderProfit(direction, pos.price, price)
+			idx += 1
+		
+		return ret
+		
+	#巡航
+	def __navigate (self,
+		tick,		#交易时间
+		direction,	#方向
+		):
+		#计算浮动利润
+		price = self.data.getClose(tick)
+		floatProfit = self.__floatingProfit(direction, price)
+		self.debug.dbg("__navigate: %s, price %s, profit %s" % (
+						tick, price, floatProfit))
+		#巡航浮动利润，更新数据统计
+		self.cs.navigate(tick, floatProfit)
+	
 	#返回下一交易时间
 	def tradeNextTick (self, 
-		tickObj,	#tick接口对象
-		tick,		#当前tick
+		tickObj,		#tick接口对象
+		tick,			#当前tick
+		direction = None,	#方向
 		):
+		#如果不在交易中则跳过巡航
+		if direction is not None:
+			self.__navigate(tick, direction)
+		
+		#继续下一tick
 		tickObj.setCurTick(tick)
 		return tickObj.getSetNextTick()
 	
