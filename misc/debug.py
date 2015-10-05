@@ -10,34 +10,80 @@ version 2 ONLY.
 '''
 
 import sys
+from colors import *
 
 #原生Debug类
 class RawDebug:
+	
+	colourLog = LogColour()	#彩色打输出接口
+	
 	def __init__ (self,
-		verbose,	#是否显示debug信息
+		verbose,	#是否打印dbg信息
+		destLog = None,	#是否保存日志
 		):
 		self.verbose = verbose
-		
-	def pr_err (self, str):
-		print "ERR: %s" % str
+		try:
+			self.storeLog = open(destLog, "a+")
+		except:
+			self.storeLog = None
 	
-	def pr_info (self, str):
-		print "INFO: %s" % str
+	def __del__ (self):
+		try:
+			self.storeLog.close()
+		except:
+			pass
 	
-	def pr_log (self, str):
-		print "LOG: %s" % str
+	#日志换行
+	def __wrappedLog (self, 
+		log,	#日志
+		):
+		return log + "\n"
 	
-	def pr_warn (self, str):
-		print "WARN: %s" % str
+	def pr_err (self, 
+		str,	#输出
+		):
+		log = "ERR: %s" % str
+		self.colourLog.printlog(log, 'red')
+		if self.storeLog:
+			self.storeLog.write(self.__wrappedLog(log))
 	
-	def pr_raw (self, str):
-		sys.stdout.write(str)
+	def pr_info (self, 
+		str,	#输出
+		):
+		log = "INFO: %s" % str
+		self.colourLog.printlog(log, 'green')
+		if self.storeLog:
+			self.storeLog.write(self.__wrappedLog(log))
+	
+	def pr_log (self, 
+		str,	#输出
+		):
+		log = "LOG: %s" % str
+		self.colourLog.printlog(log, 'black')
+		if self.storeLog:
+			self.storeLog.write(self.__wrappedLog(log))
+	
+	def pr_raw (self, 
+		str,	#输出
+		):
+		log = self.__wrappedLog(str)
+		colorLog = self.colourLog.blue() + log + self.colourLog.colorend
+		sys.stdout.write(colorLog)
 		sys.stdout.flush()
+		if self.storeLog:
+			self.storeLog.write(log)
 	
-	def pr_debug (self, str):
-		if self.verbose:
-			print "DBG: %s" % str
+	def pr_debug (self, 
+		str,	#输出
+		):
+		log = "DBG: %s" % str
+		if self.storeLog:
+			self.storeLog.write(self.__wrappedLog(log))
 		
+		if self.verbose:
+			#self.colourLog.printlog(log, 'black')
+			print log
+	
 #Debug类
 class Debug:
 	def __init__ (self,
@@ -75,18 +121,18 @@ class Debug:
 		output = '%s' % (msg)
 		self.debug.pr_info(output)
 	
-##测试
-#def doTest ():
-	#dbg = RawDebug(1)
-	#dbg.pr_err('Hello world!')
-	#dbg.pr_info('Hello world!')
-	#dbg.pr_log('Hello world!')
-	#dbg.pr_raw('Hello world!')
-	#dbg.pr_debug('Hello world!')
+#测试
+def doTest ():
+	dbg = RawDebug(1)
+	dbg.pr_err('Hello world!')
+	dbg.pr_info('Hello world!')
+	dbg.pr_log('Hello world!')
+	dbg.pr_raw('Hello world!')
+	dbg.pr_debug('Hello world!')
 	
-	#dbg = Debug('test', 1)
-	#dbg.error('Test debug error.')
-	#dbg.dbg('Test debug dbg.')
+	dbg = Debug('test', 1)
+	dbg.error('Test debug error.')
+	dbg.dbg('Test debug dbg.')
 	
-#if __name__ == '__main__':
-	#doTest()
+if __name__ == '__main__':
+	doTest()
