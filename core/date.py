@@ -26,6 +26,8 @@ class Date:
 		self.fillDates(table)
 		self.table = table
 		self.debug = Debug('Date', debug)	#调试接口
+		self.__firstDate = None	#第一个tick
+		self.__lastDate = None	#最后一个tick
 		self.current = self.firstDate()
 	
 	def __del__ (self):
@@ -49,21 +51,29 @@ class Date:
 	
 	#返回数据表里的第一个交易时间
 	def firstDate (self):
+		if self.__firstDate is not None:
+			return self.__firstDate
+		
 		strSql = 'select %s from %s order by %s asc limit 1' % (
 				F_TIME, self.table, F_TIME)
 		self.db.execSql(strSql)
 		time = self.db.fetch(0)[FN_TIME]
 		self.debug.dbg("firstDate %s" % time)
-		return self.__dateToString(time)
+		self.__firstDate = self.__dateToString(time)
+		return self.__firstDate
 	
 	#返回数据表里的最后一个交易时间
 	def lastDate (self):
+		if self.__lastDate is not None:
+			return self.__lastDate
+		
 		strSql = "select %s from %s order by %s desc limit 1" % (
 				F_TIME, self.table, F_TIME)
 		self.db.execSql(strSql)
 		time = self.db.fetch(0)[FN_TIME]
 		self.debug.dbg("lastDate %s" % time)
-		return self.__dateToString(time)
+		self.__lastDate = self.__dateToString(time)
+		return self.__lastDate
 	
 	#是否是第一个交易时间
 	def isFirstDate (self, 
