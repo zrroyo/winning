@@ -10,12 +10,14 @@ Start: 2015年 05月 28日 星期四 22:36:48 CST
 
 import sys
 sys.path.append("..")
+import thread
 
 from dataMgr.data import *
 from core.date import *
 from core.futures import *
 from core.attribute import *
 from core.signal import *
+from core.parallel import *
 
 #
 class TestFuture(Futures):
@@ -27,7 +29,6 @@ class TestFuture(Futures):
 		):
 		#
 		Futures.__init__(self, contract, table, database, debug)
-		self.tickSrc = Ticks(self.database, self.table)	#
 		self.lossProtected = False	#止损保护
 	
 	#开始交易信号
@@ -164,16 +165,29 @@ class TestFuture(Futures):
 				tick, price, num))
 		
 		return self.closePositions(tick, price, direction, num)
+		
+#
+def testParallelThreadEntry (
+	strategy,	#
+	):
+	strategy.start()
 	
 #测试
 def doTest():
 	tf = TestFuture('p1405', 'p1405_dayk', 'history', True)
+	paraCore = ParallelCore('2013-05-16', 15, 6, 'test4_para', True)
+	
 	tf.setAttrs(maxPosAllowed = 4, 
 			numPosToAdd = 1,
 			priceVariation = 40,
-			muliplier = 10,
-			dumpName = 'test1')
-	tf.start()
+			multiplier = 10,
+			dumpName = 'test4',
+			paraCore = paraCore)
+	
+	paraCore.setSyncWindowForContracts()
+	thread.start_new_thread(testParallelThreadEntry, (tf,))
+	paraCore.handleActions()
+	
 	
 if __name__ == '__main__':
 	doTest()
