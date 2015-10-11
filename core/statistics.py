@@ -35,13 +35,11 @@ class ProfitStat:
 	minSumTick = DEF_TICK	#最大累积亏损出现Tick
 	
 	def __init__ (self,
-		contract,		#合约名
 		dumpName = None,	#统计信息Dump名
 		debug = False,		#调试模式
 		):
 		self.debug = Debug('ProfitStat', debug)	#调试接口
 		self.dumpName = dumpName
-		self.contract = contract
 		self.startTick = None
 		
 		#初始化Dump接口
@@ -64,14 +62,15 @@ class ProfitStat:
 				%s int(4) not null primary key auto_increment,
 				%s varchar(10),
 				%s datetime default 0,
+				%s varchar(10),
 				%s datetime default 0,
 				%s float default 0.0,
 				%s datetime default 0,
 				%s float default 0.0,
 				%s datetime default 0,
-				%s float default 0.0)''' % (self.dumpTable, PSD_F_ID,
-						PSD_F_CONTRACT, PSD_F_TICK_START, PSD_F_TICK_END, 
-						PSD_F_MAX, PSD_F_MAX_TICK, PSD_F_MIN, PSD_F_MIN_TICK,
+				%s float default 0.0)''' % (self.dumpTable, PSD_F_ID, PSD_F_CONTRACT_START,
+						PSD_F_TICK_START, PSD_F_CONTRACT_END, PSD_F_TICK_END, 
+						PSD_F_MAX_FLOAT, PSD_F_MAX_TICK, PSD_F_MIN_FLOAT, PSD_F_MIN_TICK,
 						PSD_F_FINAL)
 		
 		self.debug.dbg("__initDump: %s" % strSql)
@@ -79,26 +78,31 @@ class ProfitStat:
 	
 	#开始交易利润统计
 	def start (self,
-		tick,	#时间
+		contract,	#合约名
+		tick,		#时间
 		):
-		#记录第一个tick以备后续关键字匹配更新数据库
+		#记录第一个tick及合约以备后续关键字匹配更新数据库
 		self.startTick = tick
+		self.startContract = contract
+		
 		#插入一条新记录
-		values = "0, '%s', '%s', Null, Null, Null, Null, Null, Null" % (self.contract, tick)
+		values = "0, '%s', '%s', Null, Null, Null, Null, Null, Null, Null" % (contract, tick)
 		self.db.insert(self.dumpTable, values)
 	
 	#结束交易利润统计
 	def end (self,
-		tick,	#时间
+		contract,	#合约名
+		tick,		#时间
 		):
 		'''
 		一次交易结束，将各统计信息更新到数据库。
 		'''
-		values = "%s = '%s', %s = '%s', %s = '%s', %s = '%s', %s = '%s', %s = '%s'" % (
+		values = "%s = '%s', %s = '%s', %s = '%s', %s = '%s', %s = '%s', %s = '%s', %s = '%s'" % (
+			PSD_F_CONTRACT_END, contract,
 			PSD_F_TICK_END, tick, 
-			PSD_F_MAX, self.maxFloating,
+			PSD_F_MAX_FLOAT, self.maxFloating,
 			PSD_F_MAX_TICK, self.maxFloatTick,
-			PSD_F_MIN, self.minFloating,
+			PSD_F_MIN_FLOAT, self.minFloating,
 			PSD_F_MIN_TICK, self.minFloatTick,
 			PSD_F_FINAL, self.final)
 			
@@ -106,7 +110,7 @@ class ProfitStat:
 		
 		clause = "%s = '%s' and %s = '%s'" % (
 			PSD_F_TICK_START, self.startTick, 
-			PSD_F_CONTRACT, self.contract)
+			PSD_F_CONTRACT_START, self.startContract)
 			
 		self.db.update(self.dumpTable, clause, values)
 		
@@ -116,8 +120,9 @@ class ProfitStat:
 	
 	#利润增加
 	def add (self,
-		tick,	#时间
-		profit,	#利润
+		contract,	#合约名
+		tick,		#时间
+		profit,		#利润
 		):
 		#累加最终利润、累积利润
 		self.final += profit
@@ -125,8 +130,9 @@ class ProfitStat:
 	
 	#巡航。在交易时间中即使没有交易发生，只要有持仓相关数据就会发生波动。
 	def navigate (self,
-		tick,	#时间
-		profit,	#利润
+		contract,	#合约名
+		tick,		#时间
+		profit,		#利润
 		):
 		#更新累积利润最大、最小值
 		sum = self.sum + profit
@@ -146,8 +152,8 @@ class ProfitStat:
 			self.minFloating = final
 			self.minFloatTick = tick
 			
-		self.debug.dbg("navigate %s: sum %s max %s min %s, final %s, max %s min %s" % (
-			tick, sum, self.maxSum, self.minSum, final, self.maxFloating, self.minFloating))
+		self.debug.dbg("%s: navigate %s: sum %s max %s min %s, final %s, max %s min %s" % (
+			contract, tick, sum, self.maxSum, self.minSum, final, self.maxFloating, self.minFloating))
 	
 	#得到最终利润
 	def getFinal (self):
@@ -167,12 +173,10 @@ class OrderStat:
 	maxOrderLoss = 0	#最大单亏损
 	
 	def __init__ (self,
-		contract,		#合约名
 		dumpName = None,	#统计信息Dump名
 		debug = False,		#调试模式
 		):
 		self.debug = Debug('OrderStat', debug)	#调试接口
-		self.contract = contract
 		self.dumpName = dumpName
 
 		#初始化Dump接口
@@ -210,6 +214,7 @@ class OrderStat:
 	
 	#记录统计信息
 	def dumpStat (self,
+		contract,	#合约名
 		tick,		#时间
 		price,		#价格
 		position,	#仓位信息
@@ -217,13 +222,14 @@ class OrderStat:
 		):
 		#将数据插入数据库
 		values = "0, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'" % (
-				self.contract, position.time, position.price, tick, 
+				contract, position.time, position.price, tick, 
 				price, position.direction, position.volume, orderProfit)
 
 		self.db.insert(self.dumpTable, values)
 	
 	#计算
 	def add (self,
+		contract,	#合约名
 		tick,		#时间
 		price,		#价格
 		position,	#仓位信息
@@ -247,7 +253,7 @@ class OrderStat:
 			
 		#存储交易单
 		if self.dumpName:
-			self.dumpStat(tick, price, position, orderProfit)
+			self.dumpStat(contract, tick, price, position, orderProfit)
 	
 	#总单数
 	def numOrders (self):
@@ -262,22 +268,22 @@ class ContractStat:
 		):
 		self.contract = contract
 		self.debug = Debug('ContractStat', debug)	#调试接口
-		self.profit = ProfitStat(contract, dumpName, debug)	#
-		self.order = OrderStat(contract, dumpName, debug)	#
+		self.profit = ProfitStat(dumpName, debug)	#初始化利润统计接口
+		self.order = OrderStat(dumpName, debug)		#初始化交易单统计接口
 	
 	#开始合约统计
 	def start (self,
 		tick,	#时间
 		):
 		#开始利润统计
-		self.profit.start(tick)
+		self.profit.start(self.contract, tick)
 	
 	#结束合约统计
 	def end (self,
 		tick,	#时间
 		):
 		#结束利润统计
-		self.profit.end(tick)
+		self.profit.end(self.contract, tick)
 	
 	#更新统计接口
 	def update (self,
@@ -287,8 +293,8 @@ class ContractStat:
 		orderProfit,	#利润
 		):
 		#进行统计
-		self.profit.add(tick, orderProfit)
-		self.order.add(tick, price, position, orderProfit)
+		self.profit.add(self.contract, tick, orderProfit)
+		self.order.add(self.contract, tick, price, position, orderProfit)
 	
 	#巡航
 	def navigate (self,
@@ -296,7 +302,7 @@ class ContractStat:
 		profit,	#利润
 		):
 		#利润统计巡航
-		self.profit.navigate(tick, profit)
+		self.profit.navigate(self.contract, tick, profit)
 	
 	#固定格式输出
 	def __formatPrint (self, 
