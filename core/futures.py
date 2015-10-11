@@ -24,12 +24,13 @@ from date import *
 from attribute import *
 from signal import *
 from statistics import *
+from parallel import *
 
 #期货类
 class Futures:
 	
-	attrs 	= Attribute()		#属性
-	posMgr	= None			#持仓管理接口
+	attrs = Attribute()	#属性
+	posMgr = None		#持仓管理接口
 	
 	def __init__ (self, 
 		contract, 	#合约
@@ -43,6 +44,9 @@ class Futures:
 		self.table = table
 		self.debug = Debug('Futures', debug)	#调试接口
 		self.data = Data(database, table)	#数据接口
+		self.tickSrc = Ticks(self.database, self.table)	#Tick接口
+		#当前tick是否已经被处理过
+		self.tagTickParaHandled = False
 	
 	'''
 	属性方法
@@ -55,6 +59,7 @@ class Futures:
 		priceVariation,		#触发加仓条件的价格差
 		muliplier,		#合约乘数
 		dumpName = None,	#统计信息Dump名
+		paraCore = None,	#并行处理接口实例
 		):
 		self.attrs.set(maxPosAllowed = maxPosAllowed,
 				numPosToAdd = numPosToAdd,
@@ -65,7 +70,12 @@ class Futures:
 		self.posMgr = PositionMananger(maxPosAllowed)
 		#数据统计接口
 		self.cs = ContractStat(self.contract, dumpName, self.dbgMode)
-
+		
+		#如果使能了并行模拟，则需要为合约初始化
+		self.paraCore = paraCore
+		if paraCore != None:
+			self.paraCore.allocManager(self.contract)
+	
 	#检查属性
 	def checkAttrs (self):
 		#默认属性无误
@@ -93,6 +103,34 @@ class Futures:
 			
 		return self.posMgr.getPosition(num)
 	
+	#发送并行处理请求
+	def __sendParaRequest (self,
+		tick,			#时间
+		type,			#操作类型
+		price,			#价格
+		volume,			#开仓手数
+		direction,		#方向
+		closeProfit = 0,	#平仓利润
+		):
+		if not self.paraCore or self.tagTickParaHandled:
+			#并行处理未使能或已并行处理过，则不处理
+			return True
+		
+		#该tick已经并行处理过
+		self.tagTickParaHandled = True
+		#计算浮动利润
+		floatProfit = self.__floatingProfit(direction, price)
+		#判定是否为最后一个tick
+		isLastTick = self.tickSrc.isLastTick(tick)
+		#发送并行处理请求
+		if not self.paraCore.request(self.contract, tick, type, price, 
+				volume, direction, floatProfit, closeProfit, isLastTick):
+			#申请并行处理失败
+			return False
+		
+		#申请成功
+		return True
+	
 	#开仓
 	def openPositions (self, 
 		tick,		#时间
@@ -100,6 +138,10 @@ class Futures:
 		direction,	#方向
 		volume = 1,	#开仓量
 		):
+		#发送并行处理请求
+		if not self.__sendParaRequest(tick, ACTION_OPEN, price, volume, direction):
+			return False
+		
 		#如果加仓失败返回False
 		if not self.posMgr.pushPosition(tick, price, volume, direction):
 			return False
@@ -124,10 +166,12 @@ class Futures:
 		
 		#从第一仓开始按序减仓
 		i = 0
+		closeProfit = 0
 		while i < numPos:
 			#移除仓位并计算利润
 			pos = self.posMgr.popPosition(1)
 			orderProfit = self.__orderProfit(direction, pos.price, price)
+			closeProfit += orderProfit
 			#更新平仓利润信息
 			self.cs.update(tick, price, pos, orderProfit)
 			
@@ -135,16 +179,22 @@ class Futures:
 							pos.price, price, orderProfit))
 			
 			i += 1
+			
+		#计算仓数
+		volume = self.attrs.numPosToAdd * numPos
+		#发送并行处理请求
+		self.__sendParaRequest(tick, ACTION_CLOSE, price, volume, direction, closeProfit)
 		
 		#如果平仓后仓位为０说明本次交易结束。打印统计信息并重置。
 		if self.curPositions() == 0:
-			self.__reset(tick, direction)
+			self.__reset(tick, price, direction)
 		
 		return True
 	
 	#打印统计信息,并重置利润
 	def __reset (self,
 		tick,		#交易时间
+		price,		#当前价
 		direction,	#方向
 		):
 		self.log("              ++++++ Business profit %s ++++++" % (
@@ -153,7 +203,7 @@ class Futures:
 							self.cs.profit.getSum()))
 		#仓位清空代表一次交易结束，需要在交易数据
 		#清零之前巡航更新统计数据。
-		self.__navigate(tick, direction)
+		self.__navigate(tick, price, direction)
 		#完成本次交易统计
 		self.cs.end(tick)
 	
@@ -381,10 +431,10 @@ class Futures:
 	#巡航
 	def __navigate (self,
 		tick,		#交易时间
+		price,		#当前价
 		direction,	#方向
 		):
 		#计算浮动利润
-		price = self.data.getClose(tick)
 		floatProfit = self.__floatingProfit(direction, price)
 		self.debug.dbg("__navigate: %s, price %s, profit %s" % (
 						tick, price, floatProfit))
@@ -397,12 +447,20 @@ class Futures:
 		tick,			#当前tick
 		direction = None,	#方向
 		):
+		price = self.data.getClose(tick)
 		#如果不在交易中则跳过巡航
 		if direction is not None:
-			self.__navigate(tick, direction)
+			self.__navigate(tick, price, direction)
+		
+		#如果不是最后一个tick则要发送并行处理请求，如果是最后一个tick则等待tradeEnd处理
+		isLastTick = self.tickSrc.isLastTick(tick)
+		if not isLastTick:
+			self.__sendParaRequest(tick, ACTION_SKIP, price, 0, direction)
 		
 		#继续下一tick
 		tickObj.setCurTick(tick)
+		#当前tick已结束，需恢复标志
+		self.tagTickParaHandled = False
 		return tickObj.getSetNextTick()
 	
 	#日志（输出）统一接口
