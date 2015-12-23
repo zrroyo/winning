@@ -1,13 +1,13 @@
 #! /usr/bin/python
 #-*- coding:utf-8 -*-
 
-'''
+"""
 配置文件(通用)读取接口
 	zhengwang.ruan@gmail.com
 	
 This program is provided under the Gnu General Public License (GPL)
 version 2 ONLY.	
-'''
+"""
 
 import ConfigParser
 
@@ -32,10 +32,9 @@ class GenConfig:
 		try:
 			optVal = self.config.get(section, option)
 			return optVal
-		except:
-			#print "Bad option!"
+		except Exception:
 			return None
-	
+
 	#设置选项值
 	def setSecOption (self, 
 		section,	#配置段
@@ -46,7 +45,7 @@ class GenConfig:
 			self.config.set(section, option, value)
 			self.config.write(open(self.cfgFile, "w"))
 			return True
-		except:
+		except Exception:
 			return False
 	
 	#添加配置段
@@ -57,9 +56,9 @@ class GenConfig:
 			self.config.add_section(section)
 			self.config.write(open(self.cfgFile, "w"))
 			return True
-		except:
+		except Exception:
 			return False
-	
+
 	#删除配置段
 	def removeSection (self, 
 		section,	#配置段
@@ -68,7 +67,7 @@ class GenConfig:
 			self.config.remove_section(section)
 			self.config.write(open(self.cfgFile, "w"))
 			return True
-		except:
+		except Exception:
 			return False
 	
 	#删除选项值
@@ -80,9 +79,9 @@ class GenConfig:
 			self.config.remove_option(section, option)
 			self.config.write(open(self.cfgFile, "w"))
 			return True
-		except:
+		except Exception:
 			return False
-	
+
 #测试
 def doTest():
 	gc = GenConfig("test_gencfg")
