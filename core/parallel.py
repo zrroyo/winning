@@ -249,6 +249,12 @@ class ParallelCore:
 		actMgr.blockLock.acquire()
 		return actMgr
 	
+	#释放操作管理接口
+	def freeManager (self,
+		contract,	#合约
+		):
+		pass
+	
 	#得到操作管理接口
 	def getManager (self,
 		contract,	#合约
@@ -378,16 +384,15 @@ class ParallelCore:
 	
 	#处理操作池中的操作。并行模拟核心。
 	def __handleActions (self):
-		i = 0
+		#轮流处理操作池中所有就绪的操作。
 		numActions = len(self.actionsPoll)
-		while i < numActions:
+		for i in range(numActions):
 			element = self.actionsPoll[0]
-			i += 1
 			todo = element["todo"]
 			action = todo.action
 			curTick = action.tick
 			actMgr = self.getManager(todo.contract)
-			oldNumPos = self.posMgr.curPos()
+			oldPosNum = self.posMgr.curPos()
 			self.debug.dbg("__handleActions: tick %s, type %s" % (action.tick, action.type))
 			
 			#平仓
@@ -397,7 +402,7 @@ class ParallelCore:
 				#统计平仓利润
 				self.profitStat.add(DEF_CONTRACT, curTick, action.closeProfit)
 				#如果该次平仓结束后导致仓位变为０说明一次交易结束，需要结束该次利润统计
-				if oldNumPos > 0 and self.posMgr.curPos() == 0:
+				if oldPosNum > 0 and self.posMgr.curPos() == 0:
 					self.profitStat.end(action.contract, curTick)
 				
 				#启动被阻塞的线程
@@ -411,7 +416,7 @@ class ParallelCore:
 				if self.posMgr.alloc(action):
 					actMgr.allowOpen = True
 					#如果是第一个仓位则表示一次新交易开始，开始利润统计
-					if oldNumPos == 0:
+					if oldPosNum == 0:
 						self.profitStat.start(action.contract, curTick)
 				
 				#启动被阻塞的线程
@@ -428,9 +433,9 @@ class ParallelCore:
 			#action处理完毕，从action poll中移除
 			self.__actionsPollRemove(0)
 			
-			##已经到最后一个action，设置结束标志，退出主循环
-			#if action.isLastTick:
-				#self.tagStopHandling = True
+			#已经到最后一个action，设置结束标志，退出主循环
+			if action.isLastTick:
+				self.tagStopHandling = True
 			
 			#把唤醒开仓阻塞线程和重新选择action分开，以使得利润统计等能够与被阻塞线程并行
 			if action.type != ACTION_SKIP:
