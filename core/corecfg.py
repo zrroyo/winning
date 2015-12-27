@@ -1,31 +1,27 @@
 #! /usr/bin/python
 #-*- coding:utf-8 -*-
 
-'''
+"""
+Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
+Start:  Wed Oct 28 19:21:03 2015
+
 核心系统配置读写接口
-'''
+"""
 
 import sys
 sys.path.append('..')
 
 from misc.genconfig import *
-from misc.debug import *
 
-#并行模拟交易配置
+# 并行模拟交易配置
 class EmulationConfig (GenConfig):
-	
-	debug = Debug("EmulationConfig", 1)	#初始化错误提示接口
-	defaultSec = 'EMULATION'		#默认配置段
-	
 	def __init__ (self, 
 		cfgFile,	#配置文件
 		):
-		try:
-			GenConfig.__init__(self, cfgFile)
-			self.cfgFile = cfgFile
-		except:
-			self.debug.error("Initialize '%s' error" % self.defaultSec)
-	
+		GenConfig.__init__(self, cfgFile)
+		self.cfgFile = cfgFile
+		self.defaultSec = 'EMULATION'	#默认配置段
+
 	def getContracts (self):
 		return self.getSecOption(self.defaultSec, 'contracts')	
 	
@@ -44,8 +40,8 @@ class EmulationConfig (GenConfig):
 	def getContractVolumeAdd (self):
 		return self.getSecOption(self.defaultSec, 'contract_volume_add')
 	
-	def getContractMuliplier (self):
-		return self.getSecOption(self.defaultSec, 'contract_muliplier')
+	def getContractMultiplier (self):
+		return self.getSecOption(self.defaultSec, 'contract_multiplier')
 	
 	def getContractTriggerLevel (self):
 		return self.getSecOption(self.defaultSec, 'contract_trigger_level')
@@ -56,7 +52,7 @@ class EmulationConfig (GenConfig):
 	def getParallelAddMaxAllowed (self):
 		return self.getSecOption(self.defaultSec, 'parallel_add_max_allowed')
 
-#测试
+# 测试
 def doTest ():
 	emulConfig = EmulationConfig('../config/emul_p')
 	print emulConfig.getContracts()
@@ -65,7 +61,7 @@ def doTest ():
 	print emulConfig.getExpireDates()
 	print emulConfig.getContractAddMaxAllowed()
 	print emulConfig.getContractVolumeAdd()
-	print emulConfig.getContractMuliplier()
+	print emulConfig.getContractMultiplier()
 	print emulConfig.getContractTriggerLevel()
 	print emulConfig.getParallelLevel()
 	print emulConfig.getParallelAddMaxAllowed()
