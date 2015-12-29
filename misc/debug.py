@@ -1,36 +1,39 @@
 #! /usr/bin/python
 #-*- coding:utf-8 -*-
 
-'''
+"""
 Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
 Start: 2014年 03月 19日 星期三 10:55:06 CST
 
 This program is provided under the Gnu General Public License (GPL)
 version 2 ONLY.
-'''
+"""
 
 import sys
 from colors import *
 
 #原生Debug类
 class RawDebug:
-	
+
 	colourLog = LogColour()	#彩色打输出接口
-	
+
 	def __init__ (self,
 		verbose,	#是否打印dbg信息
 		destLog = None,	#是否保存日志
 		):
 		self.verbose = verbose
+		self.storeLog = None
 		try:
 			self.storeLog = open(destLog, "a+")
-		except:
-			self.storeLog = None
-	
+		except IOError, e:
+			print str(e)
+		except TypeError, e:
+			pass
+
 	def __del__ (self):
 		try:
 			self.storeLog.close()
-		except:
+		except AttributeError, e:
 			pass
 	
 	#日志换行
