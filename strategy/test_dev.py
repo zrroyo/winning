@@ -175,7 +175,7 @@ def testParallelThreadEntry (
 #测试
 def doTest():
 	tf = TestFuture('p1405', 'p1405_dayk', 'history', True)
-	paraCore = ParallelCore('2013-05-16', 15, 6, 'test4_para', True)
+	paraCore = ParallelCore('2013-05-16', 15, 6, 3, 'test4_para', True)
 	
 	tf.setAttrs(maxPosAllowed = 4, 
 			numPosToAdd = 1,
@@ -183,11 +183,12 @@ def doTest():
 			multiplier = 10,
 			dumpName = 'test4',
 			paraCore = paraCore)
-	
+
+	paraCore.allocManager("p1405")
 	paraCore.setSyncWindowForContracts()
 	thread.start_new_thread(testParallelThreadEntry, (tf,))
 	paraCore.handleActions()
-	
+
 	
 if __name__ == '__main__':
 	doTest()
