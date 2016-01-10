@@ -22,6 +22,9 @@ class EmulationConfig (GenConfig):
 		self.cfgFile = cfgFile
 		self.defaultSec = 'EMULATION'	#默认配置段
 
+	def getDatabase (self):
+		return self.getSecOption(self.defaultSec, 'database')
+
 	def getContracts (self):
 		return self.getSecOption(self.defaultSec, 'contracts')	
 	
