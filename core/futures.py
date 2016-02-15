@@ -73,8 +73,6 @@ class Futures:
 		
 		# 如果使能了并行模拟，则需要为合约初始化
 		self.paraCore = paraCore
-		if paraCore != None:
-			self.paraCore.allocManager(self.contract)
 	
 	# 检查属性
 	def checkAttrs (self):

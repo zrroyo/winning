@@ -10,7 +10,8 @@ Start: 2015年 11月 21日 星期六 17:36:12 CST
 
 import sys
 sys.path.append("..")
-import threading
+# import threading
+import thread
 import time
 
 from misc.debug import Debug
@@ -58,37 +59,31 @@ class Emulation:
 				dumpName = contract,
 				paraCore = self.paraCore)
 
-		#
-		while not self.paraCore.allocManager(contract):
-			time.sleep(0.5)
-
-		thrContract = threading.Thread(target = threadContract, args = (strategy, ))
-		thrContract.start()
-		return thrContract
+		# thrContract = threading.Thread(target = threadContract, args = (strategy, ))
+		# thrContract.start()
+		# return thrContract
+		thread.start_new_thread(threadContract, (strategy, ))
 
 	#
-	def start (self,
-		startTick,	#
-		):
-		#
-		thrPara = threading.Thread(target = threadParallelCore,
-					   args = (self.paraCore, ))
-		thrPara.start()
-
-		#
+	def start (self):
 		contracts = self.emuCfg.getContracts().split(',')
-		for c in contracts:
-			self.__setupContractProcess(c)
 
-		#
-		thrPara.join()
+		# 确保所有合约都得到执行
+		num = len(contracts)
+		for idx in range(0, num):
+			c = contracts[idx]
+			if self.paraCore.allocManager(c):
+				#
+				self.__setupContractProcess(c)
+				# 如果并行度不满，则继续追加合约
+				if self.paraCore.parallelStatus():
+					continue
 
+			self.paraCore.handleActions()
 
-#
-def threadParallelCore (
-	paraCore,	#
-	):
-	paraCore.handleActions()
+		# 确保所有合约都能执行结束
+		while not self.paraCore.handleActions():
+			continue
 
 #
 def threadContract(

@@ -22,6 +22,8 @@ from statistics import *
 ACTION_OPEN	= "OPEN"
 ACTION_CLOSE	= "CLOSE"
 ACTION_SKIP	= "SKIP"
+# 需要阻塞的action类型
+BLOCKED_ACTION_TYPES = [ACTION_OPEN, ACTION_CLOSE]
 
 #ParaCore（巡航时）默认合约名
 DEF_CONTRACT	= "paraCore"
@@ -102,7 +104,7 @@ class ActionQueue:
 			self.readyToSelect = True
 		
 		#如果是开、平仓则需要阻塞，设置请求阻塞标志
-		if type != ACTION_SKIP:
+		if type in BLOCKED_ACTION_TYPES:
 			self.reqBlocked = True
 		
 		#如果是最后一个操作需提示paraCore结束合约
@@ -126,14 +128,14 @@ class ActionQueue:
 	def getHead (self):
 		try:
 			return self.actQueue[0]
-		except:
+		except IndexError:
 			return None
 	
 	#删除操作队列的头元素
 	def deleteHead (self):
 		try:
 			del(self.actQueue[0])
-		except:
+		except IndexError:
 			pass
 
 #操作管理。每个合约都需要分配一个单独操作管理接口。
@@ -204,6 +206,7 @@ class ParallelCore:
 		startTick,	#开始tick
 		interval,	#同步窗口间隔
 		maxVolume,	#最大允许的仓位数
+		parallelLevel,	#
 		dumpName,	#统计信息Dump名
 		debug = False,	#是否调试
 		):
@@ -214,12 +217,16 @@ class ParallelCore:
 		#Fix me!
 		self.nextSyncWindow = strToDatetime(startTick, self.tickFormat)
 		self.debug.dbg("__init__: nextSyncWindow %s" % self.nextSyncWindow)
+
+		#
+		self.mgrLock = thread.allocate_lock()
+		self.parallelLevel = parallelLevel
+		self.curParallelLevel = 1	#防止handle线程提前启动并结束。
+
 		#仓位管理接口
 		self.posMgr = PositionAllocator(maxVolume, debug)
 		#利润统计接口
 		self.profitStat = ProfitStat(dumpName, debug)
-		#退出并行模拟标志
-		self.tagStopHandling = False
 	
 	#检测tick格式
 	def __detectTickFormat (self,
@@ -242,19 +249,38 @@ class ParallelCore:
 	def allocManager (self,
 		contract,	#合约
 		):
+		self.mgrLock.acquire()
+		if self.curParallelLevel >= self.parallelLevel:
+			self.mgrLock.release()
+			return False
+
 		actMgr = ActionManager()
 		actMgr.actQueue = ActionQueue(self.tickFormat, self.dbgMode)
 		self.actionManagers[contract] = actMgr
 		#占住阻塞锁以保证合约线程开仓时等待
 		actMgr.blockLock.acquire()
-		return actMgr
+		#
+		self.curParallelLevel = len(self.actionManagers)
+		self.mgrLock.release()
+		return True
 	
 	#释放操作管理接口
 	def freeManager (self,
 		contract,	#合约
 		):
-		pass
-	
+		self.mgrLock.acquire()
+		try:
+			del self.actionManagers[contract]
+			self.curParallelLevel = len(self.actionManagers)
+		except KeyError:
+			self.debug.error("freeManager: Found unknown %s" % contract)
+		finally:
+			self.mgrLock.release()
+
+	# 返回并行执行状态
+	def parallelStatus (self):
+		return self.parallelLevel - self.curParallelLevel
+
 	#得到操作管理接口
 	def getManager (self,
 		contract,	#合约
@@ -302,14 +328,15 @@ class ParallelCore:
 			#如没有就绪则继续等待
 			actionQueue.lock.release()
 			sleep(0.1)
-		
-		'''
-		syncWindow内的action已就绪，或是一个阻塞的action发生
-		'''
+
+		# ----------------
+		# syncWindow内的action已就绪，或是一个阻塞的action发生
+		# ----------------
+
 		ret = []
 		while True:
 			action = actionQueue.getHead()
-			if action == None:
+			if action is None:
 				break
 			
 			#窗口内的所有action就绪
@@ -345,7 +372,7 @@ class ParallelCore:
 		):
 		try:
 			del self.actionsPoll[index]
-		except:
+		except IndexError:
 			pass
 	
 	#对操作池排序
@@ -354,6 +381,8 @@ class ParallelCore:
 	
 	#刷新操作池中的操作
 	def __freshActionsTodo (self):
+		#为所有合约设置下一同步窗口
+		self.__setSyncWindowForContracts()
 		#轮询各合约的操作队列，选取已就绪操作
 		for (contract, actMgr) in self.actionManagers.items():
 			actList = self.__select(actMgr.actQueue)
@@ -362,11 +391,26 @@ class ParallelCore:
 		#对操作池排序
 		self.__actionsPollSorted()
 		self.debug.dbg("__freshActionsTodo: actionsPoll: %s" % self.actionsPoll)
-	
+
+	#
+	def __freshContractActionsOnly(self,
+		contract,	#
+		):
+		self.debug.dbg("select actions for %s ..." % contract)
+		actMgr = self.getManager(contract)
+		newActions = self.__select(actMgr.actQueue)
+		self.__actionsPollInsert(contract, newActions)
+		#对操作池排序
+		self.__actionsPollSorted()
+
 	#唤醒阻塞的合约线程
 	def __wakeupBlockedThread (self,
 		actMgr,	#合约的操作管理接口
+		action,	#
 		):
+		if action.type not in BLOCKED_ACTION_TYPES:
+			return
+
 		#清除合约action队列的阻塞标志
 		actMgr.actQueue.reqBlocked = False
 		#设置已通知标志为假，等待合约线程第一次握手
@@ -404,9 +448,6 @@ class ParallelCore:
 				#如果该次平仓结束后导致仓位变为０说明一次交易结束，需要结束该次利润统计
 				if oldPosNum > 0 and self.posMgr.curPos() == 0:
 					self.profitStat.end(action.contract, curTick)
-				
-				#启动被阻塞的线程
-				self.__wakeupBlockedThread(actMgr)
 			
 			#开仓
 			elif action.type == ACTION_OPEN:
@@ -418,56 +459,76 @@ class ParallelCore:
 					#如果是第一个仓位则表示一次新交易开始，开始利润统计
 					if oldPosNum == 0:
 						self.profitStat.start(action.contract, curTick)
-				
-				#启动被阻塞的线程
-				self.__wakeupBlockedThread(actMgr)
-			
+
+			#启动被阻塞的线程
+			self.__wakeupBlockedThread(actMgr, action)
+
 			#记录该次操作以备数据统计时用到
 			actMgr.prevAction = action
-			
-			#Tick索引减一，如果为０则说明没有其它合约触发同一tick，可以统计tick数据
+
+			# Tick索引减１，如果为０则说明所有合约的当前tick的action已执行完毕，可以进行统计。
 			self.__tickRefsDec(curTick)
 			if self.__tickRefsGet(curTick) == 0:
 				self.__countFloatingProfit(curTick)
 			
 			#action处理完毕，从action poll中移除
 			self.__actionsPollRemove(0)
-			
-			#已经到最后一个action，设置结束标志，退出主循环
+
+			# 已经有合约结束需暂停执行，以便加入新合约并行
 			if action.isLastTick:
-				self.tagStopHandling = True
-			
-			#把唤醒开仓阻塞线程和重新选择action分开，以使得利润统计等能够与被阻塞线程并行
-			if action.type != ACTION_SKIP:
-				#
-				self.debug.dbg("select actions for %s ..." % action.contract)
-				newActions = self.__select(actMgr.actQueue)
-				self.__actionsPollInsert(action.contract, newActions)
-				break
-	
+				return False,action
+
+			# 如果有阻塞合约的action，则需要唤醒该合约并完成当前同步窗口，不然统计无法精确到tick。
+			if action.type in BLOCKED_ACTION_TYPES:
+				return False,action
+
+		# 同步窗口内的所有action执行完毕
+		return True,None
+
 	#为所有合约设置同步窗口
-	def setSyncWindowForContracts (self):
+	def __setSyncWindowForContracts (self):
 		#同步窗口内的action全部处理完毕，设置下一个同步窗口
 		self.nextSyncWindow += timedelta(days = self.interval)	#Fix Me! minutes = self.interval
-		self.debug.error("setSyncWindowForContracts: nextSyncWindow %s" % self.nextSyncWindow)
+		self.debug.error("__setSyncWindowForContracts: nextSyncWindow %s" % self.nextSyncWindow)
 		
 		for (contract, actMgr) in self.actionManagers.items():
 			actMgr.actQueue.setSyncWindow(self.nextSyncWindow)
 	
-	#处理合约操作
+	# 处理合约操作
 	def handleActions (self):
-		while not self.tagStopHandling:
-			#刷新操作池
+		"""
+		两情况下结束执行：
+		１）有合约执行结束，需退出等待添加新合约；
+		２）所有合约都执行完毕；
+		:return:
+		１）返回False
+		２）返回True
+		"""
+		while self.curParallelLevel > 0:
+			# 刷新操作池
 			self.__freshActionsTodo()
-			#如果操作池不为空则需要继续处理
-			while len(self.actionsPoll) > 0:
-				self.__handleActions()
-				self.debug.dbg("handleActions: actionsPoll: %s" % self.actionsPoll)
+			# 如果操作池不为空则需要继续处理
+			while True:
+				finished,action = self.__handleActions()
+				if finished:
+					# 同步窗口内的action处理完毕，进入下一窗口
+					break
+
+				if action.isLastTick:
+					self.debug.dbg("handleActions: Reach the last tick of %s." % (
+									action.contract))
+					# 合约执行结束，需退出等待加入新合约
+					self.freeManager(action.contract)
+					return False
+				elif action.type in BLOCKED_ACTION_TYPES:
+					self.__freshContractActionsOnly(action.contract)
+					self.debug.dbg("handleActions: actionsPoll: %s" % self.actionsPoll)
 			
-			#操作池为空则说明该窗口内的所有tick已处理，清空tick索引进入下一窗口
+			# 所有tick已处理完成，清空tick索引准备进入下一窗口
 			self.__tickRefsDestroy()
-			#为所有合约设置下一同步窗口
-			self.setSyncWindowForContracts()
+
+		# 所有合约都执行完毕
+		return True
 	
 	#计算浮动利润
 	def __countFloatingProfit (self,
