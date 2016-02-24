@@ -382,7 +382,7 @@ class ParallelCore:
 	#刷新操作池中的操作
 	def __freshActionsTodo (self):
 		#为所有合约设置下一同步窗口
-		self.__setSyncWindowForContracts()
+		self.__setSyncWindowAllContracts()
 		#轮询各合约的操作队列，选取已就绪操作
 		for (contract, actMgr) in self.actionManagers.items():
 			actList = self.__select(actMgr.actQueue)
@@ -485,15 +485,22 @@ class ParallelCore:
 		# 同步窗口内的所有action执行完毕
 		return True,None
 
-	#为所有合约设置同步窗口
-	def __setSyncWindowForContracts (self):
-		#同步窗口内的action全部处理完毕，设置下一个同步窗口
+	# 为所有合约设置同步窗口
+	def __setSyncWindowAllContracts (self):
+		# 同步窗口内的action全部处理完毕，设置下一个同步窗口
 		self.nextSyncWindow += timedelta(days = self.interval)	#Fix Me! minutes = self.interval
-		self.debug.error("__setSyncWindowForContracts: nextSyncWindow %s" % self.nextSyncWindow)
+		self.debug.error("__setSyncWindowAllContracts: nextSyncWindow %s" % self.nextSyncWindow)
 		
 		for (contract, actMgr) in self.actionManagers.items():
 			actMgr.actQueue.setSyncWindow(self.nextSyncWindow)
-	
+
+	#
+	def setSyncWindowContract (self,
+		contract,
+		):
+		actMgr = self.getManager(contract)
+		actMgr.actQueue.setSyncWindow(self.nextSyncWindow)
+
 	# 处理合约操作
 	def handleActions (self):
 		"""

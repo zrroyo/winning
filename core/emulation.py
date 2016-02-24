@@ -59,6 +59,9 @@ class Emulation:
 				dumpName = contract,
 				paraCore = self.paraCore)
 
+		# 启动一个新
+		self.paraCore.setSyncWindowContract(contract)
+
 		# thrContract = threading.Thread(target = threadContract, args = (strategy, ))
 		# thrContract.start()
 		# return thrContract
