@@ -245,7 +245,31 @@ class Ticks(Date):
 		tick,	#交易时间
 		):
 		return self.getDateIndex(tick)
-	
+
+# 获取Tick细节类
+class TickDetail:
+	def __init__(self,
+		debug = False,	#是否调试
+		):
+		self.debug = Debug('TickDetail', debug)	#调试接口
+
+	# 检测tick格式
+	@staticmethod
+	def tickFormat (
+		tick,	#
+		):
+		tickL = tick.split(' ')
+		if len(tickL) == 2:
+			strFormat = "%Y:%m:%d %H:%M:%S"
+		else:
+			strFormat = "%Y:%m:%d"
+
+		if tick.find('-') != -1:
+			sep = '-'
+
+		strFormat = strFormat.replace(':', sep,)
+		return strFormat
+
 #测试
 def doTest ():
 	tick = Ticks('history2', 'p1601_mink', debug = False)
@@ -268,6 +292,9 @@ def doTest ():
 	print tick.isLastTick('2015-05-09 11:29:00')
 	print tick.getTickIndex(time)
 
+	print TickDetail.tickFormat('2015-05-09 11:29:00')
+	print TickDetail.tickFormat('2015-05-09')
+
 	#测试结果
 	'''
 	First Tick 2015-01-16 21:00:00
@@ -284,6 +311,8 @@ def doTest ():
 	False
 	False
 	16
+	%Y-%m-%d %H-%M-%S
+	%Y-%m-%d
 	'''
 
 if __name__ == '__main__':
