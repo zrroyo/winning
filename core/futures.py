@@ -28,10 +28,6 @@ from parallel import *
 
 # 期货类
 class Futures:
-	
-	attrs = Attribute()	#属性
-	posMgr = None		#持仓管理接口
-	
 	def __init__ (self, 
 		contract, 	#合约
 		table, 		#数据表名
@@ -42,7 +38,10 @@ class Futures:
 		self.contract = contract
 		self.database = database
 		self.table = table
-		self.debug = Debug('Futures', debug)	#调试接口
+		self.attrs = Attribute()	#属性
+		# 持仓管理接口
+		self.posMgr = None
+		self.debug = Debug('Futures: %s' % contract, debug)	#调试接口
 		self.data = Data(database, table)	#数据接口
 		self.tickSrc = Ticks(self.database, self.table)	#Tick接口
 		# 当前tick是否已经被处理过
@@ -67,14 +66,14 @@ class Futures:
 				multiplier = multiplier)
 		
 		# 初始化持仓管理接口
-		self.posMgr = PositionMananger(maxPosAllowed)
+		self.posMgr = PositionManager(maxPosAllowed,
+					      prompt = self.contract,
+					      debug = False)
 		# 数据统计接口
 		self.cs = ContractStat(self.contract, dumpName, self.dbgMode)
 		
 		# 如果使能了并行模拟，则需要为合约初始化
 		self.paraCore = paraCore
-		if paraCore != None:
-			self.paraCore.allocManager(self.contract)
 	
 	# 检查属性
 	def checkAttrs (self):
@@ -163,22 +162,19 @@ class Futures:
 			self.debug.error("closePositions: require %s, but only %s left!" % (
 						numPos, self.curPositions()))
 			return False
-		
+
 		# 从第一仓开始按序减仓
-		i = 0
 		closeProfit = 0
-		while i < numPos:
+		for i in range(numPos):
 			# 移除仓位并计算利润
 			pos = self.posMgr.popPosition(1)
 			orderProfit = self.__orderProfit(direction, pos.price, price)
 			closeProfit += orderProfit
 			# 更新平仓利润信息
 			self.cs.update(tick, price, pos, orderProfit)
-			
+
 			self.log("		<<-- Close: open %s, close %s, profit %s -->>" % (
 							pos.price, price, orderProfit))
-			
-			i += 1
 			
 		# 计算仓数
 		volume = self.attrs.numPosToAdd * numPos
@@ -419,8 +415,8 @@ class Futures:
 		):
 		ret = 0
 		poses = self.curPositions()
-		for idx in range(poses):
-			pos = self.posMgr.getPosition(idx)
+		for idx in range(1, poses + 1):
+			pos = self.getPosition(idx)
 			ret += self.__orderProfit(direction, pos.price, price)
 
 		return ret
@@ -465,7 +461,7 @@ class Futures:
 		logMsg,	#日志消息
 		*args	#参数
 		):
-		logs = logMsg % (args)
+		logs = "<%s>| %s" % (self.contract, logMsg % args)
 		print logs
 	
 	
