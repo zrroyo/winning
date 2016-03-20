@@ -43,9 +43,14 @@ class Futures:
 		self.posMgr = None
 		self.debug = Debug('Futures: %s' % contract, debug)	#调试接口
 		self.data = Data(database, table)	#数据接口
-		self.tickSrc = Ticks(self.database, self.table)	#Tick接口
+		# 用于临时目的Tick帮助接口
+		self.tickHelper = Ticks(self.database, self.table)
 		# 当前tick是否已经被处理过
 		self.tagTickParaHandled = False
+
+		# 交易结束时间，可选
+		self.tickFormat = ''
+		self.stopTickTime = None
 	
 	# ----------------
 	# 属性方法
@@ -120,7 +125,7 @@ class Futures:
 		# 计算浮动利润
 		floatProfit = self.__floatingProfit(direction, price)
 		# 判定是否为最后一个tick
-		isLastTick = self.tickSrc.isLastTick(tick)
+		isLastTick = self.tickHelper.isLastTick(tick)
 		# 发送并行处理请求
 		if not self.paraCore.request(self.contract, tick, type, price, 
 				volume, direction, floatProfit, closeProfit, isLastTick):
@@ -266,7 +271,7 @@ class Futures:
 	# 交易开始
 	def tradeStart (self,
 		startTick,	#开始交易时间
-		signal,		#交易信号／方向
+		signal,		#交易信号（方向）
 		):
 		self.debug.dbg("tradeStart: Start Trading: [%s][%s]" % (
 					self.__signalToDirection(signal), startTick))
@@ -275,12 +280,12 @@ class Futures:
 		self.cs.start(startTick)
 		
 		# 使用独立交易时间管理接口，保持独立性，避免互相影响。
-		tick = Ticks(self.database, self.table)
-		tick.setCurTick(startTick)
+		tickSrc = Ticks(self.database, self.table)
+		tickSrc.setCurTick(startTick)
 		# 交易信号已经触发，先入仓
 		self.tradeAddPositions(startTick, signal)
 		# 得到tick中的下一交易时间
-		nextTick = self.tradeNextTick(tick, startTick, signal)
+		nextTick = self.tradeNextTick(tickSrc, startTick, signal)
 
 		# 除非到数据表结尾或交易退出，否则一直交易
 		while nextTick is not None:
@@ -314,7 +319,7 @@ class Futures:
 				self.tradeStopProfit(nextTick, signal)
 			
 			# 下一tick继续
-			nextTick = self.tradeNextTick(tick, nextTick, signal)
+			nextTick = self.tradeNextTick(tickSrc, nextTick, signal)
 		
 		# 正常应该以交易结束返回对应tick，如果nextTick为
 		# None说明执行到表尾，返回None
@@ -335,19 +340,25 @@ class Futures:
 		self.openPositions(tick, price, direction, volume)
 		
 	# 止损
-	# MUST_OVERRIDE
 	def tradeCutLoss (self,
 		tick,		#交易时间
 		direction,	#方向
 		):
+		"""
+		必须被重载实现
+		@MUST_OVERRIDE
+		"""
 		return
 	
 	# 止赢
-	# MUST_OVERRIDE
 	def tradeStopProfit (self,
 		tick,		#交易时间
 		direction,	#方向
 		):
+		"""
+		必须被重载实现
+		@MUST_OVERRIDE
+		"""
 		return
 	
 	# 停止交易
@@ -360,34 +371,48 @@ class Futures:
 				price = self.data.getClose(tick), 
 				direction = direction, 
 				numPos = self.curPositions())
-	
-	# 开始测试／交易
-	def start (self):
-		# 使用独立交易时间管理接口，保持独立性，避免互相影响。
-		tick = Ticks(self.database, self.table)
-		curTick = tick.firstTick()
-		
-		# 除非到数据表结尾，否则一直交易
+
+	# 设置合约结束时间
+	def __setStopTickTime (self,
+		tick,
+		):
+		self.tickFormat = TickDetail.tickFormat(tick)
+		self.stopTickTime = time.strptime(tick, self.tickFormat)
+
+	# 开始交易
+	def start (self,
+		startTick = None,	#开始交易时间
+		stopTick = None,		#
+		):
+		tickSrc = Ticks(self.database, self.table)
+		curTick = startTick
+		if not startTick:
+			curTick = tickSrc.firstTick()
+
+		if stopTick:
+			# 如指定了结束时间，则需设置交易结束时间，以便后续tick比较
+			self.__setStopTickTime(stopTick)
+		else:
+			# 默认以最后一个tick为交易结束时间
+			stopTick = tickSrc.lastTick()
+
+		self.debug.dbg("start %s at %s, stop tick %s" % (
+					self.contract, curTick, stopTick))
+
 		while curTick is not None:
 			# 检测是否触发交易信号
 			signal = self.signalStartTrading(curTick)
 			if not self.__validStartSignal(signal):
-				curTick = self.tradeNextTick(tick, curTick)
+				curTick = self.tradeNextTick(tickSrc, curTick)
 				continue
 			
-			# 触发交易信号，交易开始
-
-			# 开始交易，并返回交易结束时的当前tick
+			# 触发信号，开始交易
 			endTick = self.tradeStart(curTick, signal)
-			# 如果返回的tick为空则表示已到数据表末尾
-			if endTick is None:
-				break
-				
-			# 返回tick不为空，则继续下一tick
-			curTick = self.tradeNextTick(tick, endTick, signal)
+			# 从返回tick的下一tick继续交易
+			curTick = self.tradeNextTick(tickSrc, endTick, signal)
 		
 		# 结束交易，清空仓位
-		self.tradeEnd(tick.lastTick(), signal)
+		self.tradeEnd(stopTick, signal)
 		# 执行结束，显示统计信息
 		self.cs.show()
 	
@@ -440,21 +465,31 @@ class Futures:
 		tick,			#当前tick
 		direction = None,	#方向
 		):
+		if not tick:
+			return None
+
 		price = self.data.getClose(tick)
-		# 如果不在交易中则跳过巡航
+		# 如不在交易中无需更新持仓变化
 		if direction is not None:
 			self.__navigate(tick, price, direction)
 		
-		# 如果不是最后一个tick则要发送并行处理请求，如果是最后一个tick则等待tradeEnd处理
-		isLastTick = self.tickSrc.isLastTick(tick)
-		if not isLastTick:
+		# 如是最后tick需由tradeEnd统一平仓，并发出信号请求同步，释放仓位
+		if not tickObj.isLastTick(tick):
 			self.__sendParaRequest(tick, ACTION_SKIP, price, 0, direction)
 		
 		# 继续下一tick
 		tickObj.setCurTick(tick)
 		# 当前tick已结束，需恢复标志
 		self.tagTickParaHandled = False
-		return tickObj.getSetNextTick()
+
+		nextTick = tickObj.getSetNextTick()
+		# 如果来到指定的交易结束时间则结束
+		if self.stopTickTime and \
+			time.strptime(nextTick, self.tickFormat) > self.stopTickTime:
+			self.debug.dbg("reach the stop tick and exit.")
+			return None
+
+		return nextTick
 	
 	# 日志（输出）统一接口
 	def log (self, 
