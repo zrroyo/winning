@@ -14,6 +14,7 @@ import time
 
 from misc.debug import Debug
 from statistics import *
+from core.date import TickDetail
 
 # 操作类型
 ACTION_OPEN	= "OPEN"
@@ -97,18 +98,11 @@ class ActionQueue:
 		self.lock.release()
 
 	# 得到操作队列的头元素
-	def getHead (self):
+	def popHead (self):
 		try:
-			return self.actQueue[0]
+			return self.actQueue.pop(0)
 		except IndexError:
 			return None
-	
-	# 删除操作队列的头元素
-	def deleteHead (self):
-		try:
-			del(self.actQueue[0])
-		except IndexError:
-			pass
 
 # 操作管理接口，每个合约都需要分配一个单独操作管理接口
 class ActionManager:
@@ -169,20 +163,19 @@ class ParallelCore:
 		self.dbgMode = debug
 		self.config = config
 		# 解析Tick格式
-		self.tickFormat = self.__detectTickFormat(self.config.getStartTime())
+		self.tickFormat = TickDetail.tickFormat(self.config.getStartTime())
 
 		# 操作管理队列
 		self.actionManagers = {}
-		#
+		# 工作队列，从各合约中选取action
 		self.workQueue = []
-		#
+		#记录工作队列中上一action的tick
 		self.prevTick = None
 
-		#
+		# 并行数控制合约如期并行执行。每启动一个活动线程并行数加１，退出则减１。
 		self.mgrLock = thread.allocate_lock()
-		self.parallelLevel = int(self.config.getParallelLevel())
-		# 防止handle线程提前启动并结束
-		self.curParallelLevel = 1
+		self.parallelLevel = int(self.config.getParallelLevel())	#最大允许并行数
+		self.curParallelLevel = 0	# 当前并行数
 
 		# 仓位管理接口
 		self.posMgr = PositionAllocator(
@@ -190,23 +183,6 @@ class ParallelCore:
 				debug = debug)
 		# 利润统计接口
 		self.profitStat = ProfitStat(dumpName, debug)
-	
-	# 检测tick格式
-	def __detectTickFormat (self,
-		tick,
-		):
-		tickL = tick.split(' ')
-		if len(tickL) == 2:
-			strFormat = "%Y:%m:%d %H:%M:%S"
-		else:
-			strFormat = "%Y:%m:%d"
-		
-		if tick.find('-') != -1:
-			sep = '-'
-		
-		strFormat = strFormat.replace(':', sep,)
-		self.debug.dbg("__detectTickFormat: Tick format: %s" % strFormat)
-		return strFormat
 	
 	# 分配操作管理接口
 	def allocManager (self,
@@ -273,47 +249,53 @@ class ParallelCore:
 		actMgr.tagNotifyRecved = False
 		self.debug.dbg("__wakeupBlockedThread: waked up %s." % action.contract)
 
-	#
-	def __contractReady (self,
+	# 判定合约操作是否在工作队列中
+	def __isContractInWorkQueue (self,
 		contract,
 		):
-		for action in self.workQueue:
-			if action.contract == contract:
-				return True
+		_contracts = [ a.contract for a in self.workQueue ]
+		# self.debug.dbg("__isContractInWorkQueue: %s _contracts %s" % (
+		# 				contract, _contracts))
+		return contract in _contracts
 
-		return False
-
-	#
+	# 初始化工作队列
 	def __workQueueInit (self):
+		"""
+		从在工作队列中空缺（没有该合约的任何操作）的合约中选取action
+		至工作队列中等待被执行、调度。
+		"""
 		actions = []
 		for (contract, actMgr) in self.actionManagers.items():
-			if self.__contractReady(contract):
+			if self.__isContractInWorkQueue(contract):
 				continue
 
 			action = self.__workQueueSelect(contract)
 			actions.append(action)
 
 		self.__workQueueInsert(actions)
+		# self.debug.dbg("workQueue %s" % self.workQueue)
 
-		#
+		# 若前后两个action的tick发生变化则需要更新统计信息，
+		# prevTick用于记录上一个action的tick。
 		if self.prevTick is None:
 			self.prevTick = self.workQueue[0].tick
 
-	#
+	# 向工作队列插入action
 	def __workQueueInsert (self,
-		action,	#
+		action,	#待插入操作
 		):
 		if isinstance(action, list):
 			self.workQueue += action
 		else:
 			self.workQueue.append(action)
 
-		# self.debug.error("type %s, workQueue %s" % (type(action), self.workQueue))
+		# self.debug.dbg("type %s, workQueue %s" % (type(action), self.workQueue))
+		# 最小的tick需最先被处理
 		self.workQueue.sort(key = lambda x: time.strptime(x.tick, self.tickFormat))
 
-	#
+	# 从工作队列取出action
 	def __workQueuePop (self,
-		index = 0,	#
+		index = 0,	#默认取出头一个
 		):
 		try:
 			return self.workQueue.pop(index)
@@ -321,18 +303,19 @@ class ParallelCore:
 			self.debug.error("__workQueuePop: index %s, exp: %s" % (index, e))
 			return None
 
+	# 从合约的操作队列中选出action
 	def __workQueueSelect (self,
-		contract,	#
+		contract,	#合约
 		):
 		actMgr = self.getManager(contract)
-		#
+		# 一直等待直到选取成功
 		while True:
-			#
-			action = actMgr.actQueue.getHead()
+			action = actMgr.actQueue.popHead()
+			# self.debug.dbg("__workQueueSelect: %s action %s" % (
+			# 			contract, action.tick if action else action))
 			if not action:
 				time.sleep(0.1)
 				continue
-			actMgr.actQueue.deleteHead()
 			return action
 
 	# 处理合约操作
@@ -376,12 +359,12 @@ class ParallelCore:
 			self.__wakeupBlockedThread(actMgr, action)
 			# 数据统计时可能用到
 			actMgr.prevAction = action
-			#
+
+			# tick发生变化则需要更新该tick内的统计信息，
 			if curTick != self.prevTick:
 				self.__countFloatingProfit(curTick)
-
-			#
 			self.prevTick = curTick
+
 			# 有合约结束，需分配新合约加入
 			if action.isLastTick:
 				self.freeManager(action.contract)
