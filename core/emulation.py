@@ -43,14 +43,15 @@ class Emulation:
 		date_in_contract = filter(str.isdigit, contract)
 		year = int(date_in_contract[0:2])
 		# 合约的实际结束日期应为交割月的上月
-		month = int(date_in_contract[2:4]) - 1
-		if month == 0:
-			month = 12
+		month = int(date_in_contract[2:4])
+		if month - 1 == 0:
 			year -= 1
 
-		expireL = expireDates.split(',')
+		# expireL = expireDates.split(',')
 		# 将所有合约到期时间生成以月份为key的字典以加速查找
-		expireMap = dict([(int(ep.split('-')[0]), ep) for ep in expireL])
+		# expireMap = dict([(int(ep.split('-')[0]), ep) for ep in expireL])
+		expireL = [ep.split(':') for ep in expireDates.split(',')]
+		expireMap = dict([(int(ep[0]), ep[1]) for ep in expireL])
 		ep = expireMap[month]
 
 		if year < 10:
@@ -58,8 +59,8 @@ class Emulation:
 		else:
 			ret = "20%s-%s" % (year, ep)
 
-		self.debug.dbg("date_in_contract %s, year %s, month %s, ret %s" % (
-					date_in_contract, year, month, ret))
+		self.debug.dbg("date_in_contract %s, expire map %s, year %s, month %s, ret %s" % (
+					date_in_contract, expireMap, year, month, ret))
 		return ret
 
 	# 启动合约执行线程
