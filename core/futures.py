@@ -48,10 +48,12 @@ class Futures:
 		# 当前tick是否已经被处理过
 		self.tagTickParaHandled = False
 
-		# 交易结束时间，可选
-		self.tickFormat = ''
+		# 交易结束时间
 		self.stopTickTime = None
-	
+		self.tickFormat = ''
+		# 指定的交易结束时间并不一定有对应tick，所以需记录实际结束tick
+		self.stopTick = None
+
 	# ----------------
 	# 属性方法
 	# ----------------
@@ -116,16 +118,16 @@ class Futures:
 		direction,		#方向
 		closeProfit = 0,	#平仓利润
 		):
+		# 确保每一tick只发送一次请求
 		if not self.paraCore or self.tagTickParaHandled:
-			# 并行处理未使能或已并行处理过，则不处理
 			return True
 		
-		# 该tick已经并行处理过
+		# 标记该tick已发送过请求
 		self.tagTickParaHandled = True
 		# 计算浮动利润
 		floatProfit = self.__floatingProfit(direction, price)
-		# 判定是否为最后一个tick
-		isLastTick = self.tickHelper.isLastTick(tick)
+		isLastTick = True if self.stopTick else False
+
 		# 发送并行处理请求
 		if not self.paraCore.request(self.contract, tick, type, price, 
 				volume, direction, floatProfit, closeProfit, isLastTick):
@@ -361,7 +363,7 @@ class Futures:
 		"""
 		return
 	
-	# 停止交易
+	# 交易结束处理
 	def tradeEnd (self,
 		tick,		#交易时间
 		direction,	#方向
@@ -392,9 +394,6 @@ class Futures:
 		if stopTick:
 			# 如指定了结束时间，则需设置交易结束时间，以便后续tick比较
 			self.__setStopTickTime(stopTick)
-		else:
-			# 默认以最后一个tick为交易结束时间
-			stopTick = tickSrc.lastTick()
 
 		self.debug.dbg("start %s at %s, stop tick %s" % (
 					self.contract, curTick, stopTick))
@@ -412,7 +411,7 @@ class Futures:
 			curTick = self.tradeNextTick(tickSrc, endTick, signal)
 		
 		# 结束交易，清空仓位
-		self.tradeEnd(stopTick, signal)
+		self.tradeEnd(self.stopTick, signal)
 		# 执行结束，显示统计信息
 		self.cs.show()
 	
@@ -427,12 +426,12 @@ class Futures:
 			orderProfit = open - price
 		else:
 			orderProfit = price - open
-		
+
 		# 单价获利x每单手数x合约乘数
 		orderProfit *= self.attrs.numPosToAdd
 		orderProfit *= self.attrs.multiplier
 		return orderProfit
-	
+
 	# 计算浮动利润
 	def __floatingProfit (self,
 		direction,	#方向
@@ -472,21 +471,34 @@ class Futures:
 		# 如不在交易中无需更新持仓变化
 		if direction is not None:
 			self.__navigate(tick, price, direction)
-		
-		# 如是最后tick需由tradeEnd统一平仓，并发出信号请求同步，释放仓位
-		if not tickObj.isLastTick(tick):
-			self.__sendParaRequest(tick, ACTION_SKIP, price, 0, direction)
-		
+
 		# 继续下一tick
 		tickObj.setCurTick(tick)
-		# 当前tick已结束，需恢复标志
-		self.tagTickParaHandled = False
-
 		nextTick = tickObj.getSetNextTick()
-		# 如果来到指定的交易结束时间则结束
-		if self.stopTickTime and \
-			time.strptime(nextTick, self.tickFormat) > self.stopTickTime:
-			self.debug.dbg("reach the stop tick and exit.")
+		self.debug.info("tradeNextTick: tick %s, nextTick %s" % (tick, nextTick))
+
+		try:
+			# 如果指定的交易结束时间到或为最后tick，则交易结束
+			if self.stopTickTime and \
+				time.strptime(nextTick, self.tickFormat) > self.stopTickTime \
+				or tickObj.isLastTick(tick):
+				# 提醒tradeEnd统一平仓，并发出信号请求同步，释放仓位
+				self.stopTick = tick
+				# 之前可能已发出过并行处理请求，清除标志以便最终能发出结束请求
+				self.tagTickParaHandled = False
+				self.debug.info("reach the stop tick %s" % self.stopTick)
+				return None
+			else:
+				self.__sendParaRequest(tick, ACTION_SKIP, price, 0, direction)
+
+			# 新tick产生，标志复位
+			self.tagTickParaHandled = False
+
+		except TypeError, e:
+			self.debug.error("tradeNextTick: found error %s" % e)
+			self.stopTick = tick
+			# 已到表尾，交易结束，但之前可能已发出过并行处理请求，清除标志以便最终能发出结束请求
+			self.tagTickParaHandled = False
 			return None
 
 		return nextTick
@@ -496,7 +508,7 @@ class Futures:
 		logMsg,	#日志消息
 		*args	#参数
 		):
-		logs = "<%s>| %s" % (self.contract, logMsg % args)
+		logs = "<%s>| %s" % ("{:^12s}".format(self.contract), logMsg % args)
 		print logs
 	
 	

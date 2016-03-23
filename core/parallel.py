@@ -92,7 +92,7 @@ class ActionQueue:
 				)
 		self.lock.acquire()
 		self.actQueue.append(act)
-		self.debug.info("%s: tick %s, type %s, price %s" % (
+		self.debug.dbg("push: %s: tick %s, type %s, price %s" % (
 					contract, tick, type, price))
 
 		self.lock.release()
@@ -331,8 +331,9 @@ class ParallelCore:
 			curTick = action.tick
 			oldPosNum = self.posMgr.curPos()
 			actMgr = self.getManager(action.contract)
-			self.debug.dbg("handleActions: %s tick %s, type %s" % (
-					action.contract, action.tick, action.type))
+			self.debug.info("handleActions: %s tick %s, type %s, last tick %s" % (
+					action.contract, action.tick, action.type,
+					True if action.isLastTick else False))
 
 			# 平仓
 			if action.type == ACTION_CLOSE:
@@ -408,7 +409,8 @@ class ParallelCore:
 			return True
 		
 		# 仓位操作需阻塞，等待主线程协调处理是否允许
-		self.debug.dbg("request: type %s, acquiring lock..." % type)
+		self.debug.dbg("%s: request: type %s, acquiring lock..." % (
+						contract, type))
 		# 阻塞，等待主线程分配
 		actMgr.blockLock.acquire()
 		# 主线程分配结束，并已设置分配状态。设置已通知标志，让主线程抢回锁
