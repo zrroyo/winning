@@ -55,16 +55,19 @@ class Date:
 		pass
 
 	# 把数据库时间转换成字符串
-	def __dateToString (self,
+	def dateToString (self,
 		date,	#数据库时间
 		):
-		return datetime.strftime(date, "%Y-%m-%d %H:%M:%S")
+		return "%s" % date
 
 	# 把时间字符串转换成数据库时间
-	def __strToDateTime (self,
+	def strToDateTime (self,
 		strDate,
 		):
-		return datetime.strptime(strDate, "%Y-%m-%d %H:%M:%S")
+		try:
+			return datetime.strptime(strDate, "%Y-%m-%d %H:%M:%S")
+		except ValueError, e:
+			return datetime.strptime(strDate, "%Y-%m-%d").date()
 
 	#返回当前交易时间
 	def curDate (self):
@@ -95,7 +98,7 @@ class Date:
 		date,	#交易时间
 		):
 		if isinstance(date, str):
-			date = self.__strToDateTime(date)
+			date = self.strToDateTime(date)
 
 		return True if date == self.firstDate() else False
 	
@@ -104,7 +107,7 @@ class Date:
 		date,	#交易时间
 		):
 		if isinstance(date, str):
-			date = self.__strToDateTime(date)
+			date = self.strToDateTime(date)
 
 		return True if date == self.lastDate() else False
 	
@@ -132,7 +135,7 @@ class Date:
 		):
 		try:
 			if isinstance(date, str):
-				date = self.__strToDateTime(date)
+				date = self.strToDateTime(date)
 
 			idx = self.ticksBuffer.index(date)
 			self.current = idx
@@ -162,7 +165,7 @@ class Date:
 		):
 		try:
 			if isinstance(date, str):
-				date = self.__strToDateTime(date)
+				date = self.strToDateTime(date)
 
 			idx = self.ticksBuffer.index(date)
 			idx += limit
@@ -187,7 +190,7 @@ class Date:
 		):
 		try:
 			if isinstance(date, str):
-				date = self.__strToDateTime(date)
+				date = self.strToDateTime(date)
 
 			return self.ticksBuffer.index(date)
 		except ValueError, e:
