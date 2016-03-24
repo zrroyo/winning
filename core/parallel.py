@@ -14,7 +14,6 @@ import time
 
 from misc.debug import Debug
 from statistics import *
-from core.date import TickDetail
 
 # 操作类型
 ACTION_OPEN	= "OPEN"
@@ -52,11 +51,9 @@ class Action:
 # 操作记录队列
 class ActionQueue:
 	def __init__ (self,
-		tickFormat,	#Tick格式
 		debug = False,	#是否调试
 		):
 		self.debug = Debug('ActionQueue', debug)	#调试接口
-		self.tickFormat = tickFormat
 		# 操作记录队列
 		self.actQueue = []
 		# 保护锁
@@ -162,8 +159,6 @@ class ParallelCore:
 		self.debug = Debug('ParallelCore', debug)	#调试接口
 		self.dbgMode = debug
 		self.config = config
-		# 解析Tick格式
-		self.tickFormat = TickDetail.tickFormat(self.config.getStartTime())
 
 		# 操作管理队列
 		self.actionManagers = {}
@@ -194,7 +189,7 @@ class ParallelCore:
 			return False
 
 		actMgr = ActionManager()
-		actMgr.actQueue = ActionQueue(self.tickFormat, self.dbgMode)
+		actMgr.actQueue = ActionQueue(self.dbgMode)
 		self.actionManagers[contract] = actMgr
 		#占住阻塞锁以保证合约线程开仓时等待
 		actMgr.blockLock.acquire()
@@ -291,7 +286,7 @@ class ParallelCore:
 
 		# self.debug.dbg("type %s, workQueue %s" % (type(action), self.workQueue))
 		# 最小的tick需最先被处理
-		self.workQueue.sort(key = lambda x: time.strptime(x.tick, self.tickFormat))
+		self.workQueue.sort(key = lambda x: x.tick)
 
 	# 从工作队列取出action
 	def __workQueuePop (self,

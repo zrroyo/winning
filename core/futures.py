@@ -50,7 +50,6 @@ class Futures:
 
 		# 交易结束时间
 		self.stopTickTime = None
-		self.tickFormat = ''
 		# 指定的交易结束时间并不一定有对应tick，所以需记录实际结束tick
 		self.stopTick = None
 
@@ -374,29 +373,22 @@ class Futures:
 				direction = direction, 
 				numPos = self.curPositions())
 
-	# 设置合约结束时间
-	def __setStopTickTime (self,
-		tick,
-		):
-		self.tickFormat = TickDetail.tickFormat(tick)
-		self.stopTickTime = time.strptime(tick, self.tickFormat)
-
 	# 开始交易
 	def start (self,
 		startTick = None,	#开始交易时间
 		stopTick = None,		#
 		):
 		tickSrc = Ticks(self.database, self.table)
-		curTick = startTick
+		curTick = self.tickHelper.strToDateTime(startTick)
 		if not startTick:
 			curTick = tickSrc.firstTick()
 
 		if stopTick:
 			# 如指定了结束时间，则需设置交易结束时间，以便后续tick比较
-			self.__setStopTickTime(stopTick)
+			self.stopTickTime = self.tickHelper.strToDateTime(stopTick)
 
 		self.debug.dbg("start %s at %s, stop tick %s" % (
-					self.contract, curTick, stopTick))
+					self.contract, curTick, self.stopTickTime))
 
 		while curTick is not None:
 			# 检测是否触发交易信号
@@ -479,8 +471,7 @@ class Futures:
 
 		try:
 			# 如果指定的交易结束时间到或为最后tick，则交易结束
-			if self.stopTickTime and \
-				time.strptime(nextTick, self.tickFormat) > self.stopTickTime \
+			if self.stopTickTime and nextTick > self.stopTickTime \
 				or tickObj.isLastTick(tick):
 				# 提醒tradeEnd统一平仓，并发出信号请求同步，释放仓位
 				self.stopTick = tick

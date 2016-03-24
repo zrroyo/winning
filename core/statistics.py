@@ -81,7 +81,7 @@ class ProfitStat:
 		tick,		#时间
 		):
 		# 记录第一个tick及合约以备后续关键字匹配更新数据库
-		self.startTick = tick
+		self.startTick = "%s" % tick
 		self.startContract = contract
 		
 		# 插入新记录
