@@ -114,15 +114,15 @@ class ActionManager:
 		# 通知已接受标志
 		self.tagNotifyRecved = False
 
-# 仓位管理接口
-class PositionAllocator:
+# 加仓管理接口
+class PositionAddManager:
 	def __init__ (self,
-		maxVolume,	#最大允许仓位
+		maxAllowed,	#最大允许仓位
 		debug = False,	#是否调试
 		):
-		self.debug = Debug('PositionAllocator', debug)	#调试接口
-		self.maxVolume = maxVolume
-		self.available = maxVolume	#剩余仓位
+		self.debug = Debug('PositionAddManager', debug)	#调试接口
+		self.maxAllowed = maxAllowed
+		self.available = maxAllowed	#剩余仓位
 	
 	# 分配仓位
 	def alloc (self,
@@ -130,8 +130,8 @@ class PositionAllocator:
 		):
 		# 如果申请数大于剩余数则失败
 		if action.volume > self.available:
-			self.debug.dbg("Alloc not allowed, maxVolume %s, available %s, required %s" % (
-							self.maxVolume, self.available, action.volume))
+			self.debug.error("alloc: denied, maxAllowed %s, available %s, request %s" % (
+							self.maxAllowed, self.available, action.volume))
 			return False
 		
 		self.available -= action.volume
@@ -141,12 +141,17 @@ class PositionAllocator:
 	def free (self,
 		action,	#操作记录
 		):
+		if self.available + action.volume > self.maxAllowed:
+			self.debug.error("free: denied, available %s request %s overflows maxAllowed %s" % (
+							self.available, action.volume, self.maxAllowed))
+			return False
+
 		self.available += action.volume
 		return True
 	
 	# 返回当前的仓位
 	def curPos (self):
-		return self.maxVolume - self.available
+		return self.maxAllowed - self.available
 		
 
 # 并行测试、执行控制核心
@@ -173,8 +178,8 @@ class ParallelCore:
 		self.curParallelLevel = 0	# 当前并行数
 
 		# 仓位管理接口
-		self.posMgr = PositionAllocator(
-				maxVolume = int(self.config.getParallelAddMaxAllowed()),
+		self.posMgr = PositionAddManager(
+				maxAllowed = int(self.config.getParallelAddMaxAllowed()),
 				debug = debug)
 		# 利润统计接口
 		self.profitStat = ProfitStat(dumpName, debug)

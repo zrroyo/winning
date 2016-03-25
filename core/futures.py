@@ -144,7 +144,7 @@ class Futures:
 		volume = 1,	#开仓量
 		):
 		# 发送并行处理请求
-		if not self.__sendParaRequest(tick, ACTION_OPEN, price, volume, direction):
+		if not self.__sendParaRequest(tick, ACTION_OPEN, price, 1, direction):
 			return False
 		
 		# 如果加仓失败返回False
@@ -171,11 +171,13 @@ class Futures:
 
 		# 从第一仓开始按序减仓
 		closeProfit = 0
+		nrClose = 0
 		for i in range(numPos):
 			# 移除仓位并计算利润
 			pos = self.posMgr.popPosition(1)
 			orderProfit = self.__orderProfit(direction, pos.price, price)
 			closeProfit += orderProfit
+			nrClose += 1
 			# 更新平仓利润信息
 			self.cs.update(tick, price, pos, orderProfit)
 
@@ -185,7 +187,7 @@ class Futures:
 		# 计算仓数
 		volume = self.attrs.numPosToAdd * numPos
 		# 发送并行处理请求
-		self.__sendParaRequest(tick, ACTION_CLOSE, price, volume, direction, closeProfit)
+		self.__sendParaRequest(tick, ACTION_CLOSE, price, nrClose, direction, closeProfit)
 		
 		# 如果平仓后仓位为０说明本次交易结束。打印统计信息并重置。
 		if self.curPositions() == 0:
