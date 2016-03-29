@@ -197,6 +197,21 @@ class Date:
 			self.debug.error("getDateIndex: error: %s" % e)
 			return None
 
+	# 返回与传入date最近的tick
+	def getNextNearDate (self,
+		date,	#交易时间
+		limit,	#限制数目
+		):
+		try:
+			strSql = "select %s from %s where %s >= '%s' order by %s asc limit %s" % (
+					F_TIME, self.table, F_TIME, date, F_TIME, limit)
+			self.db.execSql(strSql)
+			ret = self.db.fetch(limit - 1)[FN_TIME]
+			return ret
+		except TypeError, e:
+			self.debug.error("getNextNearDate: error: %s" % e)
+			return None
+
 # Tick(交易时间)管理接口
 class Ticks(Date):
 	# 返回当前Tick
@@ -265,6 +280,13 @@ class Ticks(Date):
 		):
 		return self.getDateIndex(tick)
 
+	# 返回与传入tick最近的tick
+	def getNextNearTick (self,
+		tick,	#交易时间
+		limit,	#限制数目
+		):
+		return self.getNextNearDate(tick, limit)
+
 # 获取Tick细节类
 class TickDetail:
 	def __init__(self,
@@ -310,6 +332,7 @@ def doTest ():
 	print tick.isFirstTick('2015-05-09 11:29:00')
 	print tick.isLastTick('2015-05-09 11:29:00')
 	print tick.getTickIndex(time)
+	print tick.getNextNearTick('2015-05-08 11:27:00', 1)
 
 	print TickDetail.tickFormat('2015-05-09 11:29:00')
 	print TickDetail.tickFormat('2015-05-09')
