@@ -375,19 +375,31 @@ class Futures:
 				direction = direction, 
 				numPos = self.curPositions())
 
+	# 估计实际的开始和结束时间
+	def __getRealStartAndEndTick (self,
+		startTick = None,
+		stopTick = None,
+		):
+		retStart = self.tickHelper.firstTick()
+		# 指定的交易时间不一定存在，如不存在则用下一个最接近的tick开始
+		if startTick:
+			retStart = self.tickHelper.getNextNearTick(startTick, 1)
+
+		retStop = None
+		# 默认为最后一个tick，如指定则为指定tick或之前最接近的一个tick
+		if stopTick:
+			retStop = self.tickHelper.strToDateTime(stopTick)
+
+		return retStart,retStop
+
 	# 开始交易
 	def start (self,
 		startTick = None,	#开始交易时间
-		stopTick = None,		#
+		stopTick = None,	#
 		):
 		tickSrc = Ticks(self.database, self.table)
 		curTick = self.tickHelper.strToDateTime(startTick)
-		if not startTick:
-			curTick = tickSrc.firstTick()
-
-		if stopTick:
-			# 如指定了结束时间，则需设置交易结束时间，以便后续tick比较
-			self.stopTickTime = self.tickHelper.strToDateTime(stopTick)
+		curTick,self.stopTickTime = self.__getRealStartAndEndTick(startTick, stopTick)
 
 		self.debug.dbg("start %s at %s, stop tick %s" % (
 					self.contract, curTick, self.stopTickTime))
