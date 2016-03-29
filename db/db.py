@@ -1,48 +1,48 @@
 #!/usr/bin/env python
 
-class DB ():
-	def __init__ (self, host, user, passwd, db = None):
-		self.host=host
-		self.user=user
-		self.passwd=passwd
-		self.db=db
+class DB:
+	def __init__ (self, host, user, passwd, db):
+		self.host = host
+		self.user = user
+		self.passwd = passwd
+		self.db = db
 	
 	def __del__ (self):
-		return
+		pass
 	
-	def connect (self):
-		return
+	def connect (self, database):
+		pass
 	
-	def execSql (self):
-		return
+	def execSql (self, strSql):
+		pass
 	
-	def fetch (self):
-		return	
+	def fetch (self, line):
+		pass
 		
-	def search (self):
-		return
+	def search (self, table, cond, field):
+		pass
 	
-	def insert (self):
-		return
+	def insert (self, table, values):
+		pass
 	
-	def update (self):
-		return
+	def update (self, table, cond, values):
+		pass
 	
-	def remove (self):
-		return
+	def remove (self, table, cond):
+		pass
 	
 	def close (self):
-		return
+		pass
 	
-	def drop (self):
-		return
+	def drop (self, table):
+		pass
 	
 	def createTable (self):
-		return
+		pass
 	
-	def attrSetPrimary (self):
-		return
+	def attrSetPrimary (self, table, field):
+		pass
 	
 	def attrSetNotNull (self):
-		return
+		pass
 	
