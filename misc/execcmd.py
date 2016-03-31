@@ -1,16 +1,19 @@
 #! /usr/bin/python
 #-*- coding:utf-8 -*-
 
-'''
+"""
+Copyright 2014 Meizu Co., Ltd.
 Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
 Start: 2014年 03月 20日 星期四 16:05:18 CST
-'''
 
-'''
+This program is provided under the Gnu General Public License (GPL)
+version 2 ONLY.
+
 命令执行模块
 	*简化命令执行，并得到最终输出和执行状态。
-'''
+"""
 
+import os
 import commands
 
 #命令执行类
@@ -19,13 +22,19 @@ class ExecCommand:
 		self.output = None
 		self.status = None
 		
-	#执行命令	
+	#执行命令
 	def execCmd (self, 
-		cmdStr,	#命令字符串
+		cmdStr,		#命令字符串
+		quiet = True,	#是否打印log
 		):
-		res = commands.getstatusoutput(cmdStr)
-		self.output = res[1]
-		self.status = int(res[0]) / 256
+		#执行命令	
+		if quiet:
+			status,output = commands.getstatusoutput(cmdStr)
+			self.output = output
+			self.status = int(status) / 256
+		else:
+			status = os.system(cmdStr)
+			self.status = int(status) / 256
 		
 	#返回命令执行结果（输出）
 	def getOutput (self):
