@@ -19,21 +19,39 @@ from parallel import ParallelCore
 from strategy.test_dev import TestFuture
 
 # 默认配置文件目录
-DEF_EMUL_CONFIG_DIR = "config"
+DEF_EMUL_CONFIG_DIR = "tests"
+
+# 发现未识别策略异常
+class ExceptionEmulUnknown(Exception):
+	pass
 
 #模拟交易
 class Emulation:
 	def __init__ (self,
 		cfg,		#配置文件
 		dumpName,	#统计信息Dump名
+	      	strategy,	#策略名
 		debug = False,	#是否调试
 		):
 		self.debug = Debug('Emulation', debug)	#调试接口
-		self.emuCfg = EmulationConfig(cfg)	#模拟配置接口
+		testCfg = "%s/%s" % (DEF_EMUL_CONFIG_DIR, cfg)
+		self.emuCfg = EmulationConfig(testCfg)	#模拟配置接口
+		#发现未识别策略，提示调用函数处理
+		if strategy not in Emulation.validStrategy():
+			raise ExceptionEmulUnknown("Found unknown strategy.")
+
+		self.strategy = strategy
+		self.dbgMode = debug
 		# 初始化并行执行控制接口
 		self.paraCore = ParallelCore(config = self.emuCfg,
 						dumpName = dumpName,
-						debug = debug)
+						debug = self.dbgMode)
+
+	# 所有支持的策略列表
+	@staticmethod
+	def validStrategy ():
+		ret = ['testfuture']
+		return ret
 
 	# 计算符合配置的合约结束tick
 	def __estimateEndTick (self,
@@ -69,10 +87,12 @@ class Emulation:
 		startTick,	#开始交易时间
 		expireDates,	#合约结束日期
 		):
-		strategy = TestFuture(contract = contract,
-				      table = contract,
-				      database = self.emuCfg.getDatabase(),
-				      debug = True)
+		strategy = None
+		if self.strategy == "testfuture":
+			strategy = TestFuture(contract = contract,
+					      table = contract,
+					      database = self.emuCfg.getDatabase(),
+					      debug = self.dbgMode)
 
 		strategy.setAttrs(maxPosAllowed = int(self.emuCfg.getContractAddMaxAllowed()),
 				numPosToAdd = int(self.emuCfg.getContractVolumeAdd()),
@@ -126,10 +146,11 @@ def threadContract(
 # 测试
 def doTest():
 	global DEF_EMUL_CONFIG_DIR
-	DEF_EMUL_CONFIG_DIR = "../config"
+	DEF_EMUL_CONFIG_DIR = "../tests"
 
 	testCfg = "%s/test_emul" % DEF_EMUL_CONFIG_DIR
 	emul = Emulation(cfg = testCfg,
+			 strategy = 'testfuture',
 			 dumpName = "test_emul",
 			 debug = True)
 	emul.start()
