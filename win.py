@@ -6,8 +6,8 @@ from optparse import OptionParser
 
 from dataMgr.importerParser import importerOptionsParser
 from dataMgr.dataParser import dataOptionsParser
-from regress.regression import regressionOptionsParser
-from ctp.ctpParser import ctpOptionsParser
+from core.regressionParser import regressionOptionsParser
+# from ctp.ctpParser import ctpOptionsParser
 
 parser = OptionParser()
 
@@ -20,8 +20,8 @@ def parseArgs ():
 		dataOptionsParser(parser)
 	elif arg1 == 'regress':
 		regressionOptionsParser(parser)
-	elif arg1 == 'ctp':
-		ctpOptionsParser(parser)
+	# elif arg1 == 'ctp':
+	# 	ctpOptionsParser(parser)
 	else:
 		print "\n未知子系统'%s'，请指定正确子系统名称. \n" % arg1
 	
