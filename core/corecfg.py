@@ -55,6 +55,34 @@ class EmulationConfig (GenConfig):
 	def getParallelAddMaxAllowed (self):
 		return self.getSecOption(self.defaultSec, 'parallel_add_max_allowed')
 
+# 合约描述配置
+class ContractDescConfig (GenConfig):
+	def __init__ (self,
+		cfgFile,	#配置文件
+		):
+		GenConfig.__init__(self, cfgFile)
+		self.cfgFile = cfgFile
+
+	def getDatabase (self,
+		contract,
+		):
+		return self.getSecOption(contract, 'database')
+
+	def getMainTable (self,
+		contract,
+		):
+		return self.getSecOption(contract, 'main_table')
+
+	def getContractStart (self,
+		contract,
+		):
+		return self.getSecOption(contract, 'contract_start')
+
+	def getContractEnd (self,
+		contract,
+		):
+		return self.getSecOption(contract, 'contract_end')
+
 # 测试
 def doTest ():
 	emulConfig = EmulationConfig('../config/emul_p')
