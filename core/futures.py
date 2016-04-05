@@ -30,21 +30,25 @@ from parallel import *
 class Futures:
 	def __init__ (self, 
 		contract, 	#合约
-		table, 		#数据表名
-		database, 	#数据库名
+		config,		#合约配置解析接口
 		debug = False,	#是否调试
 		):
 		self.dbgMode = debug
 		self.contract = contract
-		self.database = database
-		self.table = table
+		self.config = config
+		self.database = self.config.getDatabase(contract)
+		self.table = self.config.getMainTable(contract)
+		self.contractStart = self.config.getContractStart(contract)
+		self.contractEnd = self.config.getContractEnd(contract)
 		self.attrs = Attribute()	#属性
 		# 持仓管理接口
 		self.posMgr = None
 		self.debug = Debug('Futures: %s' % contract, debug)	#调试接口
-		self.data = Data(database, table)	#数据接口
+		self.data = Data(self.database, self.table)	#数据接口
 		# 用于临时目的Tick帮助接口
-		self.tickHelper = Ticks(self.database, self.table)
+		self.tickHelper = Ticks(self.database, self.table,
+						startTick = self.contractStart,
+						endTick = self.contractEnd)
 		# 当前tick是否已经被处理过
 		self.tagTickParaHandled = False
 
@@ -283,7 +287,9 @@ class Futures:
 		self.cs.start(startTick)
 		
 		# 使用独立交易时间管理接口，保持独立性，避免互相影响。
-		tickSrc = Ticks(self.database, self.table)
+		tickSrc = Ticks(self.database, self.table,
+					startTick = self.contractStart,
+					endTick = self.contractEnd)
 		tickSrc.setCurTick(startTick)
 		# 交易信号已经触发，先入仓
 		self.tradeAddPositions(startTick, signal)
@@ -397,7 +403,9 @@ class Futures:
 		startTick = None,	#开始交易时间
 		stopTick = None,	#
 		):
-		tickSrc = Ticks(self.database, self.table)
+		tickSrc = Ticks(self.database, self.table,
+					startTick = self.contractStart,
+					endTick = self.contractEnd)
 		curTick = self.tickHelper.strToDateTime(startTick)
 		curTick,self.stopTickTime = self.__getRealStartAndEndTick(startTick, stopTick)
 

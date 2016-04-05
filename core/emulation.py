@@ -14,12 +14,14 @@ import thread
 import time
 
 from misc.debug import Debug
-from corecfg import EmulationConfig
+from corecfg import EmulationConfig, ContractDescConfig
 from parallel import ParallelCore
 from strategy.test_dev import TestFuture
 
 # 默认配置文件目录
 DEF_EMUL_CONFIG_DIR = "tests"
+# 默认合约描述文件
+DEF_CONTRACT_DESC_CFG = "config/contracts_desc"
 
 # 发现未识别策略异常
 class ExceptionEmulUnknown(Exception):
@@ -86,12 +88,12 @@ class Emulation:
 		contract,	#合约名称
 		startTick,	#开始交易时间
 		expireDates,	#合约结束日期
+		descCfg,	#合约描述配置读取接口
 		):
 		strategy = None
 		if self.strategy == "testfuture":
 			strategy = TestFuture(contract = contract,
-					      table = contract,
-					      database = self.emuCfg.getDatabase(),
+					      config = descCfg,
 					      debug = self.dbgMode)
 
 		strategy.setAttrs(maxPosAllowed = int(self.emuCfg.getContractAddMaxAllowed()),
@@ -109,6 +111,8 @@ class Emulation:
 		contracts = self.emuCfg.getContracts().strip(',').split(',')
 		startTicks = self.emuCfg.getStartTime().strip(',').split(',')
 		expireDates = self.emuCfg.getExpireDates().strip(',')
+		#初始化合约描述配置接口，以便于后续通过合约名查询相关合约细节
+		descCfg = ContractDescConfig(DEF_CONTRACT_DESC_CFG)
 
 		# 需按序启动所有合约
 		num = len(contracts)
@@ -121,7 +125,7 @@ class Emulation:
 				except IndexError:
 					tick = None
 
-				self.__setupContractProcess(c, tick, expireDates)
+				self.__setupContractProcess(c, tick, expireDates, descCfg)
 				# 如并行数量不满则继续启动线程
 				if self.paraCore.parallelStatus():
 					continue
