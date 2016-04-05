@@ -18,14 +18,18 @@ from misc.debug import *
 # 交易时间管理接口
 class Date:
 	def __init__ (self, 
-		database, 	#数据库
-		table,		#数据表
-		debug = False,	#是否调试
+		database, 		#数据库
+		table,			#数据表
+		startTick = None,	#指定开始tick
+		endTick = None,		#指定结束tick
+		debug = False,		#是否调试
 		):
 		self.debug = Debug('Date', debug)	#调试接口
 		self.db = SQL()
 		self.db.connect(database)
 		self.table = table
+		self.startTick = startTick
+		self.endTick = endTick
 		# 存放ticks的缓冲区
 		self.ticksBuffer = []
 		self.numTicks = 0
@@ -37,8 +41,20 @@ class Date:
 
 	# 从数据库中加载时间
 	def __loadTicks (self):
-		strSql = 'select %s from %s order by %s asc' % (
-				F_TIME, self.table, F_TIME)
+		# 支持仅加载指定区间的tick
+		clause = ""
+		if self.startTick:
+			clause = "%s >= '%s'" % (F_TIME, self.startTick)
+
+		if self.endTick:
+			_clause = "%s <= '%s'" % (F_TIME, self.endTick)
+			clause =  "%s and %s" % (clause, _clause) if len(clause) else _clause
+
+		if len(clause):
+			clause = "where %s" % clause
+
+		strSql = 'select %s from %s %s order by %s asc' % (
+				F_TIME, self.table, clause, F_TIME)
 		self.db.execSql(strSql)
 		# time = self.db.fetch(all)[FN_TIME]
 		self.ticksBuffer = [ e[0] for e in list(self.db.fetch('all'))]
@@ -313,7 +329,10 @@ class TickDetail:
 
 #测试
 def doTest ():
-	tick = Ticks('history2', 'p1601_mink', debug = False)
+	tick = Ticks('history2', 'p1601_mink',
+			startTick = '2015-01-16 23:37:00',
+			endTick = '2015-05-08 11:27:00',
+			debug = False)
 	print "First Tick %s" % tick.firstTick()
 	print "Last Tick %s" % tick.lastTick()
 	time = '2015-01-19 10:56:00'
@@ -327,8 +346,8 @@ def doTest ():
 	print "Current Time %s" % tick.curTick()
 	print tick.getPrevNumTick(time, 10)
 	print tick.getNexNumTick(time, 10)
-	print tick.isFirstTick("2015-01-16 21:00:00")
-	print tick.isLastTick('2015-05-08 11:29:00')
+	print tick.isFirstTick("2015-01-16 23:37:00")
+	print tick.isLastTick('2015-05-08 11:27:00')
 	print tick.isFirstTick('2015-05-09 11:29:00')
 	print tick.isLastTick('2015-05-09 11:29:00')
 	print tick.getTickIndex(time)
@@ -339,8 +358,8 @@ def doTest ():
 
 	#测试结果
 	'''
-	First Tick 2015-01-16 21:00:00
-	Last Tick 2015-05-08 11:29:00
+	First Tick 2015-01-16 23:37:00
+	Last Tick 2015-05-08 11:27:00
 	Current Time 2015-01-19 10:56:00
 	Prev Tick 2015-01-19 10:53:00
 	Next Tick 2015-01-19 11:01:00
@@ -352,7 +371,8 @@ def doTest ():
 	True
 	False
 	False
-	15
+	13
+	2015-05-08 11:27:00
 	%Y-%m-%d %H-%M-%S
 	%Y-%m-%d
 	'''
