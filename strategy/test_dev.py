@@ -23,12 +23,11 @@ from core.parallel import *
 class TestFuture(Futures):
 	def __init__ (self, 
 		contract, 	#合约
-		table, 		#数据表名
-		database, 	#数据库名
+		config,		#合约配置解析接口
 		debug = False,	#是否调试
 		):
 		#
-		Futures.__init__(self, contract, table, database, debug)
+		Futures.__init__(self, contract, config, debug)
 		self.lossProtected = False	#止损保护
 	
 	#开始交易信号
@@ -42,15 +41,15 @@ class TestFuture(Futures):
 			self.debug.dbg("tick %s index %s" % (tick, self.tickHelper.getTickIndex(tick)))
 			return None
 		
-		if price < self.data.lowestBeforeDate(tick, 20):
+		if price < self.data.lowestWithinDays(tick, 20):
 			#20内新低，开空信号
 			self.log("%s Hit Short Signal: Close %s, Lowest %s, priceVariation %d" % (
-					tick, price, self.data.lowestBeforeDate(tick, 20), self.attrs.priceVariation))
+					tick, price, self.data.lowestWithinDays(tick, 20), self.attrs.priceVariation))
 			return SIG_TRADE_SHORT
-		elif price > self.data.highestBeforeDate(tick, 20):
+		elif price > self.data.highestWithinDays(tick, 20):
 			#20内新高，开多信号
 			self.log("%s Hit Long Signal: Close %s, Highest %s, priceVariation %d" % (
-					tick, price, self.data.highestBeforeDate(tick, 20), self.attrs.priceVariation))
+					tick, price, self.data.highestWithinDays(tick, 20), self.attrs.priceVariation))
 			return SIG_TRADE_LONG
 		else:
 			#不触发信号
@@ -64,15 +63,15 @@ class TestFuture(Futures):
 		price = self.data.getClose(tick)
 		ret = False
 		
-		if direction == SIG_TRADE_SHORT and price > self.data.highestBeforeDate(tick, 10):
+		if direction == SIG_TRADE_SHORT and price > self.data.highestWithinDays(tick, 10):
 			#价格创出10日新高，结束做空
 			self.log("	[Short] [%s] Hit Highest in 10 days: Clear all!: close %s, highest %d" % (
-						tick, price, self.data.highestBeforeDate(tick, 10)))
+						tick, price, self.data.highestWithinDays(tick, 10)))
 			ret = True
-		elif direction == SIG_TRADE_LONG and price < self.data.lowestBeforeDate(tick, 10):
+		elif direction == SIG_TRADE_LONG and price < self.data.lowestWithinDays(tick, 10):
 			#价格创出10日新低，结束做多
 			self.log("	[Long] [%s] Hit Lowest in 10 days: Clear all!: close %s, lowest %d" % (
-						tick, price, self.data.lowestBeforeDate(tick, 10)))
+						tick, price, self.data.lowestWithinDays(tick, 10)))
 			ret = True
 		else:
 			return ret
