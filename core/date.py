@@ -219,6 +219,10 @@ class Date:
 		limit,	#限制数目
 		):
 		try:
+			# startTick和endTick可锁定数据表的一个时间区间，传入参数则可能在区间外
+			if self.strToDateTime(date) < self.firstDate():
+				date = self.firstDate()
+
 			strSql = "select %s from %s where %s >= '%s' order by %s asc limit %s" % (
 					F_TIME, self.table, F_TIME, date, F_TIME, limit)
 			self.db.execSql(strSql)
