@@ -406,7 +406,6 @@ class Futures:
 		tickSrc = Ticks(self.database, self.table,
 					startTick = self.contractStart,
 					endTick = self.contractEnd)
-		curTick = Date.strToDateTime(startTick)
 		curTick,self.stopTickTime = self.__getRealStartAndEndTick(startTick, stopTick)
 
 		self.debug.dbg("start %s at %s, stop tick %s" % (
