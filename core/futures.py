@@ -394,7 +394,7 @@ class Futures:
 		retStop = None
 		# 默认为最后一个tick，如指定则为指定tick或之前最接近的一个tick
 		if stopTick:
-			retStop = self.tickHelper.strToDateTime(stopTick)
+			retStop = Date.strToDateTime(stopTick)
 
 		return retStart,retStop
 
@@ -406,7 +406,7 @@ class Futures:
 		tickSrc = Ticks(self.database, self.table,
 					startTick = self.contractStart,
 					endTick = self.contractEnd)
-		curTick = self.tickHelper.strToDateTime(startTick)
+		curTick = Date.strToDateTime(startTick)
 		curTick,self.stopTickTime = self.__getRealStartAndEndTick(startTick, stopTick)
 
 		self.debug.dbg("start %s at %s, stop tick %s" % (

@@ -71,13 +71,15 @@ class Date:
 		pass
 
 	# 把数据库时间转换成字符串
-	def dateToString (self,
+	@staticmethod
+	def dateToString (
 		date,	#数据库时间
 		):
 		return "%s" % date
 
 	# 把时间字符串转换成数据库时间
-	def strToDateTime (self,
+	@staticmethod
+	def strToDateTime (
 		strDate,
 		):
 		try:
@@ -114,7 +116,7 @@ class Date:
 		date,	#交易时间
 		):
 		if isinstance(date, str):
-			date = self.strToDateTime(date)
+			date = Date.strToDateTime(date)
 
 		return True if date == self.firstDate() else False
 	
@@ -123,7 +125,7 @@ class Date:
 		date,	#交易时间
 		):
 		if isinstance(date, str):
-			date = self.strToDateTime(date)
+			date = Date.strToDateTime(date)
 
 		return True if date == self.lastDate() else False
 	
@@ -151,7 +153,7 @@ class Date:
 		):
 		try:
 			if isinstance(date, str):
-				date = self.strToDateTime(date)
+				date = Date.strToDateTime(date)
 
 			idx = self.ticksBuffer.index(date)
 			self.current = idx
@@ -181,7 +183,7 @@ class Date:
 		):
 		try:
 			if isinstance(date, str):
-				date = self.strToDateTime(date)
+				date = Date.strToDateTime(date)
 
 			idx = self.ticksBuffer.index(date)
 			idx += limit
@@ -206,7 +208,7 @@ class Date:
 		):
 		try:
 			if isinstance(date, str):
-				date = self.strToDateTime(date)
+				date = Date.strToDateTime(date)
 
 			return self.ticksBuffer.index(date)
 		except ValueError, e:
@@ -220,7 +222,7 @@ class Date:
 		):
 		try:
 			# startTick和endTick可锁定数据表的一个时间区间，传入参数则可能在区间外
-			if self.strToDateTime(date) < self.firstDate():
+			if Date.strToDateTime(date) < self.firstDate():
 				date = self.firstDate()
 
 			strSql = "select %s from %s where %s >= '%s' order by %s asc limit %s" % (
