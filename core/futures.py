@@ -44,7 +44,7 @@ class Futures:
 		# 持仓管理接口
 		self.posMgr = None
 		self.debug = Debug('Futures: %s' % contract, debug)	#调试接口
-		self.data = Data(self.database, self.table)	#数据接口
+		self.data = Data(contract, config, debug = False)	#数据接口
 		# 用于临时目的Tick帮助接口
 		self.tickHelper = Ticks(self.database, self.table,
 						startTick = self.contractStart,
