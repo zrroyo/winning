@@ -30,22 +30,11 @@ class Apriori:
 	def __unique (self,
 		curKn,	#当前kn矩阵
 		):
-		if len(curKn.columns) <= 1:
-			return list(curKn[0].unique())
-
-		func_k_cols = lambda x : "curKn[%s]" % x
-		columns = map(func_k_cols, curKn.columns)
-		_strColumns = ",".join(columns)
-		self.debug.dbg("_strColumns: %s" % _strColumns)
-		unique = pd.concat((eval(_strColumns))).unique()
-		unique.sort()
-
-		# unique = pd.Series()
-		# for col in curKn.columns:
-		# 	unique = pd.concat((unique, curKn[col]), axis = 0)
-		#
-		# unique = unique.unique()
-		# unique.sort()
+		_func_unique = lambda x : list(pd.Series(x).unique())
+		_unique = map(_func_unique, curKn.T.as_matrix())
+		# self.debug.dbg(_unique)
+		_unique = reduce(lambda x,y : x + y, _unique)
+		unique = pd.Series(_unique).unique()
 		return list(unique)
 
 	# 生成下一个kn矩阵
