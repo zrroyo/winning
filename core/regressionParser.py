@@ -8,6 +8,7 @@ Start: 2016年 03月 30日 星期三 22:47:59 CST
 回归测试命令解析
 """
 
+import os
 import sys
 sys.path.append(".")
 
@@ -22,11 +23,10 @@ shell = ExecCommand()
 
 # 列出所有可选的测试配置文件
 def listTestConfigs ():
-	strCmd = "ls -l %s | sed \"1d\" | awk '{print $9}'" % DEF_EMUL_CONFIG_DIR
-	shell.execCmd(strCmd)
-	output = shell.getOutput()
-	# debug.dbg("output: %s" % output)
-	print output
+	configs = os.listdir(DEF_EMUL_CONFIG_DIR)
+	# debug.dbg("output: %s" % configs)
+	configs = '\n'.join(configs)
+	print configs
 
 # 回归测试入口
 def startRegression (
