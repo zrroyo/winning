@@ -441,8 +441,7 @@ class Futures:
 			orderProfit = price - open
 
 		# 单价获利x每单手数x合约乘数
-		orderProfit *= self.attrs.numPosToAdd
-		orderProfit *= self.attrs.multiplier
+		orderProfit *= self.attrs.numPosToAdd * self.attrs.multiplier
 		return orderProfit
 
 	# 计算浮动利润
@@ -451,13 +450,16 @@ class Futures:
 		price,		#当前价
 		):
 		ret = 0
-		poses = self.curPositions()
-		for idx in range(1, poses + 1):
-			pos = self.getPosition(idx)
-			ret += self.__orderProfit(direction, pos.price, price)
+		# 对当前所有仓位价格求和，以快速求出浮动利润
+		_sumPrice = self.posMgr.valueSum(value = 'price')
+		if direction == SIG_TRADE_SHORT:
+			ret = _sumPrice - price * self.posMgr.numPositions()
+		elif direction == SIG_TRADE_LONG:
+			ret = price * self.posMgr.numPositions() - _sumPrice
 
+		ret *= self.attrs.numPosToAdd * self.attrs.multiplier
 		return ret
-		
+
 	# 巡航
 	def __navigate (self,
 		tick,		#交易时间

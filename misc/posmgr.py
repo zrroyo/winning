@@ -72,7 +72,29 @@ class PositionManager:
 			self.debug.error("getPosition: num %s, current %s\n %s" % (
 							num, self.numPositions(), e))
 			return None
-		
+
+	# 对所有仓位指定字段求和
+	def valueSum (self,
+		value = 'price',	#指定字段
+		):
+		poses = self.numPositions()
+		if poses == 0:
+			return 0
+		elif poses == 1:
+			ret = self.getPosition(1).price
+			if value == 'volume':
+				ret = self.getPosition(1).volume
+			return ret
+
+		# 仓位大于1
+		# self.debug.dbg("poses: %s" % self.__posStack)
+		_funcSum = lambda x, y : Position(x.price + y.price, None, 0, None)
+		if value == 'volume':
+			_funcSum = lambda x, y : Position(0.0, None, x.volume + y.volume, None)
+
+		ret = reduce(_funcSum, self.__posStack)
+		return ret.price
+
 	# 返回第num个仓位，num从１开始记
 	def getPosition (self, 
 		num,	#仓位标号
