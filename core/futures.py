@@ -15,6 +15,7 @@ Start: 2015年 05月 23日 星期六 23:51:07 CST
 
 import sys
 sys.path.append("..")
+import pandas as pd
 
 from dataMgr.data import *
 from ctp.autopos import *
@@ -23,8 +24,8 @@ from misc.debug import *
 from date import *
 from attribute import *
 from signal import *
-from statistics import *
 from parallel import *
+from tradestat import *
 
 # 期货类
 class Futures:
@@ -57,6 +58,15 @@ class Futures:
 		# 指定的交易结束时间并不一定有对应tick，所以需记录实际结束tick
 		self.stopTick = None
 
+		# 初始化tick、交易统计表
+		self.tickStat = TickStat()
+		self.tickStatFrame = pd.DataFrame(columns = TICK_STATS)
+		self.tradeStat = TradeStat()
+		self.trdStatFrame = pd.DataFrame(columns = TRADE_STATS)
+		# 通用数据统计区域
+		self.comStat = CommonStat()
+
+
 	# ----------------
 	# 属性方法
 	# ----------------
@@ -79,9 +89,7 @@ class Futures:
 		self.posMgr = PositionManager(maxPosAllowed,
 					      prompt = self.contract,
 					      debug = False)
-		# 数据统计接口
-		self.cs = ContractStat(self.contract, dumpName, self.dbgMode)
-		
+
 		# 如果使能了并行模拟，则需要为合约初始化
 		self.paraCore = paraCore
 	
@@ -157,7 +165,6 @@ class Futures:
 		
 		self.log("		-->> Open: %s, poses %s <<--" % (
 						price, self.curPositions()))
-	
 		return True
 	
 	# 平仓
@@ -174,47 +181,64 @@ class Futures:
 			return False
 
 		# 从第一仓开始按序减仓
-		closeProfit = 0
-		nrClose = 0
+		_profitL = []
 		for i in range(numPos):
 			# 移除仓位并计算利润
 			pos = self.posMgr.popPosition(1)
 			orderProfit = self.__orderProfit(direction, pos.price, price)
-			closeProfit += orderProfit
-			nrClose += 1
-			# 更新平仓利润信息
-			self.cs.update(tick, price, pos, orderProfit)
-
+			_profitL.append(orderProfit)
 			self.log("		<<-- Close: open %s, close %s, profit %s -->>" % (
 							pos.price, price, orderProfit))
-			
-		# 计算仓数
-		volume = self.attrs.numPosToAdd * numPos
-		# 发送并行处理请求
-		self.__sendParaRequest(tick, ACTION_CLOSE, price, nrClose, direction, closeProfit)
-		
+
+		# 平仓需统计交易单相关统计数据
+		closeProfit = sum(_profitL)
+		nrClose = len(_profitL)
+		_profitL = pd.Series(_profitL)
+		self.tickStat.ordWins = len(_profitL[_profitL > 0])
+		self.tickStat.ordLoses = len(_profitL[_profitL < 0])
+		self.tickStat.ordFlat = len(_profitL[_profitL == 0])
+		self.tickStat.orderProfit = closeProfit
+		# 更新累积交易利润
+		self.comStat.cumProfit += closeProfit
+
 		# 如果平仓后仓位为０说明本次交易结束。打印统计信息并重置。
 		if self.curPositions() == 0:
-			self.__reset(tick, price, direction)
-		
+			self.tickStat.tagTradeEnd = True
+
+		# 发送并行处理请求
+		self.__sendParaRequest(tick, ACTION_CLOSE, price, nrClose, direction, closeProfit)
 		return True
-	
-	# 打印统计信息,并重置利润
-	def __reset (self,
-		tick,		#交易时间
-		price,		#当前价
-		direction,	#方向
+
+	# 交易结束操作
+	def __exitTrade (self,
+		tick,	#结束tick
 		):
-		self.log("              ++++++ Business profit %s ++++++" % (
-							self.cs.profit.getFinal()))
-		self.log("              ****** Total profit %s ******" % (
-							self.cs.profit.getSum()))
-		# 仓位清空代表一次交易结束，需要在交易数据
-		# 清零之前巡航更新统计数据。
-		self.__navigate(tick, price, direction)
-		# 完成本次交易统计
-		self.cs.end(tick)
-	
+		self.debug.dbg("statFrame: \n%s" % self.tickStatFrame)
+		# 统计tick数据
+		_sum = self.tickStatFrame.sum()
+		self.debug.dbg("_sum: \n%s" % _sum)
+		_floatBuf = self.tickStatFrame[TK_FLOAT_MOV]
+		_floatDesc = _floatBuf.describe()
+		self.debug.dbg("_floatDesc: \n%s" % _floatDesc)
+		# 统计交易数据
+		self.tradeStat.tickEnd = tick
+		self.tradeStat.profit = _sum[TK_ORD_PROFIT]
+		_floatBuf = self.tickStatFrame[TK_FLOAT_MOV]
+		self.tradeStat.tickFloatMax = list(_floatBuf[_floatBuf == _floatDesc['max']].index)[0]
+		self.tradeStat.tickFloatMin = list(_floatBuf[_floatBuf == _floatDesc['min']].index)[0]
+
+		self.log("              ++++++ Business profit %s ++++++" % self.tradeStat.profit)
+		self.log("              ****** Total profit %s ******" % self.comStat.cumProfit)
+
+		# 将交易数据插入交易表
+		values = self.tradeStat.values(_sum, _floatDesc)
+		self.trdStatFrame = self.trdStatFrame.append(
+					pd.DataFrame([values], columns = TRADE_STATS),
+					ignore_index = True)
+		# 交易数据依赖tick统计表，交易完成需清空
+		self.tickStatFrame.drop(self.tickStatFrame.index, inplace = True)
+		self.debug.dbg("trdStatFrame: \n%s" % self.trdStatFrame.T)
+
 	# ----------------
 	# 交易方法
 	# ----------------
@@ -282,10 +306,11 @@ class Futures:
 		):
 		self.debug.dbg("tradeStart: Start Trading: [%s][%s]" % (
 					self.__signalToDirection(signal), startTick))
-		
-		# 开始交易数据统计
-		self.cs.start(startTick)
-		
+
+		# 各交易单独分配数据统计区域
+		self.tradeStat = TradeStat()
+		self.tradeStat.tickStart = startTick
+
 		# 使用独立交易时间管理接口，保持独立性，避免互相影响。
 		tickSrc = Ticks(self.database, self.table,
 					startTick = self.contractStart,
@@ -311,6 +336,8 @@ class Futures:
 				self.debug.dbg("tradeStart: Cut Loss: [%s][%s]" % (
 							self.__signalToDirection(signal), nextTick))
 				self.tradeCutLoss(nextTick, signal)
+				#
+				self.tickStat.cutLoss = 1
 				# 如果止损后仓位为０，说明交易结束，返回当前tick
 				if self.curPositions() == 0:
 					return nextTick
@@ -320,13 +347,15 @@ class Futures:
 				self.debug.dbg("tradeStart: Add Position: [%s][%s]" % (
 							self.__signalToDirection(signal), nextTick))
 				self.tradeAddPositions(nextTick, signal)
-				
+
 			elif self.signalStopProfit(nextTick, signal):
 				# 触发止赢信号
 				self.debug.dbg("tradeStart: Stop Profit: [%s][%s]" % (
 							self.__signalToDirection(signal), nextTick))
 				self.tradeStopProfit(nextTick, signal)
-			
+				#
+				self.tickStat.stopWin = 1
+
 			# 下一tick继续
 			nextTick = self.tradeNextTick(tickSrc, nextTick, signal)
 		
@@ -346,8 +375,9 @@ class Futures:
 						tick, price, volume, direction))
 		
 		# 开仓
-		self.openPositions(tick, price, direction, volume)
-		
+		if self.openPositions(tick, price, direction, volume):
+			self.tickStat.addPos = 1
+
 	# 止损
 	def tradeCutLoss (self,
 		tick,		#交易时间
@@ -425,9 +455,7 @@ class Futures:
 		
 		# 结束交易，清空仓位
 		self.tradeEnd(self.stopTick, signal)
-		# 执行结束，显示统计信息
-		self.cs.show()
-	
+
 	# 计算仓位利润
 	def __orderProfit (self,
 		direction,	#方向
@@ -444,8 +472,8 @@ class Futures:
 		orderProfit *= self.attrs.numPosToAdd * self.attrs.multiplier
 		return orderProfit
 
-	# 计算浮动利润
-	def __floatingProfit (self,
+	# 当前持仓浮动利润
+	def __curPosFloatProfit (self,
 		direction,	#方向
 		price,		#当前价
 		):
@@ -460,19 +488,44 @@ class Futures:
 		ret *= self.attrs.numPosToAdd * self.attrs.multiplier
 		return ret
 
-	# 巡航
-	def __navigate (self,
+	# 计算浮动利润
+	def __floatingProfit (self,
+		direction,	#方向
+		price,		#当前价
+		):
+		# 当前持仓浮动利润
+		ret = self.__curPosFloatProfit(direction, price)
+		self.debug.dbg("__floatingProfit: position float %s, cumulate %s, order profit %s" %
+			       (ret, self.tradeStat.cumFloat, self.tickStat.orderProfit))
+		# 当前浮动赢利=累积利润+当前tick持仓利润+当前tick的交易单利润
+		ret += self.tickStat.orderProfit + self.tradeStat.cumFloat
+		return ret
+
+	# 存储tick的统计数据
+	def __storeTickStat (self,
 		tick,		#交易时间
 		price,		#当前价
 		direction,	#方向
 		):
-		# 计算浮动利润
-		floatProfit = self.__floatingProfit(direction, price)
-		self.debug.dbg("__navigate: %s, price %s, profit %s" % (
-						tick, price, floatProfit))
-		# 巡航浮动利润，更新数据统计
-		self.cs.navigate(tick, floatProfit)
-	
+		# 当前持仓浮动利润
+		_posFloat = self.__curPosFloatProfit(direction, price)
+		# 更新当前tick的统计数据
+		self.tickStat.floatProPos = _posFloat
+		self.tickStat.floatProCum = self.tradeStat.cumFloat
+		self.tickStat.floatProfit = self.tickStat.floatProCum + self.tickStat.orderProfit + _posFloat
+		values = self.tickStat.values()
+		# 交易单利润需累加，以使下一tick计算浮动赢利
+		self.tradeStat.cumFloat += self.tickStat.orderProfit
+		self.debug.dbg("__storeTickStat: tick %s, price %s, move %s, pos %s, cum %s, order profit %s" %
+						(tick, price, self.tickStat.floatProfit, _posFloat,
+						 self.tradeStat.cumFloat, self.tickStat.orderProfit))
+		# 将tick数据存入数据表
+		self.tickStatFrame = self.tickStatFrame.append(
+					pd.DataFrame([values], columns = TICK_STATS, index = [tick])
+					)
+
+		# self.debug.dbg("statFrame: %s" % self.tickStatFrame)
+
 	# 返回下一交易时间
 	def tradeNextTick (self, 
 		tickObj,		#tick接口对象
@@ -485,7 +538,13 @@ class Futures:
 		price = self.data.getClose(tick)
 		# 如不在交易中无需更新持仓变化
 		if direction is not None:
-			self.__navigate(tick, price, direction)
+			self.__storeTickStat(tick, price, direction)
+
+		# 交易的最后一tick
+		if self.tickStat.tagTradeEnd:
+			self.__exitTrade(tick)
+		# 为了各tick统计数据隔离，重新分配数据存储区
+		self.tickStat = TickStat()
 
 		# 继续下一tick
 		tickObj.setCurTick(tick)
