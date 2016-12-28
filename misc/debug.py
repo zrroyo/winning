@@ -1,4 +1,3 @@
-#! /usr/bin/python
 #-*- coding:utf-8 -*-
 
 """
@@ -12,15 +11,17 @@ version 2 ONLY.
 import sys
 from colors import *
 
-#原生Debug类
 class RawDebug:
 
 	colourLog = LogColour()	#彩色打输出接口
 
-	def __init__ (self,
-		verbose,	#是否打印dbg信息
-		destLog = None,	#是否保存日志
-		):
+	def __init__ (self, verbose, destLog = None):
+		"""
+		Debug打印控制
+		:param verbose: 是否打印dbg信息
+		:param destLog: 是否保存日志
+		:return: None
+		"""
 		self.verbose = verbose
 		self.storeLog = None
 		try:
@@ -36,50 +37,78 @@ class RawDebug:
 		except AttributeError, e:
 			pass
 	
-	#日志换行
-	def __wrappedLog (self, 
-		log,	#日志
-		):
+	def __wrappedLog (self, log):
+		"""
+		日志换行
+		:param log: 日志
+		:return:
+		"""
 		return log + "\n"
 	
-	def pr_err (self, 
-		str,	#输出
-		):
-		log = "ERR: %s" % str
+	def pr_err (self, msg):
+		"""
+		打印错误错误
+		:param msg: 打印信息
+		:return: None
+		"""
+		log = "ERR: %s" % msg
 		self.colourLog.printlog(log, 'red')
 		if self.storeLog:
 			self.storeLog.write(self.__wrappedLog(log))
 	
-	def pr_info (self, 
-		str,	#输出
-		):
-		log = "INFO: %s" % str
+	def pr_info (self, msg):
+		"""
+		打印提示信息
+		:param msg: 打印信息
+		:return: None
+		"""
+		log = "INFO: %s" % msg
 		self.colourLog.printlog(log, 'green')
 		if self.storeLog:
 			self.storeLog.write(self.__wrappedLog(log))
-	
-	def pr_log (self, 
-		str,	#输出
-		):
-		log = "LOG: %s" % str
+
+	def pr_warn (self, msg):
+		"""
+		打印警告信息
+		:param msg: 打印信息
+		:return: None
+		"""
+		log = "WARN: %s" % msg
+		self.colourLog.printlog(log, 'brown')
+		if self.storeLog:
+			self.storeLog.write(self.__wrappedLog(log))
+
+	def pr_log (self, msg):
+		"""
+		打印日志
+		:param msg: 打印信息
+		:return: None
+		"""
+		log = "LOG: %s" % msg
 		self.colourLog.printlog(log, 'black')
 		if self.storeLog:
 			self.storeLog.write(self.__wrappedLog(log))
-	
-	def pr_raw (self, 
-		str,	#输出
-		):
-		log = self.__wrappedLog(str)
+
+	def pr_raw (self, msg):
+		"""
+		打印
+		:param msg: 打印信息
+		:return: None
+		"""
+		log = self.__wrappedLog(msg)
 		colorLog = self.colourLog.blue() + log + self.colourLog.colorend
 		sys.stdout.write(colorLog)
 		sys.stdout.flush()
 		if self.storeLog:
 			self.storeLog.write(log)
-	
-	def pr_debug (self, 
-		str,	#输出
-		):
-		log = "DBG: %s" % str
+
+	def pr_debug (self, msg):
+		"""
+		打印debug信息
+		:param msg: 打印信息
+		:return: None
+		"""
+		log = "DBG: %s" % msg
 		if self.storeLog:
 			self.storeLog.write(self.__wrappedLog(log))
 		
@@ -87,41 +116,55 @@ class RawDebug:
 			#self.colourLog.printlog(log, 'black')
 			print log
 	
-#Debug类
 class Debug:
-	def __init__ (self,
-		prompt,			#打印提示
-		verbose = False,	#是否显示debug信息
-		):
+	def __init__ (self, prompt, verbose = False):
+		"""
+		Debug支持
+		:param prompt: 打印提示
+		:param verbose: 是否显示debug信息
+		:return: None
+		"""
+		self.verbose = verbose
 		self.prompt = prompt
 		self.debug = RawDebug(verbose)
 		
-	#打印错误
-	def error (self, 
-		msg,	#错误信息
-		):
+	def error (self, msg):
+		"""
+		打印错误错误
+		:param msg: 打印信息
+		:return: None
+		"""
 		output = '%s: %s' % (self.prompt, msg)
 		self.debug.pr_err(output)
 	
-	#打印debug信息
-	def dbg (self, 
-		msg,	#调试信息
-		):
+	def dbg (self, msg):
+		"""
+		打印debug信息
+		:param msg: 打印信息
+		:return: None
+		"""
+		# 大型数据结构转化为字符串严重影响性能
+		if not self.verbose:
+			return None
 		output = '%s: %s' % (self.prompt, msg)
 		self.debug.pr_debug(output)
 		
-	#打印信息
-	def warn (self, 
-		msg,	#打印信息
-		):
+	def warn (self, msg):
+		"""
+		打印警告信息
+		:param msg: 打印信息
+		:return: None
+		"""
 		output = '%s: %s' % (self.prompt, msg)
 		self.debug.pr_warn(output)
 	
-	#打印信息
-	def info (self, 
-		msg,	#打印信息
-		):
-		output = '%s' % (msg)
+	def info (self, msg):
+		"""
+		打印提示信息
+		:param msg: 打印信息
+		:return: None
+		"""
+		output = '%s: %s' % (self.prompt, msg)
 		self.debug.pr_info(output)
 	
 #测试
@@ -129,13 +172,16 @@ def doTest ():
 	dbg = RawDebug(1)
 	dbg.pr_err('Hello world!')
 	dbg.pr_info('Hello world!')
+	dbg.pr_debug('Hello world!')
+	dbg.pr_warn('Hello world!')
 	dbg.pr_log('Hello world!')
 	dbg.pr_raw('Hello world!')
-	dbg.pr_debug('Hello world!')
-	
+
 	dbg = Debug('test', 1)
 	dbg.error('Test debug error.')
+	dbg.info('Test debug dbg.')
 	dbg.dbg('Test debug dbg.')
-	
+	dbg.warn('Test debug dbg.')
+
 if __name__ == '__main__':
 	doTest()
