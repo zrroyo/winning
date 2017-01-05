@@ -2,81 +2,94 @@
 #-*- coding:utf-8 -*-
 
 """
-加仓管理模块(Add-Position Manangement Module)
+Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
+
+持仓管理器(Add-Position Manangement Module)
 """
 
 import sys
 sys.path.append("..")
 
-from misc.debug import *
+from misc.debug import Debug
 
-# 加仓类
 class Position:
-	def __init__ (self,
-		price,		#价格
-		time,		#时间
-		volume,		#开仓手数
-		direction,	#方向
-		):
+	def __init__ (self, price, time, volume, direction):
+		"""
+		加仓信息
+		:param price: 成交价
+		:param time: 时间
+		:param volume: 开仓手数
+		:param direction: 方向
+		"""
 		self.price = price
 		self.time = time
 		self.volume = volume
 		self.direction = direction
 		
-# 仓位管理接口
 class PositionManager:
-	def __init__ (self,
-		maxAddPos,	#最大可加仓数
-		prompt = None,	#调试提示符
-		debug = False,	#是否调试
-		):
+	def __init__ (self, maxAddPos, prompt = None, debug = False):
+		"""
+		持仓管理器
+		:param maxAddPos: 最大可加仓数
+		:param prompt: 调试提示符
+		:param debug: 是否调试
+		"""
 		self.maxAddPos = maxAddPos
 		# 持仓栈
-		self.__posStack = []
+		self.posStack = []
 		prompt =  "PositionManager" if not prompt else "PositionManager:%s" % prompt
 		self.debug = Debug(prompt, debug)	#调试接口
 		
-	# 当前仓位
 	def numPositions (self):
-		return len(self.__posStack)
+		"""
+		返回当前仓位
+		:return: 当前持仓数
+		"""
+		return len(self.posStack)
 		
-	# 加仓
-	def pushPosition (self,
-		time,			#时间
-		price,			#价格
-		volume = 1,		#数量
-		direction = None,	#方向
-		):
+	def pushPosition (self, time, price, volume = 1, direction = None):
+		"""
+		加仓
+		:param time: 时间
+		:param price: 成交价
+		:param volume: 数量
+		:param direction: 方向
+		:return: 成功为True，否则为False
+		"""
 		if self.numPositions() >= self.maxAddPos:
 			return False
 			
 		addPos = Position(price, time, volume, direction)
-		self.__posStack.append(addPos)
-		self.debug.dbg("current %s" % self.numPositions())
+		self.posStack.append(addPos)
+		self.debug.dbg("pushPosition: current %s" % self.numPositions())
 		return True
 		
-	# 减仓
-	def popPosition (self,
-		num = None,	#仓位标号
-		):
+	def popPosition (self, num = None):
+		"""
+		减掉索引对应的仓位
+		:param num: 仓位索引（第N次加仓）
+		:return: 索引对应的仓位
+		"""
 		try:
 			# 标号为None则返回末位仓
 			if not num:
-				return self.__posStack.pop()
+				return self.posStack.pop()
 
 			# 否则返回指定仓
-			pos = self.__posStack.pop(num - 1)
+			pos = self.posStack.pop(num - 1)
 			self.debug.dbg("current %s" % self.numPositions())
 			return pos
 		except IndexError, e:
-			self.debug.error("getPosition: num %s, current %s\n %s" % (
+			self.debug.error("popPosition: num %s, current %s\n %s" % (
 							num, self.numPositions(), e))
 			return None
 
-	# 对所有仓位指定字段求和
-	def valueSum (self,
-		value = 'price',	#指定字段
-		):
+	def valueSum (self, value = 'price'):
+		"""
+		对所有仓位指定字段求和
+		:param value: 指定字段
+		:return: 指定字段求和的值
+		"""
 		poses = self.numPositions()
 		if poses == 0:
 			return 0
@@ -87,28 +100,32 @@ class PositionManager:
 			return ret
 
 		# 仓位大于1
-		# self.debug.dbg("poses: %s" % self.__posStack)
+		# self.debug.dbg("poses: %s" % self.posStack)
 		_funcSum = lambda x, y : Position(x.price + y.price, None, 0, None)
 		if value == 'volume':
 			_funcSum = lambda x, y : Position(0.0, None, x.volume + y.volume, None)
 
-		ret = reduce(_funcSum, self.__posStack)
+		ret = reduce(_funcSum, self.posStack)
 		return ret.price
 
-	# 返回第num个仓位，num从１开始记
-	def getPosition (self, 
-		num,	#仓位标号
-		):
+	def getPosition (self, num):
+		"""
+		返回第num个仓位，num从１开始记。仅返回，不会移除！
+		:param num: 仓位索引（第N次加仓）
+		:return: 索引对应的仓位
+		"""
 		try:
-			return self.__posStack[num - 1]
+			return self.posStack[num - 1]
 		except IndexError, e:
 			self.debug.error("getPosition: num %s, current %s\n %s" % (
 							num, self.numPositions(), e))
 			return None
 		
-	# 清空持仓
 	def empty (self):
-		self.__posStack = []
+		"""
+		清空持仓
+		"""
+		self.posStack = []
 		
 # 测试
 def doTest():
@@ -133,17 +150,19 @@ def doTest():
 	
 	# 测试结果
 	'''
-	3666
-	3677
+	True
+	True
+	True
+	False
 	3688
-	None
-	3688
-	ERR: PositionManager: getPosition: num [3] overflow [3]!
+	ERR: PositionManager: getPosition: num 4, current 3
+	 list index out of range
 	None
 	3666 2014-1-13 2 None
 	3688 2014-1-13 3 None
 	3677 2014-1-13 1 0
-	ERR: PositionManager: popPosition: num [None] overflow [0]!
+	ERR: PositionManager: getPosition: num None, current 0
+	 pop from empty list
 	'''
 	
 if __name__ == '__main__':
