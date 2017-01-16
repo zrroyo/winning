@@ -7,9 +7,9 @@ import time
 import math
 
 from misc.debug import Debug
+from misc.dateTime import *
 from db.sql import SQL
 from db.tbldesc import *
-from core.date import Date
 #from ctp.ctpagent import MarketDataAgent
 
 #数据库数据对象
@@ -53,9 +53,13 @@ class Data:
 	def dateConverter (
 		date,
 		):
+		if not isinstance(date, str):
+			return date
+
 		# 支持时间字符串
-		if isinstance(date, str):
-			date = Date.strToDateTime(date)
+		date = strToDatetime(date, DB_FORMAT_DATE)
+		if not date:
+			date = strToDatetime(date, DB_FORMAT_DATETIME)
 
 		return date
 
