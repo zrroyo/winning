@@ -17,7 +17,7 @@ def strToDatetime (timeStr, timeFormat = "%Y:%m:%d:%H:%M:%S"):
 	"""
 	try:
 		return datetime.strptime(timeStr, timeFormat)
-	except Exception:
+	except ValueError, e:
 		return None
 		
 def nowDatetime (timeFormat = "%Y:%m:%d:%H:%M:%S"):
@@ -45,7 +45,7 @@ def mkTimeInSeconds (timeStr, timeFormat = "%Y:%m:%d:%H:%M:%S"):
 	:param timeFormat: 时间格式,如 "%H:%M:%S"
 	:return: 1979年以来秒数时间
 	"""
-	return time.mktime(datetime.strptime(timeStr, timeFormat).timetuple())
+	return time.mktime(strToDatetime(timeStr, timeFormat).timetuple())
 
 #测试
 if __name__ == '__main__':
@@ -54,9 +54,8 @@ if __name__ == '__main__':
 	print strToDatetime(strTime, "%Y:%m:%d:%H:%M")
 	print nowDatetime()
 	print nowDatetime("%Y:%m:%d:%H:%M")
-	print nowDatetime("%Y:%m:%M")
+	print nowDatetime("%Y:%m:%d")
 	print nowDatetime("%H:%M:%S")
 	print strToDatetime("18:08:09", "%H:%M:%S")
 	print datetimeToStr(nowDatetime(), "%d/%m/%Y")
 	print mkTimeInSeconds(strTime, "%Y:%m:%d:%H:%M:%S")
-	
