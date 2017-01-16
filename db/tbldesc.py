@@ -1,11 +1,15 @@
 #-*- coding:utf-8 -*-
 
-'''
+"""
 Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
 Start: 2015年 05月 17日 星期日 17:23:49 CST
 
 数据表描述
-'''
+"""
+
+# 数据库时间格式
+DB_FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S"
+DB_FORMAT_DATE = "%Y-%m-%d"
 
 #数据表字段(Field)
 F_TIME		= 'Time'
