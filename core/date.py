@@ -14,16 +14,19 @@ from datetime import datetime
 from db.sql import *
 from db.tbldesc import *
 from misc.debug import *
+from misc.dateTime import *
 
-# 交易时间管理接口
 class Date:
-	def __init__ (self, 
-		database, 		#数据库
-		table,			#数据表
-		startTick = None,	#指定开始tick
-		endTick = None,		#指定结束tick
-		debug = False,		#是否调试
-		):
+	def __init__ (self, database, table, startTick = None,
+			endTick = None, debug = False):
+		"""
+		交易时间管理接口。从数据库中读取所有交易时间，以加速读取。
+		:param database: 数据库
+		:param table: 数据表
+		:param startTick: 指定开始tick
+		:param endTick: 指定结束tick
+		:param debug: 是否调试
+		"""
 		self.debug = Debug('Date', debug)	#调试接口
 		self.db = SQL()
 		self.db.connect(database)
@@ -34,13 +37,18 @@ class Date:
 		self.ticksBuffer = []
 		self.numTicks = 0
 		self.current = 0
+		# 交易时间字符格式
+		self.dFormat = None
 		self.__loadTicks()
 
 	def __del__ (self):
 		self.db.close()
 
-	# 从数据库中加载时间
 	def __loadTicks (self):
+		"""
+		从数据库中加载所有交易时间
+		:return: None
+		"""
 		# 支持仅加载指定区间的tick
 		clause = ""
 		if self.startTick:
@@ -61,129 +69,174 @@ class Date:
 		# self.debug.dbg(self.ticksBuffer)
 		self.numTicks = len(self.ticksBuffer)
 		self.current = 0
+		self.dFormat = TickDetail.tickFormat(self.firstDate())
 		# self.debug.dbg("__loadTicks: ticks buffer %s, num %s" % (
 		# 		self.ticksBuffer, self.numTicks))
 
-	#无意义，仅用于往后兼容性支持
-	def fillDates (self, 
-		table,
-		):
-		pass
-
-	# 把数据库时间转换成字符串
 	@staticmethod
-	def dateToString (
-		date,	#数据库时间
-		):
+	def dateToString (date):
+		"""
+		把数据库时间转换成字符串
+		:param date: 交易时间
+		:return: 时间字符串
+		"""
 		return "%s" % date
 
-	# 把时间字符串转换成数据库时间
-	@staticmethod
-	def strToDateTime (
-		strDate,
-		):
-		try:
-			return datetime.strptime(strDate, "%Y-%m-%d %H:%M:%S")
-		except ValueError, e:
-			return datetime.strptime(strDate, "%Y-%m-%d").date()
+	def convertToDBtime (self, date):
+		"""
+		将传入时间转化为数据库时间
+		:param date: 交易时间，且必须为datetime格式。
+		:return: 数据库时间
+		"""
+		# datetime类型要包含时间
+		if self.dFormat.find('%H') > 0:
+			return date
 
-	#返回当前交易时间
+		return date.date()
+
+	def strToDateTime (self, strDate):
+		"""
+		把时间字符串转换成数据库时间。
+		:param strDate: 时间字符串
+		:return: 数据库时间
+		"""
+		try:
+			ret = datetime.strptime(strDate, self.dFormat)
+			return self.convertToDBtime(ret)
+		except ValueError, e:
+			self.debug.warn("strToDateTime: found date doesn't match tick format.")
+			ret = strToDatetime(strDate, DB_FORMAT_DATE)
+			if not ret:
+				ret = strToDatetime(strDate, DB_FORMAT_DATETIME)
+
+			return self.convertToDBtime(ret)
+
 	def curDate (self):
+		"""
+		返回当前交易时间
+		:return: 当前交易时间
+		"""
 		try:
 			return self.ticksBuffer[self.current]
 		except IndexError, e:
-			self.debug.error("curDate: error: %s" % e)
+			self.debug.dbg("curDate: %s" % e)
 			return None
 	
-	# 返回数据表里的第一个交易时间
 	def firstDate (self):
+		"""
+		返回数据表里的第一个交易时间
+		:return: 首个交易时间，没有返回None
+		"""
 		try:
 			return self.ticksBuffer[0]
 		except IndexError, e:
-			self.debug.error("firstDate: error: %s" % e)
+			self.debug.dbg("firstDate: %s" % e)
 			return None
 	
-	# 返回数据表里的最后一个交易时间
 	def lastDate (self):
+		"""
+		返回数据表里的最后一个交易时间
+		:return: 最后一个交易时间，没有返回None
+		"""
 		try:
 			return self.ticksBuffer[self.numTicks - 1]
 		except IndexError, e:
-			self.debug.error("firstDate: error: %s" % e)
+			self.debug.dbg("firstDate: %s" % e)
 			return None
 
-	# 是否是第一个交易时间
-	def isFirstDate (self, 
-		date,	#交易时间
-		):
+	def isFirstDate (self, date):
+		"""
+		是否是第一个交易时间
+		:param date: 交易时间
+		:return: 是返回True，否则返回False
+		"""
 		if isinstance(date, str):
-			date = Date.strToDateTime(date)
+			date = self.strToDateTime(date)
 
 		return True if date == self.firstDate() else False
 	
-	# 是否是最后一个交易时间
-	def isLastDate (self, 
-		date,	#交易时间
-		):
+	def isLastDate (self, date):
+		"""
+		是否是最后一个交易时间
+		:param date: 交易时间
+		:return: 是返回True，否则返回False
+		"""
 		if isinstance(date, str):
-			date = Date.strToDateTime(date)
+			date = self.strToDateTime(date)
 
 		return True if date == self.lastDate() else False
 	
-	# 返回当前交易时间后的下一个交易时间
 	def nextDate (self):
+		"""
+		返回当前交易时间后的下一个交易时间
+		:return: 下一个交易时间，没有返回None
+		"""
 		try:
 			ret = self.ticksBuffer[self.current + 1]
 			self.debug.dbg("current %s, ret %s " % (self.current, ret))
 			return ret
 		except IndexError, e:
-			self.debug.error("nextDate: error: %s" % e)
+			self.debug.dbg("nextDate: %s" % e)
 			return None
 
-	# 返回当前交易时间前的上一个交易时间
 	def prevDate (self):
+		"""
+		返回当前交易时间前的上一个交易时间
+		:return: 前一个交易时间，没有返回None
+		"""
 		try:
 			return self.ticksBuffer[self.current - 1]
 		except IndexError, e:
-			self.debug.error("prevDate: error: %s" % e)
+			self.debug.dbg("prevDate: %s" % e)
 			return None
 
-	# 设置当前交易时间
-	def setCurDate (self, 
-		date,	#交易时间
-		):
+	def setCurDate (self, date):
+		"""
+		设置当前交易时间
+		:param date: 交易时间
+		:return: None
+		"""
 		try:
 			if isinstance(date, str):
-				date = Date.strToDateTime(date)
+				date = self.strToDateTime(date)
 
 			idx = self.ticksBuffer.index(date)
 			self.current = idx
 		except ValueError, e:
 			self.debug.error("setCurDate: error: %s" % e)
 	
-	# 设置下一交易时间为当前交易时间，并返回
 	def getSetNextDate (self):
+		"""
+		设置下一交易时间为当前交易时间，并返回
+		:return: 下一交易时间
+		"""
 		ret = self.nextDate()
 		if ret:
 			self.current += 1
 
 		return ret
 
-	# 设置上一交易时间为当前交易时间，并返回
 	def getSetPrevDate (self):
+		"""
+		设置上一交易时间为当前交易时间，并返回
+		:return: 上一交易时间
+		"""
 		ret = self.prevDate()
 		if ret:
 			self.current -= 1
 
 		return ret
 
-	# 返回指定交易时间之后的第@limit个交易时间
-	def getNexNumDate (self, 
-		date,	#交易时间
-		limit,	#限制数目
-		):
+	def getNexNumDate (self, date, limit):
+		"""
+		返回指定交易时间之后的第@limit个交易时间
+		:param date: 交易时间
+		:param limit: 限制数目
+		:return: 指定时间之后第limit个交易时间
+		"""
 		try:
 			if isinstance(date, str):
-				date = Date.strToDateTime(date)
+				date = self.strToDateTime(date)
 
 			idx = self.ticksBuffer.index(date)
 			idx += limit
@@ -192,38 +245,43 @@ class Date:
 			return ret
 
 		except (ValueError, IndexError), e:
-			self.debug.error("getNexNumDate: limit %s, error: %s" % (limit, e))
+			self.debug.dbg("getNexNumDate: limit %s, error: %s" % (limit, e))
 			return None
 
-	# 返回指定交易时间之前的第@limit个交易时间
-	def getPrevNumDate (self, 
-		date,	#交易时间
-		limit,	#限制数目
-		):
+	def getPrevNumDate (self, date, limit):
+		"""
+		返回指定交易时间之前的第@limit个交易时间
+		:param date: 交易时间
+		:param limit: 限制数目
+		:return: 指定时间之前第limit个交易时间
+		"""
 		return self.getNexNumDate(date, -limit)
 		
-	# 返回交易时间在数据表中的索引号（位置）
-	def getDateIndex (self, 
-		date,	#交易时间
-		):
+	def getDateIndex (self, date):
+		"""
+		返回交易时间在数据表中的索引号（位置）
+		:param date: 交易时间
+		:return: 指定时间索引
+		"""
 		try:
 			if isinstance(date, str):
-				date = Date.strToDateTime(date)
+				date = self.strToDateTime(date)
 
 			return self.ticksBuffer.index(date)
 		except ValueError, e:
-			self.debug.error("getDateIndex: error: %s" % e)
+			self.debug.dbg("getDateIndex: %s" % e)
 			return None
 
-	# 返回与传入date最近的tick
-	def getNextNearDate (self,
-		date,	#交易时间
-		limit,	#限制数目
-		):
+	def getNextNearDate (self, date, limit):
+		"""
+		返回与传入date最近的tick
+		:param date: 交易时间
+		:param limit: 限制数目
+		:return: 指定时间之后下一时间
+		"""
 		try:
-			# startTick和endTick可锁定数据表的一个时间区间，传入参数则可能在区间外
-			if Date.strToDateTime(date) < self.firstDate():
-				date = self.firstDate()
+			if isinstance(date, str):
+				date = self.strToDateTime(date)
 
 			strSql = "select %s from %s where %s >= '%s' order by %s asc limit %s" % (
 					F_TIME, self.table, F_TIME, date, F_TIME, limit)
@@ -231,106 +289,145 @@ class Date:
 			ret = self.db.fetch(limit - 1)[FN_TIME]
 			return ret
 		except TypeError, e:
-			self.debug.error("getNextNearDate: error: %s" % e)
+			self.debug.dbg("getNextNearDate: %s" % e)
 			return None
 
-# Tick(交易时间)管理接口
 class Ticks(Date):
-	# 返回当前Tick
 	def curTick (self):
+		"""
+		返回当前Tick
+		:return: 当前Tick
+		"""
 		return self.curDate()
 	
-	# 返回数据表里的第一个Tick
 	def firstTick (self):
+		"""
+		返回数据表里的第一个Tick
+		:return: 第一个Tick
+		"""
 		return self.firstDate()
 
-	# 返回数据表里的最后一个Tick
 	def lastTick (self):
+		"""
+		返回数据表里的最后一个Tick
+		:return: 最后一个Tick
+		"""
 		return self.lastDate()
 	
-	# 是否是第一个Tick
-	def isFirstTick (self, 
-		tick,
-		):
+	def isFirstTick (self, tick):
+		"""
+		是否是第一个交易时间
+		:param tick: 交易时间
+		:return: 是返回True，否则返回False
+		"""
 		return self.isFirstDate(tick)
 	
-	# 是否是最后一个Tick
-	def isLastTick (self, 
-		tick,
-		):
+	def isLastTick (self, tick):
+		"""
+		是否是最后一个交易时间
+		:param tick: 交易时间
+		:return: 是返回True，否则返回False
+		"""
 		return self.isLastDate(tick)
 	
-	# 返回当前Tick后的下一个Tick
 	def nextTick (self):
+		"""
+		返回当前交易时间后的下一个交易时间
+		:return: 下一个交易时间，没有返回None
+		"""
 		return self.nextDate()
 	
-	# 返回当前Tick前的上一个Tick
 	def prevTick (self):
+		"""
+		返回当前交易时间前的上一个交易时间
+		:return: 前一个交易时间，没有返回None
+		"""
 		return self.prevDate()
 	
-	# 设置当前Tick
-	def setCurTick (self, 
-		tick,
-		):
+	def setCurTick (self, tick):
+		"""
+		设置当前交易时间
+		:param tick: 交易时间
+		:return: None
+		"""
 		return self.setCurDate(tick)
 	
-	# 设置下一Tick为当前Tick，并返回
 	def getSetNextTick (self):
+		"""
+		设置下一交易时间为当前交易时间，并返回
+		:return: 下一交易时间
+		"""
 		return self.getSetNextDate()
 	
-	# 设置上一Tick为当前Tick，并返回
 	def getSetPrevTick (self):
+		"""
+		设置上一Tick为当前Tick，并返回
+		:return: 上一交易时间
+		"""
 		return self.getSetPrevDate()
 	
-	# 返回传入Tick后的第@limit个Tick
-	def getNexNumTick (self, 
-		tick,	#Tick
-		limit,	#限制数目
-		):
+	def getNexNumTick (self, tick, limit):
+		"""
+		返回指定交易时间之后的第@limit个交易时间
+		:param tick: 交易时间
+		:param limit: 限制数目
+		:return: 指定时间之后第limit个交易时间
+		"""
 		return self.getNexNumDate(tick, limit)
 
-	# 返回传入Tick前的第@limit个Tick
-	def getPrevNumTick (self, 
-		tick,	#Tick
-		limit,	#限制数目
-		):
+	def getPrevNumTick (self, tick, limit):
+		"""
+		返回指定交易时间之前的第@limit个交易时间
+		:param tick: 交易时间
+		:param limit: 限制数目
+		:return: 指定时间之前第limit个交易时间
+		"""
 		return self.getPrevNumDate(tick, limit)
 	
-	# 返回交易时间在数据表中的索引号（位置）
-	def getTickIndex (self, 
-		tick,
-		):
+	def getTickIndex (self, tick):
+		"""
+		返回交易时间在数据表中的索引号（位置）
+		:param tick: 交易时间
+		:return: 指定时间索引
+		"""
 		return self.getDateIndex(tick)
 
-	# 返回与传入tick最近的tick
-	def getNextNearTick (self,
-		tick,	#交易时间
-		limit,	#限制数目
-		):
+	def getNextNearTick (self, tick, limit):
+		"""
+		返回与传入date最近的tick
+		:param tick: 交易时间
+		:param limit: 限制数目
+		:return: 指定时间之后下一时间
+		"""
 		return self.getNextNearDate(tick, limit)
 
-# 获取Tick细节类
 class TickDetail:
-	def __init__(self,
-		debug = False,	#是否调试
-		):
+	def __init__(self, debug = False):
+		"""
+		获取Tick细节
+		:param debug: 是否调试
+		"""
 		self.debug = Debug('TickDetail', debug)	#调试接口
 
-	# 检测tick格式
 	@staticmethod
-	def tickFormat (
-		tick,	#
-		):
-		tickL = tick.split(' ')
-		if len(tickL) == 2:
-			strFormat = "%Y:%m:%d %H:%M:%S"
+	def tickFormat (tick):
+		"""
+		检测tick格式。支持datetime, datetime.date, 以及以
+		"%Y-%m-%d %H:%M:%S"或"%Y-%m-%d"格式字符时间。
+		:param tick: 交易时间
+		:return: 交易时间字符串格式
+		"""
+		if isinstance(tick, str):
+			tickL = tick.split(' ')
+			if len(tickL) == 2:
+				strFormat = "%Y-%m-%d %H:%M:%S"
+			else:
+				strFormat = "%Y-%m-%d"
+		elif isinstance(tick, datetime):
+			strFormat = "%Y-%m-%d %H:%M:%S"
 		else:
-			strFormat = "%Y:%m:%d"
+			strFormat = "%Y-%m-%d"
 
-		if tick.find('-') != -1:
-			sep = '-'
-
-		strFormat = strFormat.replace(':', sep,)
 		return strFormat
 
 #测试
@@ -358,9 +455,15 @@ def doTest ():
 	print tick.isLastTick('2015-05-09 11:29:00')
 	print tick.getTickIndex(time)
 	print tick.getNextNearTick('2015-05-08 11:27:00', 1)
+	print tick.getNextNearTick('2015-05-08', 1)
 
 	print TickDetail.tickFormat('2015-05-09 11:29:00')
 	print TickDetail.tickFormat('2015-05-09')
+	print tick.strToDateTime('2013-12-31 1:31:5')
+	# 测试是否能转化成date时间
+	tick.dFormat = "%Y-%m-%d"
+	ret = tick.strToDateTime('2013-12-31')
+	print type(ret), ret
 
 	#测试结果
 	'''
@@ -379,8 +482,12 @@ def doTest ():
 	False
 	13
 	2015-05-08 11:27:00
-	%Y-%m-%d %H-%M-%S
+	WARN: Date: strToDateTime: found date doesn't match tick format.
+	2015-05-08 00:00:00
+	%Y-%m-%d %H:%M:%S
 	%Y-%m-%d
+	2013-12-31 01:31:05
+	<type 'datetime.date'> 2013-12-31
 	'''
 
 #
