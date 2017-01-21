@@ -20,14 +20,17 @@ def strToDatetime (timeStr, timeFormat = "%Y:%m:%d:%H:%M:%S"):
 	except ValueError, e:
 		return None
 		
-def nowDatetime (timeFormat = "%Y:%m:%d:%H:%M:%S"):
+def nowDatetime (timeFormat = None):
 	"""
-	返回当前datetime时间
+	返回当前时间。如指定timeFormat返回字符串，否则返回datetime时间。
 	:param timeFormat: 时间格式,如 "%H:%M:%S"
-	:return: datetime时间
+	:return: 如指定timeFormat则返回字符串，否则返回datetime类型。
 	"""
-	strTimeNow = datetime.now().strftime(timeFormat)
-	return datetime.strptime(strTimeNow, timeFormat)
+	now = datetime.now()
+	if not timeFormat:
+		return now
+
+	return now.strftime(timeFormat)
 	
 def datetimeToStr (ptime, timeFormat = "%Y:%m:%d:%H:%M:%S"):
 	"""
@@ -54,7 +57,7 @@ if __name__ == '__main__':
 	print strToDatetime(strTime, "%Y:%m:%d:%H:%M")
 	print nowDatetime()
 	print nowDatetime("%Y:%m:%d:%H:%M")
-	print nowDatetime("%Y:%m:%d")
+	print nowDatetime("%Y-%m-%d")
 	print nowDatetime("%H:%M:%S")
 	print strToDatetime("18:08:09", "%H:%M:%S")
 	print datetimeToStr(nowDatetime(), "%d/%m/%Y")
