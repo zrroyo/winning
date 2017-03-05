@@ -243,8 +243,8 @@ class Emulation:
 		self.strategy = strategy
 
 		#
-		testCfg = "%s/%s" % (DEF_EMUL_CONFIG_DIR, cfg)
-		self.emuCfg = EmulationConfig(testCfg)
+		self.testCfg = "%s/%s" % (DEF_EMUL_CONFIG_DIR, cfg)
+		self.emuCfg = EmulationConfig(self.testCfg)
 		self.contracts = self.emuCfg.getContracts().strip(',').split(',')
 		self.startTicks = self.emuCfg.getStartTime().strip(',').split(',')
 		self.expireDates = self.emuCfg.getExpireDates().strip(',')
@@ -617,15 +617,34 @@ class Emulation:
 			if act == 0 and not self.__handleReqs():
 				break
 
-	def start (self):
+	def __initTestEnv(self, argv, name = None):
 		"""
-		模拟测试入口
+		初始化模拟测试环境
+		:param argv: 命令参数列表
+		:param name: 执行别名
 		:return: None
 		"""
-		self.logDir = "%s/%s" % (DEF_TEST_OUT_DIR,
-				datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
+		# 创建测试目录名
+		if not name:
+			name = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+		self.logDir = "%s/%s" % (DEF_TEST_OUT_DIR, name)
 		self.debug.dbg("logDir: %s" % self.logDir)
 		os.system("mkdir -p %s" % self.logDir)
+
+		# 保存测试配置及命令，以免测试数据对不上
+		os.system("cp -f %s %s/EMUL_CONFIG" % (self.testCfg, self.logDir))
+		os.system("echo %s > %s/WIN_CMD" % (" ".join(argv), self.logDir))
+
+	def start (self, argv, name = None):
+		"""
+		模拟测试入口
+		:param argv: 命令参数列表
+		:param name: 执行别名
+		:return: None
+		"""
+		# 初始化测试环境
+		self.__initTestEnv(argv, name)
+
 		try:
 			for i in range(self.paraLevel):
 				self.__setupContractProcess(self.contracts.pop(0),

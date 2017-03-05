@@ -19,7 +19,7 @@ def parseArgs ():
 	elif arg1 == 'data':
 		dataOptionsParser(parser)
 	elif arg1 == 'regress':
-		regressionOptionsParser(parser)
+		regressionOptionsParser(parser, sys.argv)
 	# elif arg1 == 'ctp':
 	# 	ctpOptionsParser(parser)
 	else:

@@ -21,35 +21,43 @@ debug = Debug('Regression', False)
 # shell命令执行接口
 shell = ExecCommand()
 
-# 列出所有可选的测试配置文件
 def listTestConfigs ():
+	"""
+	列出所有可选的测试配置文件
+	:return: None
+	"""
 	configs = os.listdir(DEF_EMUL_CONFIG_DIR)
 	# debug.dbg("output: %s" % configs)
 	configs = '\n'.join(configs)
 	print configs
 
-# 回归测试入口
-def startRegression (
-	strategy,	#策略名
-	test,		#测试配置名
-	dump,		#dump数据表名
-	dbgMode,	#调试开关
-	):
+def startRegression (strategy, test, argv, name, dbgMode):
+	"""
+	启动回归测试
+	:param strategy: 策略名
+	:param test: 测试配置名
+	:param argv: 命令参数列表
+	:param name: 执行别名
+	:param dbgMode: 调试开关
+	:return: 成功返回True，否则返回False
+	"""
 	try:
 		emulate = Emulation(cfg = test,
-				dumpName = dump,
 				strategy = strategy,
 				debug = dbgMode)
-		emulate.start()
+		emulate.start(argv, name)
+		return True
 	except ExceptionEmulUnknown, e:
 		debug.error("startRegression: error: %s!" % e)
 		return False
 
-# 回归测试命令解析函数
-def regressionOptionsHandler (
-	options,	#选项集
-	args,		#
-	):
+def regressionOptionsHandler (options, argv):
+	"""
+	回归测试命令解析函数
+	:param options: 选项集
+	:param argv: 命令参数列表
+	:return: 成功返回True，否则返回False
+	"""
 	if options.debug:
 		global debug
 		debug = Debug('Regression', True)
@@ -66,28 +74,26 @@ def regressionOptionsHandler (
 		debug.error("Please select a test configuration!")
 		return False
 
-	if not options.dump:
-		debug.error("Please specify a dump name.")
-		return False
+	return startRegression(options.strategy, options.test, argv,
+				options.name, options.debug)
 
-	return startRegression(options.strategy, options.test,
-				options.dump, options.debug)
-
-# 回归测试命令解析入口
-def regressionOptionsParser (
-	parser,	#
-	):
+def regressionOptionsParser (parser, argv):
+	"""
+	回归测试命令解析入口
+	:param parser: OptionParser接口对象
+	:param argv: 命令参数列表
+	"""
 	parser.add_option('-l', '--list', action="store_true", dest='list',
 			help='List all test configurations.')
 	parser.add_option('-s', '--strategy', dest='strategy',
 			help='Select the test strategy.')
 	parser.add_option('-t', '--test', dest='test',
 			help='Select a test configuration.')
-	parser.add_option('-d', '--dump', dest='dump',
-			help='The name of dump table.')
+	parser.add_option('-n', '--name', dest='name',
+			help='Name for a regress test.')
 	parser.add_option('-D', '--debug', action="store_true", dest='debug',
 			help='Enable debug mode.')
 
 	(options, args) = parser.parse_args()
 
-	regressionOptionsHandler(options, args)
+	regressionOptionsHandler(options, argv)
