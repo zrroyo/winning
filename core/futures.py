@@ -659,10 +659,10 @@ class Futures:
 
 		self.pid = os.getpid()
 
-		# # 如指定日志路径，则需保存日志
-		# if logName:
-		# 	fd = open(logName, "w")
-		# 	sys.stdout = sys.stderr = fd
+		# 如指定日志路径，则需保存日志
+		if logName:
+			fd = open(logName, "w")
+			sys.stdout = sys.stderr = fd
 
 		#
 		self.paraMsgQ = msgQ

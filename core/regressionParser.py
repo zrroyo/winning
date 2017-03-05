@@ -31,7 +31,8 @@ def listTestConfigs ():
 	configs = '\n'.join(configs)
 	print configs
 
-def startRegression (strategy, test, argv, name, dbgMode):
+def startRegression (strategy, test, argv, name,
+			dbgMode, storeLog):
 	"""
 	启动回归测试
 	:param strategy: 策略名
@@ -39,12 +40,14 @@ def startRegression (strategy, test, argv, name, dbgMode):
 	:param argv: 命令参数列表
 	:param name: 执行别名
 	:param dbgMode: 调试开关
+	:param storeLog: 保存日志
 	:return: 成功返回True，否则返回False
 	"""
 	try:
 		emulate = Emulation(cfg = test,
 				strategy = strategy,
-				debug = dbgMode)
+				debug = dbgMode,
+				storeLog = storeLog)
 		emulate.start(argv, name)
 		return True
 	except ExceptionEmulUnknown, e:
@@ -75,7 +78,7 @@ def regressionOptionsHandler (options, argv):
 		return False
 
 	return startRegression(options.strategy, options.test, argv,
-				options.name, options.debug)
+				options.name, options.debug, options.storeLog)
 
 def regressionOptionsParser (parser, argv):
 	"""
@@ -91,6 +94,8 @@ def regressionOptionsParser (parser, argv):
 			help='Select a test configuration.')
 	parser.add_option('-n', '--name', dest='name',
 			help='Name for a regress test.')
+	parser.add_option('-S', '--storeLog', action="store_true", dest='storeLog',
+			help='Store logs for each contract.')
 	parser.add_option('-D', '--debug', action="store_true", dest='debug',
 			help='Enable debug mode.')
 

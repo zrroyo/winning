@@ -228,15 +228,17 @@ PS_PRI	= 3		#优先级
 PS_CONT	= 4		#合约名
 
 class Emulation:
-	def __init__ (self, cfg, strategy, debug = False):
+	def __init__ (self, cfg, strategy, debug = False, storeLog = False):
 		"""
 		模拟交易
 		:param cfg: 配置文件
 		:param strategy: 策略名
 		:param debug: 是否调试
+		:param storeLog: 保存合约日志
 		"""
 		self.debug = Debug('Emulation', debug)	#调试接口
 		self.dbgMode = debug
+		self.storeLog = storeLog
 		#发现未识别策略，提示调用函数处理
 		if strategy not in Emulation.validStrategy():
 			raise ExceptionEmulUnknown("Found unknown strategy.")
@@ -319,7 +321,9 @@ class Emulation:
 		:param follow: 跳过startTick，从下一tick开始
 		:return: None
 		"""
-		logName = "%s/%s" % (self.logDir, contract)
+		logName = None
+		if self.storeLog:
+			logName = "%s/%s" % (self.logDir, contract)
 
 		strategy = None
 		if self.strategy == "testfuture":
@@ -622,28 +626,35 @@ class Emulation:
 		初始化模拟测试环境
 		:param argv: 命令参数列表
 		:param name: 执行别名
-		:return: None
+		:return: 成功返回True，否则返回False
 		"""
 		# 创建测试目录名
 		if not name:
 			name = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
 		self.logDir = "%s/%s" % (DEF_TEST_OUT_DIR, name)
+		if os.path.exists(self.logDir):
+			self.debug.error("'%s' already exists!" % self.logDir)
+			return False
+
 		self.debug.dbg("logDir: %s" % self.logDir)
 		os.system("mkdir -p %s" % self.logDir)
 
 		# 保存测试配置及命令，以免测试数据对不上
 		os.system("cp -f %s %s/EMUL_CONFIG" % (self.testCfg, self.logDir))
 		os.system("echo %s > %s/WIN_CMD" % (" ".join(argv), self.logDir))
+		return True
 
 	def start (self, argv, name = None):
 		"""
 		模拟测试入口
 		:param argv: 命令参数列表
 		:param name: 执行别名
-		:return: None
+		:return: 成功返回True，否则返回False
 		"""
 		# 初始化测试环境
-		self.__initTestEnv(argv, name)
+		if not self.__initTestEnv(argv, name):
+			return False
 
 		try:
 			for i in range(self.paraLevel):
@@ -654,6 +665,7 @@ class Emulation:
 
 		# 启动请求调度
 		self.__schedule()
+		return True
 
 # 测试
 def doTest():
