@@ -13,11 +13,12 @@ sys.path.append('..')
 
 from misc.genconfig import *
 
-# 并行模拟交易配置
 class EmulationConfig (GenConfig):
-	def __init__ (self, 
-		cfgFile,	#配置文件
-		):
+	def __init__ (self, cfgFile):
+		"""
+		并行模拟交易配置
+		:param cfgFile: 配置文件
+		"""
 		GenConfig.__init__(self, cfgFile)
 		self.cfgFile = cfgFile
 		self.defaultSec = 'EMULATION'	#默认配置段
@@ -42,10 +43,7 @@ class EmulationConfig (GenConfig):
 	
 	def getContractVolumeAdd (self):
 		return self.getSecOption(self.defaultSec, 'contract_volume_add')
-	
-	def getContractMultiplier (self):
-		return self.getSecOption(self.defaultSec, 'contract_multiplier')
-	
+
 	def getContractTriggerLevel (self):
 		return self.getSecOption(self.defaultSec, 'contract_trigger_level')
 	
@@ -55,33 +53,35 @@ class EmulationConfig (GenConfig):
 	def getParallelAddMaxAllowed (self):
 		return self.getSecOption(self.defaultSec, 'parallel_add_max_allowed')
 
-# 合约描述配置
+	def getParallelCapital (self):
+		return self.getSecOption(self.defaultSec, 'parallel_capital')
+
 class ContractDescConfig (GenConfig):
-	def __init__ (self,
-		cfgFile,	#配置文件
-		):
+	def __init__ (self, cfgFile):
+		"""
+		合约描述配置
+		:param cfgFile: 配置文件
+		"""
 		GenConfig.__init__(self, cfgFile)
 		self.cfgFile = cfgFile
 
-	def getDatabase (self,
-		contract,
-		):
+	def getDatabase (self, contract):
 		return self.getSecOption(contract, 'database')
 
-	def getMainTable (self,
-		contract,
-		):
+	def getMainTable (self, contract):
 		return self.getSecOption(contract, 'main_table')
 
-	def getContractStart (self,
-		contract,
-		):
+	def getContractStart (self, contract):
 		return self.getSecOption(contract, 'contract_start')
 
-	def getContractEnd (self,
-		contract,
-		):
+	def getContractEnd (self, contract):
 		return self.getSecOption(contract, 'contract_end')
+
+	def getMultiplier (self, contract):
+		return self.getSecOption(contract, 'multiplier')
+
+	def getMarginRatio (self, contract):
+		return self.getSecOption(contract, 'margin_ratio')
 
 # 测试
 def doTest ():
