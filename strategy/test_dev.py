@@ -10,26 +10,34 @@ Start: 2015年 05月 28日 星期四 22:36:48 CST
 
 import sys
 sys.path.append("..")
-import thread
 
-from dataMgr.data import *
-from core.date import *
 from core.futures import *
-from core.attribute import *
-from core.signal import *
-from core.parallel import *
+# from core.parallel import *
 
 #
 class TestFuture(Futures):
 	def __init__ (self, 
 		contract, 	#合约
 		config,		#合约配置解析接口
+		logDir,		#日志目录
 		debug = False,	#是否调试
 		):
 		#
-		Futures.__init__(self, contract, config, debug)
+		Futures.__init__(self, contract, config, logDir, debug)
 		self.lossProtected = False	#止损保护
-	
+		self.initStatFrame(tkCols = ['LossProt'])
+
+	#
+	def tradeStoreTickEnv (self):
+		env = [self.lossProtected]
+		return env
+
+	#
+	def tradeResumeTickEnv (self, values):
+		self.lossProtected = values['LossProt'].values[0]
+		self.debug.warn("tradeResumeTickEnv: type %s, lossProtected %s" % (
+						type(values), self.lossProtected))
+
 	#开始交易信号
 	def signalStartTrading (self,
 		tick,	#交易时间
@@ -164,32 +172,32 @@ class TestFuture(Futures):
 				tick, price, num))
 		
 		return self.closePositions(tick, price, direction, num)
-		
 #
-def testParallelThreadEntry (
-	strategy,	#
-	):
-	strategy.start()
-	
-#测试
-def doTest():
-	tf = TestFuture('p1405', 'p1405_dayk', 'history', True)
-	paraCore = ParallelCore('2013-05-16', 15, 6, 3, 'test4_para', True)
-	
-	tf.setAttrs(maxPosAllowed = 4, 
-			numPosToAdd = 1,
-			priceVariation = 40,
-			multiplier = 10,
-			dumpName = 'test4',
-			paraCore = paraCore)
-
-	paraCore.allocManager("p1405")
-	paraCore.setSyncWindowForContracts()
-	thread.start_new_thread(testParallelThreadEntry, (tf,))
-	paraCore.handleActions()
-
-	
-if __name__ == '__main__':
-	doTest()
-	
-	
+# #
+# def testParallelThreadEntry (
+# 	strategy,	#
+# 	):
+# 	strategy.start()
+#
+# #测试
+# def doTest():
+# 	tf = TestFuture('p1405', 'p1405_dayk', 'history', True)
+# 	paraCore = ParallelCore('2013-05-16', 15, 6, 3, 'test4_para', True)
+#
+# 	tf.setAttrs(maxPosAllowed = 4,
+# 			numPosToAdd = 1,
+# 			priceVariation = 40,
+# 			multiplier = 10,
+# 			dumpName = 'test4',
+# 			paraCore = paraCore)
+#
+# 	paraCore.allocManager("p1405")
+# 	paraCore.setSyncWindowForContracts()
+# 	thread.start_new_thread(testParallelThreadEntry, (tf,))
+# 	paraCore.handleActions()
+#
+#
+# if __name__ == '__main__':
+# 	doTest()
+#
+#
