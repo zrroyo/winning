@@ -226,7 +226,7 @@ class Futures:
 			return False
 
 		req = self.__ReqMsg(tick, pos = volume, capital = capital)
-		self.debug.info("__sendParaRequest: tick %s [%s], type %s, vol %s, "
+		self.debug.dbg("__sendParaRequest: tick %s [%s], type %s, vol %s, "
 					"capital %s, profit %s, fakeSpMode %s" %
 				(tick, req.tick, type, req.pos, req.capital, profit, req.mode))
 
@@ -260,7 +260,7 @@ class Futures:
 			self.paraCtrl.nr_np += 1
 			self.paraLock.release()
 			self.paraMsgQ.put(req)
-			self.debug.info("__sendParaRequest: sending req: type %s, nr_np %s" % (
+			self.debug.dbg("__sendParaRequest: sending req: type %s, nr_np %s" % (
 						req.type, self.paraCtrl.nr_np))
 			return True
 
@@ -268,7 +268,7 @@ class Futures:
 		self.paraCtrl.command = EMUL_CA_CMD_CLEAR
 		self.paraLock.release()
 
-		self.debug.info("__sendParaRequest: sending req: type %s, nr_np %s" % (
+		self.debug.dbg("__sendParaRequest: sending req: type %s, nr_np %s" % (
 							req.type, self.paraCtrl.nr_np))
 
 		# WP操作需等待（EMUL_REQ_NSP_OPEN、EMUL_REQ_OSP_CLOSE（|EMUL_REQ_END）
@@ -276,10 +276,10 @@ class Futures:
 		allowed = False
 		while True:
 			self.paraLock.acquire()
-			self.debug.info("__sendParaRequest: command %s" % self.paraCtrl.command)
+			self.debug.dbg("__sendParaRequest: command %s" % self.paraCtrl.command)
 			if self.paraCtrl.command == EMUL_CA_CMD_WP_MOVE_ON:
 				allowed = True if self.paraCtrl.approve == 1 else False
-				self.debug.info("__sendParaRequest: WP_MOVE_ON: mode %s, allow %s" % (
+				self.debug.dbg("__sendParaRequest: WP_MOVE_ON: mode %s, allow %s" % (
 									self.paraCtrl.mode, allowed))
 				self.paraLock.release()
 				break
@@ -292,7 +292,7 @@ class Futures:
 				break
 			elif self.paraCtrl.command == EMUL_CA_CMD_TK_STAT:
 				# osp close在等待过程中可能收到sched命令，不响应会造成“死锁”
-				self.debug.info("__sendParaRequest: TK_STAT")
+				self.debug.dbg("__sendParaRequest: TK_STAT")
 				self.__schedCmdHandler(self.__mktime(tick))
 				self.paraLock.release()
 			else:
@@ -394,13 +394,13 @@ class Futures:
 		:param tick: 结束tick
 		:return: None
 		"""
-		self.debug.dbg("statFrame: \n%s" % self.tickStatFrame)
+		self.debug.dbg("__exitTrade: statFrame: \n%s" % self.tickStatFrame)
 		# 统计tick数据
 		_sum = self.tickStatFrame.sum()
-		self.debug.dbg("_sum: \n%s" % _sum)
+		# self.debug.dbg("__exitTrade: _sum: \n%s" % _sum)
 		_floatBuf = self.tickStatFrame[TK_FLOAT_MOV]
 		_floatDesc = _floatBuf.describe()
-		self.debug.dbg("_floatDesc: \n%s" % _floatDesc)
+		# self.debug.dbg("__exitTrade: _floatDesc: \n%s" % _floatDesc)
 		# 统计交易数据
 		self.tradeStat.tickEnd = tick
 		self.tradeStat.profit = _sum[TK_ORD_PROFIT]
@@ -416,7 +416,6 @@ class Futures:
 		self.trdStatFrame = self.trdStatFrame.append(
 					pd.DataFrame([values], columns = self.trdStatCols),
 					ignore_index = True)
-		self.debug.dbg("trdStatFrame: \n%s" % self.trdStatFrame.T)
 		# tick数据已经汇总并缓存至交易数据，导出并清空
 		self.__clearTickStatFrame()
 
@@ -667,6 +666,7 @@ class Futures:
 		:return: None
 		"""
 		# 将交易数据以excel格式保存
+		self.debug.dbg("__exit: trdStatFrame: \n%s" % self.trdStatFrame.T)
 		_trdXlsx = "%s/%s_TRADE_STAT.xlsx" % (self.logDir, self.contract)
 		self.trdStatFrame.T.to_excel(_trdXlsx, float_format = "%.2f")
 
@@ -702,7 +702,6 @@ class Futures:
 		self.paraMsgQ = msgQ
 		self.paraCtrl = shmem
 		self.paraLock = shmlock
-		# self.debug.info("CA.mode: %s" % self.paraCtrl.mode)
 
 		tickSrc = Ticks(self.database, self.table, self.contractStart, self.contractEnd)
 		curTick,self.stopTickTime = self.__getRealStartAndEndTick(startTick, stopTick, follow)
@@ -827,7 +826,7 @@ class Futures:
 				_tf = _tf[pd.Series(_tf.index <= tick, index = _tf.index)]
 				_values = _tf.tail(1)[[TK_RES_POS, TK_RES_CAP, TK_RES_ACT]]
 
-			self.debug.info("__getOpenStat: tick %s, _tf:2 %s, _values %s" % (
+			self.debug.dbg("__getOpenStat: tick %s, _tf:2 %s, _values %s" % (
 								tick, _tf, _values))
 
 			(pos, capital, action) = tuple(_values.values.tolist()[0])
@@ -858,7 +857,7 @@ class Futures:
 
 		# 从数据区恢复上一tick的执行环境
 		values = self.tickStatFrame.tail(1)
-		self.debug.info("__tickEnvResume: resume to %s, values %s" % (values.index[0], values))
+		self.debug.dbg("__tickEnvResume: resume to %s, values %s" % (values.index[0], values))
 		self.tradeResumeTickEnv(values)
 
 	def __schedCmdHandler(self, tick, tickObj = None):
@@ -872,7 +871,7 @@ class Futures:
 			# WP操作之后状态可能会有改变
 			self.fakeSpMode = self.paraCtrl.mode
 			self.paraCtrl.command = EMUL_CA_CMD_CLEAR
-			self.debug.info("__schedCmdHandler: WP_MOVE_ON: fakeSpMode %s" % self.fakeSpMode)
+			self.debug.dbg("__schedCmdHandler: WP_MOVE_ON: fakeSpMode %s" % self.fakeSpMode)
 
 		elif self.paraCtrl.command == EMUL_CA_CMD_TK_STAT and \
 				tick >= self.paraCtrl.tick:
@@ -893,7 +892,7 @@ class Futures:
 			_tick = self.__totick(self.paraCtrl.tick)
 			# 重置之后操作状态明确，需切换为NSP状态
 			self.fakeSpMode = EMUL_SCHED_MODE_NSP
-			self.debug.info("__schedCmdHandler: REDO_OSP_MP: fakeSpMode %s" % self.fakeSpMode)
+			self.debug.dbg("__schedCmdHandler: REDO_OSP_MP: fakeSpMode %s" % self.fakeSpMode)
 
 			if self.paraCtrl.redo_next:
 				# 清除标志避免影响下次重置
@@ -950,7 +949,7 @@ class Futures:
 			# 如果tick内已发过请求则不需要ack确认
 			if not self.tagTickSentReq:
 				req = self.__ReqMsg(tick, EMUL_REQ_ACK)
-				self.debug.info("__tickParaHandler: sending ack")
+				self.debug.dbg("__tickParaHandler: sending ack")
 				self.paraMsgQ.put(req)
 			# 清除ack标志避免重复响应
 			self.paraCtrl.ack = 0
