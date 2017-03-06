@@ -59,15 +59,19 @@ class Attribute:
 		self.marginRatio = marginRatio
 
 class Futures:
-	def __init__ (self, contract, config, debug = False):
+	def __init__ (self, contract, config, logDir, debug = False):
 		"""
 		期货交易
 		:param contract: 合约名
 		:param config: 合约配置解析接口
+		:param logDir: 日志目录
 		:param debug: 是否调试
 		"""
+		self.debug = Debug('Futures: %s' % contract, debug)	#调试接口
 		self.dbgMode = debug
 		self.contract = contract
+		self.logDir = logDir
+		self.debug.error("logDir: %s" % self.logDir)
 		self.config = config
 		self.database = self.config.getDatabase(contract)
 		self.table = self.config.getMainTable(contract)
@@ -76,7 +80,6 @@ class Futures:
 		self.attrs = Attribute()	#属性
 		# 持仓管理接口
 		self.posMgr = None
-		self.debug = Debug('Futures: %s' % contract, debug)	#调试接口
 		self.data = Data(contract, config, debug = False)	#数据接口
 		# 用于临时目的Tick帮助接口
 		self.tickHelper = Ticks(self.database, self.table,
@@ -369,6 +372,22 @@ class Futures:
 
 		return True
 
+	def __clearTickStatFrame (self):
+		"""
+		将tickStatFrame导出到文件保存，并清空。
+		:return: None
+		"""
+		_csv = "%s/%s.csv" % (self.logDir, self.contract)
+		# self.debug.dbg("_csv: %s" % _csv)
+		if not os.path.exists(_csv):
+			# 首次保存需包含表头
+			self.tickStatFrame.to_csv(_csv)
+		else:
+			self.tickStatFrame.to_csv(_csv, header = False, mode = 'a')
+
+		# 交易数据依赖tick统计表，交易完成需清空
+		self.tickStatFrame.drop(self.tickStatFrame.index, inplace = True)
+
 	def __exitTrade (self, tick):
 		"""
 		交易结束操作
@@ -397,9 +416,9 @@ class Futures:
 		self.trdStatFrame = self.trdStatFrame.append(
 					pd.DataFrame([values], columns = self.trdStatCols),
 					ignore_index = True)
-		# 交易数据依赖tick统计表，交易完成需清空
-		self.tickStatFrame.drop(self.tickStatFrame.index, inplace = True)
 		self.debug.dbg("trdStatFrame: \n%s" % self.trdStatFrame.T)
+		# tick数据已经汇总并缓存至交易数据，导出并清空
+		self.__clearTickStatFrame()
 
 	# ----------------
 	# 交易方法
@@ -642,8 +661,23 @@ class Futures:
 
 		return retStart,retStop
 
+	def __exit (self):
+		"""
+		即将退出合约进程，将交易、tick数据导出保存。
+		:return: None
+		"""
+		# 将交易数据以excel格式保存
+		_trdXlsx = "%s/%s_TRADE_STAT.xlsx" % (self.logDir, self.contract)
+		self.trdStatFrame.T.to_excel(_trdXlsx, float_format = "%.2f")
+
+		# 将tick数据以excel格式保存
+		_data = "%s/%s" % (self.logDir, self.contract)
+		_csvData = pd.read_csv("%s.csv" % _data, index_col = 0)
+		_csvData.to_excel("%s_TICK_STAT.xlsx" % _data, float_format = "%.2f")
+		os.unlink("%s.csv" % _data)
+
 	def start (self, startTick = None, stopTick = None, msgQ = None,
-			shmem = None, shmlock = None, logName = None, follow = False):
+			shmem = None, shmlock = None, storeLog = False, follow = False):
 		"""
 		启动交易入口
 		:param startTick: 开始交易时间。支持秒数时间、字符串时间如（2013-10-15）
@@ -651,7 +685,7 @@ class Futures:
 		:param msgQ: sched请求消息队列
 		:param shmem: 与sched共享内存
 		:param shmlock: 共享内存保护锁
-		:param logName: 保存日志至文件
+		:param storeLog: 保存合约日志
 		:param follow: 从startTick后一tick开始执行
 		:return: None
 		"""
@@ -659,12 +693,12 @@ class Futures:
 
 		self.pid = os.getpid()
 
-		# 如指定日志路径，则需保存日志
-		if logName:
-			fd = open(logName, "w")
+		if storeLog:
+			# 保存日志
+			_logName = "%s/%s" % (self.logDir, self.contract)
+			fd = open(_logName, "w")
 			sys.stdout = sys.stderr = fd
 
-		#
 		self.paraMsgQ = msgQ
 		self.paraCtrl = shmem
 		self.paraLock = shmlock
@@ -693,6 +727,9 @@ class Futures:
 		# 结束时未在交易中，清仓发送EMUL_REQ_END
 		if not endTick:
 			self.__tradeEnd(self.stopTick, signal)
+
+		# 退出前处理
+		self.__exit()
 
 	def __orderProfit (self, direction, open, price):
 		"""

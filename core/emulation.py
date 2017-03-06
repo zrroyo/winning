@@ -321,16 +321,13 @@ class Emulation:
 		:param follow: 跳过startTick，从下一tick开始
 		:return: None
 		"""
-		logName = None
-		if self.storeLog:
-			logName = "%s/%s" % (self.logDir, contract)
-
 		strategy = None
 		if self.strategy == "testfuture":
 			import strategy.test_dev
 			strategy = strategy.test_dev.TestFuture(contract = contract,
-					      config = self.descCfg,
-					      debug = self.dbgMode)
+						config = self.descCfg,
+						logDir = self.logDir,
+						debug = self.dbgMode)
 
 		strategy.setAttrs(maxPosAllowed = int(self.emuCfg.getContractAddMaxAllowed()),
 				numPosToAdd = int(self.emuCfg.getContractVolumeAdd()),
@@ -342,7 +339,7 @@ class Emulation:
 		# self.debug.error("ctrl.mode: %s" % ctrl[0].mode)
 		p = mp.Process(target = strategy.start, args = (startTick,
 					self.__estimateEndTick(contract, expireDates),
-					self.msgQ, ctrl[0], lock, logName, follow))
+					self.msgQ, ctrl[0], lock, self.storeLog, follow))
 		p.name = contract
 		p.start()
 		# 指定优先级
