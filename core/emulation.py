@@ -70,21 +70,15 @@ class ReqStack:
 		"""
 		self.debug = Debug('ReqStack', debug)	#调试接口
 		self.stack = []	#按req.tick从大到小排列
-		self.rare = {}	#特殊请求队列
 
-	def insert (self, req, rare = False):
+	def insert (self, req):
 		"""
 		在队列中插入请求。
 		:param req: 请求
-		:param rare: 特殊标记
 		:return: None
 		"""
 		quickInsert(self.stack, req, descend = True, extract = lambda x: x.tick)
 		# 对于特殊请求（比如current为0），需要标记以便快速查找
-		if rare:
-			self.rare[req.pid] = req
-			self.debug.dbg("insert: rare %s" % self.rare)
-
 	def len (self):
 		"""
 		返回队列长度。
@@ -122,15 +116,8 @@ class ReqStack:
 		try:
 			if isinstance(reqs, int):
 				self.stack = [ r for r in self.stack if r.pid != reqs ]
-				del self.rare[reqs]
 			else:
 				self.stack = [ r for r in self.stack if r not in reqs ]
-				# 列表中可能包含rare请求，同时移除
-				_pids = set([ r.pid for r in reqs ]).intersection(set(self.rare.keys()))
-				for p in _pids:
-					del self.rare[p]
-
-				self.debug.dbg("drop: rare %s" % self.rare)
 		except KeyError:
 			pass
 
@@ -518,14 +505,18 @@ class Emulation:
 		:param new: 新接受请求
 		:return: 等待进程数，0表示所有进程确认完毕，大于0表示还有进程未确认
 		"""
-		pids = set(self.procStates.keys()) - set([top.pid])
+		pids = set(self.procStates.keys())
 		req = top
 		if new:
-			pids = set(top.wait.keys()) - set([new.pid])
+			pids = set(top.wait.keys())
 			req = new
 
-		self.debug.dbg("__broadcastACK: top %s, new %s, pid (all: %s, top: %s, left: %s)" % (
-					top, new, self.procStates.keys(), top.wait.keys(), pids))
+		# WP请求已在队列中，但current小于req.tick，会被设置ack从面导致死锁。
+		_rm = [ r.pid for r in self.rStack.stack if r.tick >= req.tick ]
+		pids = pids - set(_rm)
+
+		self.debug.dbg("__broadcastACK: top %s, new %s, pid (all: %s, top: %s, _rm: %s, left: %s)" % (
+					top, new, self.procStates.keys(), top.wait.keys(), _rm, pids))
 
 		req.wait = {}
 		for p in pids:
@@ -539,14 +530,6 @@ class Emulation:
 				lock.release()
 				continue
 			else:
-				# 当合约进程第一tick就触发开仓（NSP.WP）信号时，current
-				# 等于0并且已发送req至队列中，并且不会再发出ack确认，会造成
-				# 死锁。该种情况下不能再设置ack确认，应主动检测并规避。
-				if p in self.rStack.rarePids():
-					self.debug.dbg("__broadcastACK: %s: found rare req" % p)
-					lock.release()
-					continue
-
 				ctrl.ack = req.tick
 				req.wait[p] = 1
 			lock.release()
@@ -562,13 +545,18 @@ class Emulation:
 		:param req: 待移出（请求对应的）进程id
 		:return: 等待进程数
 		"""
-		self.debug.dbg("__rmReqWait: %s wait %s, req %s" % (
-					self.procStates[dest.pid][PS_CONT], dest.wait, req))
 		try:
 			if req.tick >= dest.tick:
 				del dest.wait[req.pid]
+
+			self.debug.error("__rmReqWait: %s %s, wait %s" % (
+					self.procStates[dest.pid][PS_CONT], dest.tick, dest.wait))
 		except KeyError:
 			pass
+		except AttributeError:
+			self.debug.warn("__rmReqWait: found ineffective ack, dest %s" % dest)
+			# dest为None则返回1，继续等待其它请求
+			return 1
 
 		return len(dest.wait)
 
@@ -593,14 +581,11 @@ class Emulation:
 				# OSP状态重置为NSP后，现有队列中所有osp req需被丢弃
 				continue
 			elif req.type == EMUL_REQ_ACK:
-				#
+				# ack到来，从top请求中移除对应等待进程
 				act = self.__rmReqWait(top, req)
 			else:
 				try:
-					# pState[PS_LOCK].acquire()
-					_rare = pState[PS_CTRL].current
-					# pState[PS_LOCK].release()
-					self.rStack.insert(req, _rare == 0)
+					self.rStack.insert(req)
 
 					self.debug.error("__schedule: req (%s tick %s), top (%s, tick %s)" % (
 							pState[PS_CONT], req.tick,
@@ -612,7 +597,7 @@ class Emulation:
 						# 触发req操作
 						act = self.__rmReqWait(top, req)
 				except AttributeError:
-					# top is None
+					# 列表中暂无请求，top为空
 					act = self.__broadcastACK(self.rStack.top())
 
 			if act == 0 and not self.__handleReqs():
