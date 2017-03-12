@@ -15,6 +15,7 @@ import time
 import ctypes
 import Queue
 import multiprocessing as mp
+import pandas as pd
 from datetime import datetime
 
 from misc.debug import Debug
@@ -648,6 +649,19 @@ class Emulation:
 		# 启动请求调度
 		self.__schedule()
 		return True
+
+	def report(self):
+		"""
+		生成全局统计报表
+		:return: None
+		"""
+		xls=  [ f for f in os.listdir(self.logDir) if f.find("TICK_STAT.xlsx") >= 0 ]
+		self.debug.dbg("report: xls: %s" % xls)
+		cum = pd.read_excel("%s/%s" % (self.logDir, xls.pop(0)))
+		for x in xls:
+			cum = cum.add(pd.read_excel("%s/%s" % (self.logDir, x)), fill_value = 0)
+
+		cum.to_excel("%s/%s" % (self.logDir, "TICK_STAT_OVERALL.xlsx"))
 
 # 测试
 def doTest():

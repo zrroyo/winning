@@ -11,6 +11,7 @@ Start: 2016年 03月 30日 星期三 22:47:59 CST
 import os
 import sys
 sys.path.append(".")
+import time
 
 from misc.debug import Debug
 from misc.execcmd import ExecCommand
@@ -44,11 +45,18 @@ def startRegression (strategy, test, argv, name,
 	:return: 成功返回True，否则返回False
 	"""
 	try:
+		_start = time.time()
 		emulate = Emulation(cfg = test,
 				strategy = strategy,
 				debug = dbgMode,
 				storeLog = storeLog)
 		emulate.start(argv, name)
+		_end = time.time()
+		debug.info("Time Execution: %ss" % (_end - _start))
+		_start = _end
+		emulate.report()
+		_end = time.time()
+		debug.info("Time Report: %ss" % (_end - _start))
 		return True
 	except ExceptionEmulUnknown, e:
 		debug.error("startRegression: error: %s!" % e)
