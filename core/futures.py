@@ -506,8 +506,9 @@ class Futures:
 			self.debug.warn("__tradeStart: adding position denied.")
 			return startTick
 
-		# 交易开始刷新tick数据统计，确保交易数据统计准确性
-		self.tickStatFrame.drop(self.tickStatFrame.index, inplace = True)
+		# 将上次交易结束之后未触发交易的tick数据保存至文件中，并
+		# 清空数据区重新统计
+		self.__clearTickStatFrame()
 
 		# 得到tick中的下一交易时间
 		nextTick = self.__tradeNextTick(tickSrc, startTick, signal)
@@ -670,6 +671,8 @@ class Futures:
 		_trdXlsx = "%s/%s_TRADE_STAT.xlsx" % (self.logDir, self.contract)
 		self.trdStatFrame.T.to_excel(_trdXlsx, float_format = "%.2f")
 
+		# 部分tick不在交易中，没有机会保存至文件中
+		self.__clearTickStatFrame()
 		# 将tick数据以excel格式保存
 		_data = "%s/%s" % (self.logDir, self.contract)
 		_csvData = pd.read_csv("%s.csv" % _data, index_col = 0)
