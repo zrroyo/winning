@@ -68,8 +68,17 @@ class ContractDescConfig (GenConfig):
 	def getDatabase (self, contract):
 		return self.getSecOption(contract, 'database')
 
-	def getMainTable (self, contract):
-		return self.getSecOption(contract, 'main_table')
+	def getDaykTable (self, contract):
+		return self.getSecOption(contract, 'dayk_table')
+
+	def getMinkTable (self, contract):
+		return self.getSecOption(contract, 'mink_table')
+
+	def getDataLevel (self, contract):
+		"""
+		返回数据级别类型。days代表日K级数据，minutes为分钟级数据。
+		"""
+		return self.getSecOption(contract, 'data_level')
 
 	def getContractStart (self, contract):
 		return self.getSecOption(contract, 'contract_start')
