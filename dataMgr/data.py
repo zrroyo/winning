@@ -1,10 +1,15 @@
-#! /usr/bin/python
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
+
+"""
+交易数据
+"""
 
 import sys
 sys.path.append("..")
 import time
 import math
+import pandas as pd
+import numpy as np
 
 from misc.debug import Debug
 from misc.dateTime import *
@@ -12,210 +17,410 @@ from db.sql import SQL
 from db.tbldesc import *
 #from ctp.ctpagent import MarketDataAgent
 
-#数据库数据对象
+
 class Data:
-	def __init__ (self,
-		contract, 	#合约
-		config,		#合约配置解析接口
-		debug = False,	#是否调试
-		):
+	def __init__ (self, contract, config, debug = False):
+		"""
+		交易数据接口
+		:param contract: 合约
+		:param config: 合约配置解析接口
+		:param debug: 是否调试
+		"""
 		self.debug = Debug("Data", debug)	#调试接口
 		self.contract = contract
 		self.config = config
 		self.database = self.config.getDatabase(contract)
-		self.table = self.config.getMainTable(contract)
+		self.tableDayk = self.config.getDaykTable(contract)
 		self.startTick = self.config.getContractStart(contract)
 		self.endTick = self.config.getContractEnd(contract)
 
+		# 数据库接口
 		self.db = SQL()
 		self.db.connect(self.database)
-		self.clause = self.__initClause()	#查询条件
-		self.current = None	#当前数据（缓冲，优化查询速度）
+		# 日K线数据
+		self.datDayk = None
+		# 根据邻近性原则建立tick数据缓存区
+		self.__daykCache = {}
+		self.__loadData()
 
 	def __del__ (self):
 		self.db.close()
 
-	# 初始化查询条件
-	def __initClause (self):
-		# 支持仅加载指定区间的tick
-		clause = ""
-		if self.startTick:
-			clause = "%s >= '%s'" % (F_TIME, self.startTick)
+	def __loadData(self):
+		"""
+		从数据库中导入数据
+		:return: None
+		"""
+		# 读取日k线数据
+		strSql = "select * from %s where %s >= '%s' and %s <= '%s'" % (
+			self.tableDayk, F_TIME, self.startTick, F_TIME, self.endTick)
+		self.datDayk = pd.read_sql(strSql, self.db.conn, index_col = F_TIME)
+		# 将index转化为datetime类型
+		self.datDayk.index = pd.to_datetime(self.datDayk.index)
 
-		if self.endTick:
-			_clause = "%s <= '%s'" % (F_TIME, self.endTick)
-			clause =  "%s and %s" % (clause, _clause) if len(clause) else _clause
-
-		return clause
-
-	# 将时间转化为datetime
 	@staticmethod
-	def dateConverter (
-		date,
-		):
+	def dateConverter (date):
+		"""
+		将字符格式时间转化为数据表格式时间
+		:param date: 字符时间
+		:return: 数据表格式时间
+		"""
 		if not isinstance(date, str):
 			return date
 
 		# 支持时间字符串
-		date = strToDatetime(date, DB_FORMAT_DATE)
-		if not date:
-			date = strToDatetime(date, DB_FORMAT_DATETIME)
+		ret = strToDatetime(date, DB_FORMAT_DATE)
+		if not ret:
+			ret = strToDatetime(date, DB_FORMAT_DATETIME)
 
-		return date
+		return ret
 
-	# 计算移动平均值
-	def M (self,
-		date,	#时间
-		field,	#字段
-		days,	#移动时间
-		):
-		strSql = "select avg(%s) from ( \
-			select * from %s where %s and %s <= '%s' order by %s desc limit %s) as T1" % (
-				field, self.table, self.clause, F_TIME, date, F_TIME, days)
-
-		self.db.execSql(strSql)
-
+	def M(self, date, field, days):
+		"""
+		返回指定天数的移动平均值
+		:param date: 交易时间
+		:param field: 字段
+		:param days: 移动单位数
+		:return: 移动平均值
+		"""
 		try:
-			ret = self.db.fetch(0)[0]
-			# self.debug.dbg("__fetchDataWithinDays: %s" % ret)
-			return ret
-		except IndexError, e:
-			# 严重错误，需及时提醒
-			self.debug.error("M: error: %s" % e)
-			return None
+			return self.__daykCache[date]['M'][field][days]
+		except KeyError:
+			# @num对应的sum值还没有
+			_tmp = self.datDayk[self.datDayk.index <= date ].tail(days)
+			mean = _tmp[field].describe()['mean']
 
-	# 5日移动平均值
-	def M5 (self,
-		date,
-		field = F_CLOSE,
-		):
+			if date not in self.__daykCache.keys():
+				# tick日期发生变化，依据邻近原则更新缓存区
+				self.debug.dbg("M: __daykCache: %s" % self.__daykCache)
+				self.__daykCache.clear()
+				self.__daykCache[date] = {}
+				self.__daykCache[date]['M'] = {}
+				self.__daykCache[date]['M'][field] = {}
+			elif 'M' not in self.__daykCache[date].keys():
+				self.__daykCache[date]['M'] = {}
+				self.__daykCache[date]['M'][field] = {}
+			elif field not in self.__daykCache[date]['M'].keys():
+				self.__daykCache[date]['M'][field] = {}
+
+			self.__daykCache[date]['M'][field][days] = mean
+			return mean
+
+	def M5(self, date, field = F_CLOSE):
+		"""
+		5日移动平均值
+		:param date: 交易时间
+		:param field: 字段
+		:return: 移动平均值
+		"""
 		return self.M(date, field, 5)
 	
-	# 10日移动平均值
-	def M10 (self,
-		date,
-		field = F_CLOSE,
-		):
+	def M10(self, date, field = F_CLOSE):
+		"""
+		10日移动平均值
+		:param date: 交易时间
+		:param field: 字段
+		:return: 移动平均值
+		"""
 		return self.M(date, field, 10)
 	
-	# 20日移动平均值
-	def M20 (self,
-		date,
-		field = F_CLOSE,
-		):
+	def M20(self, date, field = F_CLOSE):
+		"""
+		20日移动平均值
+		:param date: 交易时间
+		:param field: 字段
+		:return: 移动平均值
+		"""
 		return self.M(date, field, 20)
 	
-	# 30日移动平均值
-	def M30 (self,
-		date,
-		field = F_CLOSE,
-		):
+	def M30(self, date, field = F_CLOSE):
+		"""
+		30日移动平均值
+		:param date: 交易时间
+		:param field: 字段
+		:return: 移动平均值
+		"""
 		return self.M(date, field, 30)
 	
-	# 60日移动平均值
-	def M60 (self,
-		date,
-		field = F_CLOSE,
-		):
+	def M60(self, date, field = F_CLOSE):
+		"""
+		60日移动平均值
+		:param date: 交易时间
+		:param field: 字段
+		:return: 移动平均值
+		"""
 		return self.M(date, field, 60)
 
-	# 获得字段值
-	def getField (self,
-		date,	#交易时间
-		field,	#字段
-		):
+	def getField (self, date, field):
+		"""
+		获取指定交易时间指定字段值
+		:param date: 交易时间
+		:param field: 字段
+		:return: 没有返回None，有则返回值
+		"""
 		try:
-			# 如果数据已缓存则直接返回
 			date = Data.dateConverter(date)
-			_fn_ret = DATA_TBL_F_FN_MAP[field]
-			_fn_tm = DATA_TBL_F_FN_MAP[F_TIME]
-			# self.debug.dbg("_fn_ret %s, _fn_tm %s" % (_fn_ret, _fn_tm))
-			if self.current and date == self.current[_fn_tm]:
-				return self.current[_fn_ret]
-
-			#数据不在缓冲区中，需查询
-			strSql = "select * from %s where %s and %s = '%s'" % (
-					self.table, self.clause, F_TIME, date)
-			# self.debug.dbg("strSql: %s" % strSql)
-			self.db.execSql(strSql)
-			self.current = self.db.fetch()
-			# self.debug.dbg(self.current)
-			return self.current[_fn_ret]
-
+			return self.datDayk.xs(date)[field]
 		except KeyError, e:
-			# 严重错误，需及时提醒
-			self.debug.error("getField: error: %s" % e)
+			self.debug.dbg("getField: found error: %s" % e)
 			return None
 
-	# 获得开盘价
-	def getOpen (self,
-		date,
-		):
+	def getOpen(self, date):
+		"""
+		获取指定交易时间开盘价
+		:param date: 交易时间
+		:return: 没有返回None，有则返回值
+		"""
 		return self.getField(date, F_OPEN)
 
-	# 获得收盘价
-	def getClose (self,
-		date,
-		):
+	def getClose(self, date):
+		"""
+		获取指定交易时间收盘价
+		:param date: 交易时间
+		:return: 没有返回None，有则返回值
+		"""
 		return self.getField(date, F_CLOSE)
 
-	# 获得当日均价
-	def getAvg (self,
-		date,
-		):
+	def getAvg(self, date):
+		"""
+		获取指定交易时间平均价
+		:param date: 交易时间
+		:return: 没有返回None，有则返回值
+		"""
 		return self.getField(date, F_AVG)
 
-	# 获得最高价
-	def getHighest (self,
-		date,
-		):
+	def getHighest(self, date):
+		"""
+		获取指定交易时间最高价
+		:param date: 交易时间
+		:return: 没有返回None，有则返回值
+		"""
 		return self.getField(date, F_HIGH)
 
-	# 获得最低价
-	def getLowest (self,
-		date,
-		):
+	def getLowest(self, date):
+		"""
+		获取指定交易时间最低价
+		:param date: 交易时间
+		:return: 没有返回None，有则返回值
+		"""
 		return self.getField(date, F_LOW)
 
-	# 获得交易时间前N天的最小值
-	def lowestWithinDays (self,
-		date,
-		days,
-		field = F_CLOSE,
-		exclude = True,		#是否包含传入时间
-		):
-		sign = '<='
+	def lowestWithinDays (self, date, days, field = F_CLOSE, exclude = True):
+		"""
+		获得交易时间前@days天中最小值
+		:param date: 交易时间
+		:param days: 天数
+		:param field: 字段
+		:param exclude: 传入tick是否计入
+		:return: 几天内最低值
+		"""
 		if exclude:
-			sign = '<'
-			days -= 1
+			ret = self.datDayk[self.datDayk.index < date].tail(days - 1)[field].min()
+		else:
+			ret =  self.datDayk[self.datDayk.index <= date].tail(days)[field].min()
 
-		strSql = "select min(%s) from ( \
-			select * from %s where %s and %s %s '%s' order by %s desc limit %s) as T1" % (
-				field, self.table, self.clause, F_TIME, sign, date, F_TIME, days)
-
-		self.db.execSql(strSql)
-		ret = self.db.fetch(0)[0]
+		if ret is np.nan:
+			return None
 		return ret
 
-	# 获得交易时间前N天的最大值
-	def highestWithinDays (self,
-		date,
-		days,
-		field = F_CLOSE,
-		exclude = True,		#是否包含传入时间
-		):
-		sign = '<='
+	def highestWithinDays (self, date, days, field = F_CLOSE, exclude = True):
+		"""
+		获得交易时间前@days天中最大值
+		:param date: 交易时间
+		:param days: 天数
+		:param field: 字段
+		:param exclude: 传入tick是否计入
+		:return: 几天内最低值
+		"""
 		if exclude:
-			sign = '<'
-			days -= 1
+			ret = self.datDayk[self.datDayk.index < date].tail(days - 1)[field].max()
+		else:
+			ret = self.datDayk[self.datDayk.index <= date].tail(days)[field].max()
 
-		strSql = "select max(%s) from ( \
-			select * from %s where %s and %s %s '%s' order by %s desc limit %s) as T1" % (
-				field, self.table, self.clause, F_TIME, sign, date, F_TIME, days)
-
-		self.db.execSql(strSql)
-		ret = self.db.fetch(0)[0]
+		if ret is np.nan:
+			return None
 		return ret
+
+class DataMink(Data):
+	def __init__(self, contract, config, debug = False):
+		"""
+		分钟级交易数据接口
+		:param contract: 合约
+		:param config: 合约配置解析接口
+		:param debug: 是否调试
+		"""
+		Data.__init__(self, contract, config, debug)
+		self.debug = Debug("DataMink", debug)	#调试接口
+		self.tableMink = self.config.getMinkTable(contract)
+
+		# 分钟级K线数据
+		self.datMink = None
+		# 根据邻近性原则建立tick数据缓存区，以加速查询。
+		# 如：{'2014-03-11': {
+		# 	'lowest': {'Close': {10: 6102.0}},
+		# 	'highest': {'Close': {10: 6328.0}},
+		# 	'M': {'Close': {1: (0.0, 0), 10: (55820.0, 9),
+		# 			20: (116194.0, 19), 5: (25136.0, 4),
+		# 			30: (174044.0, 29)}}}}
+		self.__minkCache = {}
+		self.__loadData()
+
+	def __loadData(self):
+		"""
+		从数据库中导入数据
+		:return: None
+		"""
+		# 读取分钟级k线数据
+		strSql = "select * from %s where %s >= '%s' and %s <= '%s'" % (
+			self.tableMink, F_TIME, self.startTick, F_TIME, self.endTick)
+		self.datMink = pd.read_sql(strSql, self.db.conn, index_col = F_TIME)
+		# 将index转化为datetime类型
+		self.datMink.index = pd.to_datetime(self.datMink.index)
+
+	def M(self, tick, field, num):
+		"""
+		返回指定天数的移动平均值
+		:param tick: 交易时间，必须为datetime类型
+		:param field: 字段
+		:param num: 移动单位数
+		:return: 移动平均值
+		"""
+		_date = "%s" % tick.date()
+		try:
+			(_sum, _len) = self.__minkCache[_date]['M'][field][num]
+			ret = (_sum + self.getField(tick, field)) / (_len + 1)
+			return ret
+		except KeyError:
+			# @num对应的sum值还没有
+			# self.debug.dbg("M: _date %s" % _date)
+			# self.debug.dbg("M: datDayk.index < %s: %s" % (_date, self.datDayk.index < _date))
+			_tmp = self.datDayk[self.datDayk.index < _date ].tail(num - 1)
+			_len = len(_tmp)
+			_sum = _tmp.sum()[field]
+
+			if _date not in self.__minkCache.keys():
+				# tick日期发生变化，依据邻近原则更新缓存区
+				self.debug.dbg("M: __minkCache: %s" % self.__minkCache)
+				self.__minkCache.clear()
+				self.__minkCache[_date] = {}
+				self.__minkCache[_date]['M'] = {}
+				self.__minkCache[_date]['M'][field] = {}
+			elif 'M' not in self.__minkCache[_date].keys():
+				self.__minkCache[_date]['M'] = {}
+				self.__minkCache[_date]['M'][field] = {}
+			elif field not in self.__minkCache[_date]['M'].keys():
+				self.__minkCache[_date]['M'][field] = {}
+
+			self.__minkCache[_date]['M'][field][num] = (_sum, _len)
+
+			ret = (_sum + self.getField(tick, field)) / (_len + 1)
+			return ret
+
+	def getField(self, tick, field):
+		"""
+		获取指定交易时间指定字段值
+		:param tick: 交易时间
+		:param field: 字段
+		:return: 没有返回None，有则返回值
+		"""
+		try:
+			return self.datMink.xs(tick)[field]
+		except KeyError:
+			return None
+
+	def lowestWithinDays (self, tick, days, field = F_CLOSE, exclude = True):
+		"""
+		获得交易时间前@days天中最小值
+		:param tick: 交易时间
+		:param days: 天数
+		:param field: 字段
+		:param exclude: 传入tick是否计入
+		:return: 几天内最低值
+		"""
+		_date = "%s" % tick.date()
+		try:
+			_vPrior = self.__minkCache[_date]['lowest'][field][days]
+			if not exclude:
+				# 计入传入tick数据
+				_vCur = self.getField(tick, field)
+				if _vPrior is None:
+					return _vCur
+				return min(_vPrior, _vCur)
+
+			return _vPrior
+		except KeyError:
+			if _date not in self.__minkCache.keys():
+				# tick日期发生变化，依据邻近原则更新缓存区
+				self.debug.dbg("lowestWithinDays: __minkCache: %s" % self.__minkCache)
+				self.__minkCache.clear()
+				self.__minkCache[_date] = {}
+				self.__minkCache[_date]['lowest'] = {}
+				self.__minkCache[_date]['lowest'][field] = {}
+			elif 'lowest' not in self.__minkCache[_date].keys():
+				self.__minkCache[_date]['lowest'] = {}
+				self.__minkCache[_date]['lowest'][field] = {}
+			elif field not in self.__minkCache[_date]['lowest'].keys():
+				self.__minkCache[_date]['lowest'][field] = {}
+
+			# 将前@days - 1天的最低值存入缓存
+			_vPrior = Data.lowestWithinDays(self, _date, days, field, True)
+			self.__minkCache[_date]['lowest'][field][days] = _vPrior
+
+			if not exclude:
+				# 计入传入tick数据
+				_vCur = self.getField(tick, field)
+				if _vPrior is None:
+					return _vCur
+				return min(_vPrior, _vCur)
+
+			return _vPrior
+
+	def highestWithinDays (self, tick, days, field = F_CLOSE, exclude = True):
+		"""
+		获得交易时间前@days天中最大值
+		:param tick: 交易时间
+		:param days: 天数
+		:param field: 字段
+		:param exclude: 传入tick是否计入
+		:return: 几天内最低值
+		"""
+		_date = "%s" % tick.date()
+		try:
+			_vPrior = self.__minkCache[_date]['highest'][field][days]
+			if not exclude:
+				# 计入传入tick数据
+				_vCur = self.getField(tick, field)
+				if _vPrior is None:
+					return _vCur
+				return max(_vPrior, _vCur)
+
+			return _vPrior
+		except KeyError:
+			if _date not in self.__minkCache.keys():
+				# tick日期发生变化，依据邻近原则更新缓存区
+				self.debug.dbg("highestWithinDays: __minkCache: %s" % self.__minkCache)
+				self.__minkCache.clear()
+				self.__minkCache[_date] = {}
+				self.__minkCache[_date]['highest'] = {}
+				self.__minkCache[_date]['highest'][field] = {}
+			elif 'highest' not in self.__minkCache[_date].keys():
+				self.__minkCache[_date]['highest'] = {}
+				self.__minkCache[_date]['highest'][field] = {}
+			elif field not in self.__minkCache[_date]['highest'].keys():
+				self.__minkCache[_date]['highest'][field] = {}
+
+			# 将前@days - 1天的最大值存入缓存
+			_vPrior = Data.highestWithinDays(self, _date, days, field, True)
+			self.__minkCache[_date]['highest'][field][days] = _vPrior
+
+			if not exclude:
+				# 计入传入tick数据
+				_vCur = self.getField(tick, field)
+				if _vPrior is None:
+					return _vCur
+				return max(_vPrior, _vCur)
+
+			return _vPrior
 
 #CTP数据对象
 class CtpData(Data):
@@ -336,8 +541,11 @@ class CtpData(Data):
 	def getUpdateTime (self):
 		return self.mdlocal.getUpdateTime(self.instrument)
 
-#
-def doTest():
+
+def doTestData():
+	"""
+	Data测试
+	"""
 	import core.corecfg
 	descCfg = core.corecfg.ContractDescConfig('../config/contracts_desc')
 	data = Data('p1405', descCfg, False)
@@ -435,5 +643,109 @@ def doTest():
 	Lowest Before: exclude 5900.0, not exclude 5876.0
 	"""
 
+
+def doTestDataMink():
+	"""
+	DataMink测试
+	"""
+	import core.corecfg
+	descCfg = core.corecfg.ContractDescConfig('../config/contracts_desc')
+	data = DataMink('p1405_mink', descCfg, False)
+
+	date = DataMink.dateConverter('2014-03-11 14:36:00')
+	print "Test Middle: Date: %s" % date
+	print "M: %s" % data.M(date, F_CLOSE, 1)
+	print "M5: %s" % data.M5(date, F_CLOSE)
+	print "M10: %s" % data.M10(date, F_CLOSE)
+	print "M20: %s" % data.M20(date, F_CLOSE)
+	print "M30: %s" % data.M30(date, F_CLOSE)
+	print "Open: %s" % data.getOpen(date)
+	print "Close: %s" % data.getClose(date)
+	print "Avg: %s" % data.getAvg(date)
+	print "High: %s" % data.getHighest(date)
+	print "Low: %s" % data.getLowest(date)
+	print "Highest Before: exclude %s, not exclude %s" % (
+		data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
+	print "Lowest Before: exclude %s, not exclude %s" % (
+		data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+
+	date = DataMink.dateConverter('2013-05-16 9:01:00')
+	print "Test Left Bound: Date: %s" % date
+	print "M: %s" % data.M(date, F_CLOSE, 1)
+	print "M5: %s" % data.M5(date, F_CLOSE)
+	print "M10: %s" % data.M10(date, F_CLOSE)
+	print "M20: %s" % data.M20(date, F_CLOSE)
+	print "M30: %s" % data.M30(date, F_CLOSE)
+	print "Open: %s" % data.getOpen(date)
+	print "Close: %s" % data.getClose(date)
+	print "Avg: %s" % data.getAvg(date)
+	print "High: %s" % data.getHighest(date)
+	print "Low: %s" % data.getLowest(date)
+	print "Highest Before: exclude %s, not exclude %s" % (
+		data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
+	print "Lowest Before: exclude %s, not exclude %s" % (
+		data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+
+	date = DataMink.dateConverter('2014-04-30 14:58:00')
+	print "Test Right Bound: Date: %s" % date
+	print "M: %s" % data.M(date, F_CLOSE, 1)
+	print "M5: %s" % data.M5(date, F_CLOSE)
+	print "M10: %s" % data.M10(date, F_CLOSE)
+	print "M20: %s" % data.M20(date, F_CLOSE)
+	print "M30: %s" % data.M30(date, F_CLOSE)
+	print "Open: %s" % data.getOpen(date)
+	print "Close: %s" % data.getClose(date)
+	print "Avg: %s" % data.getAvg(date)
+	print "High: %s" % data.getHighest(date)
+	print "Low: %s" % data.getLowest(date)
+	print "Highest Before: exclude %s, not exclude %s" % (
+		data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
+	print "Lowest Before: exclude %s, not exclude %s" % (
+		data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+
+	"""
+	Test Middle: Date: 2014-03-11 14:36:00
+	M: 6398.0
+	M5: 6306.8
+	M10: 6221.8
+	M20: 6129.6
+	M30: 6014.73333333
+	Open: 6400.0
+	Close: 6398.0
+	Avg: 0.0
+	High: 6402.0
+	Low: 6398.0
+	Highest Before: exclude 6328.0, not exclude 6398.0
+	Lowest Before: exclude 6102.0, not exclude 6102.0
+	Test Left Bound: Date: 2013-05-16 09:01:00
+	M: 6246.0
+	M5: 6246.0
+	M10: 6246.0
+	M20: 6246.0
+	M30: 6246.0
+	Open: 6246.0
+	Close: 6246.0
+	Avg: 0.0
+	High: 6246.0
+	Low: 6246.0
+	Highest Before: exclude None, not exclude 6246.0
+	Lowest Before: exclude None, not exclude 6246.0
+	Test Right Bound: Date: 2014-04-30 14:58:00
+	M: 5876.0
+	M5: 5912.0
+	M10: 5930.4
+	M20: 5963.6
+	M30: 6001.73333333
+	Open: 5878.0
+	Close: 5876.0
+	Avg: 0.0
+	High: 5878.0
+	Low: 5876.0
+	Highest Before: exclude 6002.0, not exclude 6002.0
+	Lowest Before: exclude 5900.0, not exclude 5876.0
+	"""
+
+
 if __name__ == '__main__':
-	doTest()
+	doTestData()
+	doTestDataMink()
