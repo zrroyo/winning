@@ -83,27 +83,28 @@ class Data:
 		:param days: 移动单位数
 		:return: 移动平均值
 		"""
+		_date = "%s" % date
 		try:
-			return self.__daykCache[date]['M'][field][days]
+			return self.__daykCache[_date]['M'][field][days]
 		except KeyError:
 			# @num对应的sum值还没有
-			_tmp = self.datDayk[self.datDayk.index <= date ].tail(days)
+			_tmp = self.datDayk[self.datDayk.index <= _date ].tail(days)
 			mean = _tmp[field].describe()['mean']
 
-			if date not in self.__daykCache.keys():
+			if _date not in self.__daykCache.keys():
 				# tick日期发生变化，依据邻近原则更新缓存区
 				self.debug.dbg("M: __daykCache: %s" % self.__daykCache)
 				self.__daykCache.clear()
-				self.__daykCache[date] = {}
-				self.__daykCache[date]['M'] = {}
-				self.__daykCache[date]['M'][field] = {}
-			elif 'M' not in self.__daykCache[date].keys():
-				self.__daykCache[date]['M'] = {}
-				self.__daykCache[date]['M'][field] = {}
-			elif field not in self.__daykCache[date]['M'].keys():
-				self.__daykCache[date]['M'][field] = {}
+				self.__daykCache[_date] = {}
+				self.__daykCache[_date]['M'] = {}
+				self.__daykCache[_date]['M'][field] = {}
+			elif 'M' not in self.__daykCache[_date].keys():
+				self.__daykCache[_date]['M'] = {}
+				self.__daykCache[_date]['M'][field] = {}
+			elif field not in self.__daykCache[_date]['M'].keys():
+				self.__daykCache[_date]['M'][field] = {}
 
-			self.__daykCache[date]['M'][field][days] = mean
+			self.__daykCache[_date]['M'][field][days] = mean
 			return mean
 
 	def M5(self, date, field = F_CLOSE):
@@ -214,10 +215,11 @@ class Data:
 		:param exclude: 传入tick是否计入
 		:return: 几天内最低值
 		"""
+		_date = "%s" % date
 		if exclude:
-			ret = self.datDayk[self.datDayk.index < date].tail(days - 1)[field].min()
+			ret = self.datDayk[self.datDayk.index < _date].tail(days - 1)[field].min()
 		else:
-			ret =  self.datDayk[self.datDayk.index <= date].tail(days)[field].min()
+			ret =  self.datDayk[self.datDayk.index <= _date].tail(days)[field].min()
 
 		if ret is np.nan:
 			return None
@@ -232,10 +234,11 @@ class Data:
 		:param exclude: 传入tick是否计入
 		:return: 几天内最低值
 		"""
+		_date = "%s" % date
 		if exclude:
-			ret = self.datDayk[self.datDayk.index < date].tail(days - 1)[field].max()
+			ret = self.datDayk[self.datDayk.index < _date].tail(days - 1)[field].max()
 		else:
-			ret = self.datDayk[self.datDayk.index <= date].tail(days)[field].max()
+			ret = self.datDayk[self.datDayk.index <= _date].tail(days)[field].max()
 
 		if ret is np.nan:
 			return None
