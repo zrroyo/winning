@@ -71,7 +71,6 @@ class Futures:
 		self.dbgMode = debug
 		self.contract = contract
 		self.logDir = logDir
-		self.debug.error("logDir: %s" % self.logDir)
 		self.config = config
 		self.database = self.config.getDatabase(contract)
 		self.table = self.config.getMainTable(contract)
@@ -394,7 +393,7 @@ class Futures:
 		:param tick: 结束tick
 		:return: None
 		"""
-		self.debug.dbg("__exitTrade: statFrame: \n%s" % self.tickStatFrame)
+		# self.debug.dbg("__exitTrade: statFrame: \n%s" % self.tickStatFrame)
 		# 统计tick数据
 		_sum = self.tickStatFrame.sum()
 		# self.debug.dbg("__exitTrade: _sum: \n%s" % _sum)
@@ -480,10 +479,24 @@ class Futures:
 		else:
 			return None
 
-	def __tradeStart (self, startTick, signal):
+	def __validSignal (self, signal):
+		"""
+		检查是否是有效信号
+		:param signal: 信号
+		:return: 有效返回True，否则返回False
+		"""
+		if signal and self.stopTick:
+			# 最后一个tick开仓信号无意义
+			self.debug.warn("__validSignal: ignore the signal on last tick.")
+			return False
+
+		return signal
+
+	def __tradeStart (self, tickSrc, startTick, signal):
 		"""
 		新交易触发，开始交易
 		:param startTick: 开始交易时间
+		:param tickSrc: 交易时间接口
 		:param signal: 交易信号
 		:return: 执行到结尾返回None，否则为交易结束时tick
 		"""
@@ -494,13 +507,6 @@ class Futures:
 		self.tradeStat = TradeStat()
 		self.tradeStat.tickStart = startTick
 
-		# 使用独立交易时间管理接口，保持独立性，避免互相影响。
-		tickSrc = Ticks(self.database, self.table,
-					startTick = self.contractStart,
-					endTick = self.contractEnd)
-		tickSrc.setCurTick(startTick)
-
-		# self.__tradeAddPositions(startTick, signal)
 		if not self.__tradeAddPositions(startTick, signal):
 			# 加仓失败，可能是远程sched仓位不足，需确保以当前tick退出
 			self.debug.warn("__tradeStart: adding position denied.")
@@ -511,13 +517,13 @@ class Futures:
 		self.__clearTickStatFrame()
 
 		# 得到tick中的下一交易时间
-		nextTick = self.__tradeNextTick(tickSrc, startTick, signal)
+		nextTick = self.__tradeNextTick(tickSrc, signal)
 
 		# 除非到数据表结尾或交易退出，否则一直交易
 		while nextTick:
 			if self.signalEndTrading(nextTick, signal) or self.stopTick:
 				"""
-				到达最后一个tick或触发退出交易信号
+				1）触发退出交易信号；2）到达最后一个tick不允许退出外的任何操作；
 				"""
 				self.debug.dbg("__tradeStart: End Trading: [%s][%s] stop tick %s" % (
 						self.__signalToDirection(signal), nextTick, self.stopTick))
@@ -555,10 +561,11 @@ class Futures:
 				# 防止止损操作重载时统计信息遗漏
 				self.tickStat.stopWin = 1
 
-			# 下一tick继续
-			nextTick = self.__tradeNextTick(tickSrc, nextTick, signal)
+			nextTick = self.__tradeNextTick(tickSrc, signal)
 		
-		# 交易结束返回结束时tick，如果nextTick为None说明执行到表尾
+		# 正常结束时不从这返回，因为交易结束要么正常触发结束信号，
+		# 要么是最后一个tick(stopTick被设置)。但如果数据表中仅
+		# 有一个tick且触发开仓信号则从这里返回
 		return None
 
 	def __tradeAddPositions (self, tick, direction):
@@ -708,6 +715,7 @@ class Futures:
 
 		tickSrc = Ticks(self.database, self.table, self.contractStart, self.contractEnd)
 		curTick,self.stopTickTime = self.__getRealStartAndEndTick(startTick, stopTick, follow)
+		tickSrc.setCurTick(curTick)
 
 		self.debug.dbg("start: start %s at %s, stop tick %s" % (
 					self.contract, curTick, self.stopTickTime))
@@ -717,14 +725,19 @@ class Futures:
 			# 检测是否触发交易信号
 			signal = self.signalStartTrading(curTick)
 			# self.debug.dbg("signal: %s" % signal)
-			if not signal:
-				curTick = self.__tradeNextTick(tickSrc, curTick)
+			if not self.__validSignal(signal):
+				curTick = self.__tradeNextTick(tickSrc)
 				continue
 			
 			# 触发信号，开始交易
-			endTick = self.__tradeStart(curTick, signal)
+			endTick = self.__tradeStart(tickSrc, curTick, signal)
+			if not endTick:
+				# 原则上交易退出时不为None，但数据表中仅有一个tick时会出现
+				self.debug.warn("start: found unexpected endTick.")
+				break
+
 			# 从返回tick的下一tick继续交易
-			curTick = self.__tradeNextTick(tickSrc, endTick, signal)
+			curTick = self.__tradeNextTick(tickSrc, signal)
 
 		# 结束时未在交易中，清仓发送EMUL_REQ_END
 		if not endTick:
@@ -957,7 +970,7 @@ class Futures:
 			# 清除ack标志避免重复响应
 			self.paraCtrl.ack = 0
 
-		self.debug.dbg("__tickParaHandler: ack %s" % self.paraCtrl.ack)
+		# self.debug.dbg("__tickParaHandler: ack %s" % self.paraCtrl.ack)
 
 		# 以便sched读取到前tick信息
 		self.paraCtrl.current = _tick
@@ -967,17 +980,14 @@ class Futures:
 		self.tagResuming = False
 		return None
 
-	def __tradeNextTick (self, tickObj, tick, direction = None):
+	def __tradeNextTick (self, tickObj, direction = None):
 		"""
 		返回下一交易时间
 		:param tickObj: tick接口对象
-		:param tick: 当前tick
 		:param direction: 多空方向
 		:return: 下一tick
 		"""
-		if not tick:
-			return None
-
+		tick = tickObj.curTick()
 		price = self.data.getClose(tick)
 		# 保存tick统计数据
 		self.__storeTickStat(tick, price, direction)
@@ -997,7 +1007,6 @@ class Futures:
 		self.tickStat = TickStat()
 
 		# 继续下一tick
-		tickObj.setCurTick(tick)
 		nextTick = tickObj.getSetNextTick()
 		_nxtNxtTick = tickObj.nextTick()
 		self.debug.dbg("__tradeNextTick: tick %s, nextTick %s" % (tick, nextTick))
