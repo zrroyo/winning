@@ -279,8 +279,6 @@ class Futures:
 						req.type, self.paraCtrl.nr_np))
 			return True
 
-		# WP依赖sched发出命令，进入等待前清除命令，确保不会误判
-		self.paraCtrl.command = EMUL_CA_CMD_CLEAR
 		self.paraLock.release()
 
 		self.debug.dbg("__sendParaRequest: sending req: type %s, nr_np %s" % (
@@ -855,6 +853,7 @@ class Futures:
 		self.tickStat.floatProPos = _posFloat
 		self.tickStat.floatProCum = self.tradeStat.cumFloat
 		self.tickStat.floatProfit = self.tickStat.floatProCum + self.tickStat.orderProfit + _posFloat
+		self.tickStat.spMode = self.fakeSpMode
 		# REDO_OSP_MP恢复执行环境时依赖各tick保存策略自定义的数据，如变量等
 		values = self.tickStat.values() + self.tradeStoreTickEnv()
 		# 交易单利润需累加，以使下一tick计算浮动赢利
@@ -967,11 +966,13 @@ class Futures:
 					# 反之则不用做任何事情
 					if not _inOspWp:
 						# sched.tick至当前tick间无OSP.Open和OSP.WP发生
+						self.debug.dbg("__schedCmdHandler: retrieve NSP mode only.")
 						self.paraCtrl.command = EMUL_CA_CMD_CLEAR
 						return None
 
 					# 当前tick在OSP.WP，需重置为NSP.Close
 					_tick = self.__totick(tick)
+					self.debug.dbg("__schedCmdHandler: resend OSP.wp as NSP.np.")
 			else:
 				# sched.tick有OSP.Open需重置，但sched
 				# 已处理过该tick，不能再重复发送req
