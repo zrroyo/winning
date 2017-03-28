@@ -23,11 +23,12 @@ TK_ORD_FLAT 		= 'Order_Flat'			#持平单数
 TK_RES_POS 		= 'Res_Pos'			#仓位（tick恢复）
 TK_RES_CAP 		= 'Res_Cap'			#资金（tick恢复）
 TK_RES_ACT 		= 'Res_Act'			#操作类型（tick恢复）
+TK_SP_MODE 		= 'SP_Mode'			# SP模式
 
 # Tick统计表头
 TICK_STATS = [TK_FLOAT_MOV, TK_FLOAT_CUM, TK_FLOAT_POS, TK_ORD_PROFIT, TK_ADD_POS, \
 	      TK_CUT_LOSES, TK_STOP_WINS, TK_ORD_WINS, TK_ORD_LOSS, TK_ORD_FLAT, \
-	      TK_RES_POS, TK_RES_CAP, TK_RES_ACT]
+	      TK_RES_POS, TK_RES_CAP, TK_RES_ACT, TK_SP_MODE]
 
 class TickStat:
 	def __init__ (self):
@@ -49,6 +50,7 @@ class TickStat:
 		self.resAct = emul.MEUL_FUT_ACT_SKIP
 		self.tagTradeEnd = False	#交易结束标志
 		self.reqtype = 0	#sched req类型
+		self.spMode = 0		# SP模式
 
 	def values (self):
 		"""
@@ -58,7 +60,7 @@ class TickStat:
 		return [self.floatProfit, self.floatProCum, self.floatProPos, \
 			self.orderProfit, self.addPos, self.cutLoss, self.stopWin, \
 			self.ordWins, self.ordLoses, self.ordFlat, \
-			self.resPos, self.resCap, self.resAct]
+			self.resPos, self.resCap, self.resAct, self.spMode]
 
 # 交易统计属性
 TRD_TICK_START		= 'Tick_Start'			#开始Tick
