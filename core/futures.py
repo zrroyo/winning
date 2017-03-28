@@ -18,7 +18,7 @@ sys.path.append("..")
 import pandas as pd
 import time
 
-from dataMgr.data import Data
+from dataMgr.data import Data, DataMink
 from ctp.autopos import *
 from misc.posmgr import PositionManager
 from misc.debug import Debug
@@ -73,13 +73,20 @@ class Futures:
 		self.logDir = logDir
 		self.config = config
 		self.database = self.config.getDatabase(contract)
-		self.table = self.config.getMainTable(contract)
+
+		# 根据不同数据级别启用不同主表和交易数据接口
+		if self.config.getDataLevel(contract) == 'days':
+			self.table = self.config.getDaykTable(contract)
+			self.data = Data(contract, config, debug = False)
+		elif self.config.getDataLevel(contract) == 'minutes':
+			self.table = self.config.getMinkTable(contract)
+			self.data = DataMink(contract, config, debug = False)
+
 		self.contractStart = self.config.getContractStart(contract)
 		self.contractEnd = self.config.getContractEnd(contract)
 		self.attrs = Attribute()	#属性
 		# 持仓管理接口
 		self.posMgr = None
-		self.data = Data(contract, config, debug = False)	#数据接口
 		# 用于临时目的Tick帮助接口
 		self.tickHelper = Ticks(self.database, self.table,
 						startTick = self.contractStart,
@@ -92,8 +99,14 @@ class Futures:
 
 		# 申明统计数据
 		self.tickStat = self.tradeStat = self.comStat = None
+		# tick统计、交易统计对应表头
 		self.tickStatCols = self.trdStatCols = None
+		# tick、交易统计数据存储区
 		self.tickStatFrame = self.trdStatFrame = None
+		# tick数据汇总
+		self.tickStatTotal = None
+		# tick数据临时存储区
+		self.tickStatDict = {}
 
 		# 当前tick是否已经被处理过
 		self.tagTickSentReq = False
@@ -120,6 +133,7 @@ class Futures:
 		self.tickStat = TickStat()
 		self.tickStatCols = TICK_STATS + tkCols
 		self.tickStatFrame = pd.DataFrame(columns = self.tickStatCols)
+		self.tickStatTotal = pd.DataFrame(columns = self.tickStatCols)
 		self.tradeStat = TradeStat()
 		self.trdStatCols = TRADE_STATS + trdCols
 		self.trdStatFrame = pd.DataFrame(columns = self.trdStatCols)
@@ -233,6 +247,8 @@ class Futures:
 		if self.fakeSpMode != self.paraCtrl.mode:
 			# OSP状态发生改变的话请求已无意义
 			self.paraLock.release()
+			self.debug.dbg("__sendParaRequest: fakeSpMode %s not matching para mode %s" % (
+								self.fakeSpMode, self.paraCtrl.mode))
 			return False
 		elif self.fakeSpMode == EMUL_SCHED_MODE_NSP:
 			if type == EMUL_FUT_ACT_OPEN:
@@ -284,7 +300,7 @@ class Futures:
 				break
 			elif self.paraCtrl.command == EMUL_CA_CMD_REDO_OSP_MP:
 				# OSP.Close被sched识别无效，退出进入__tickParaHandler处理
-
+				self.debug.dbg("__sendParaRequest: REDO_OSP_MP")
 				#记录req类型，以便后续辨别发生重置位置
 				self.tickStat.reqtype = req.type
 				self.paraLock.release()
@@ -371,21 +387,35 @@ class Futures:
 
 		return True
 
-	def __clearTickStatFrame (self):
+	def __appendTickStatToFrame (self, verified = True):
 		"""
-		将tickStatFrame导出到文件保存，并清空。
+		更新tick统计数据区
+		:param verified: 数据是否已经袯验证过不需要重置,可以合入总表
 		:return: None
 		"""
-		_csv = "%s/%s.csv" % (self.logDir, self.contract)
-		# self.debug.dbg("_csv: %s" % _csv)
-		if not os.path.exists(_csv):
-			# 首次保存需包含表头
-			self.tickStatFrame.to_csv(_csv)
-		else:
-			self.tickStatFrame.to_csv(_csv, header = False, mode = 'a')
+		self.tickStatFrame = self.tickStatFrame.append(
+					pd.DataFrame(self.tickStatDict).T)
+		# self.debug.dbg("__appendTickStatToFrame: tickStatFrame \n%s" %
+		# 	       			self.tickStatFrame[self.tickStatCols])
 
-		# 交易数据依赖tick统计表，交易完成需清空
-		self.tickStatFrame.drop(self.tickStatFrame.index, inplace = True)
+		if verified:
+			self.tickStatTotal = self.tickStatTotal.append(self.tickStatFrame)
+
+	def __clearTickStatFrame (self, tick = None):
+		"""
+		清空临时存储区、统计区
+		:param tick: 交易时间，指定则清空tick及以后数据
+		:return: None
+		"""
+		self.tickStatDict.clear()
+		if not tick:
+			# 默认清空所有数据
+			self.tickStatFrame.drop(self.tickStatFrame.index, inplace = True)
+			return
+
+		# 仅移除>=tick的数据
+		_start = list(self.tickStatFrame.index).index(tick)
+		self.tickStatFrame.drop(self.tickStatFrame[_start:].index, inplace = True)
 
 	def __exitTrade (self, tick):
 		"""
@@ -393,19 +423,21 @@ class Futures:
 		:param tick: 结束tick
 		:return: None
 		"""
+		self.__appendTickStatToFrame()
 		# self.debug.dbg("__exitTrade: statFrame: \n%s" % self.tickStatFrame)
 		# 统计tick数据
 		_sum = self.tickStatFrame.sum()
 		# self.debug.dbg("__exitTrade: _sum: \n%s" % _sum)
-		_floatBuf = self.tickStatFrame[TK_FLOAT_MOV]
-		_floatDesc = _floatBuf.describe()
-		# self.debug.dbg("__exitTrade: _floatDesc: \n%s" % _floatDesc)
+		_floatMov = self.tickStatFrame[TK_FLOAT_MOV].astype(float)
+		_floatDesc = _floatMov.describe()
+		# self.debug.dbg("__exitTrade: _floatMov %s,\ntype %s, \n_floatDesc: %s" % (
+		# 					_floatMov, type(_floatMov), _floatDesc))
 		# 统计交易数据
 		self.tradeStat.tickEnd = tick
 		self.tradeStat.profit = _sum[TK_ORD_PROFIT]
-		_floatBuf = self.tickStatFrame[TK_FLOAT_MOV]
-		self.tradeStat.tickFloatMax = list(_floatBuf[_floatBuf == _floatDesc['max']].index)[0]
-		self.tradeStat.tickFloatMin = list(_floatBuf[_floatBuf == _floatDesc['min']].index)[0]
+		_floatMov = self.tickStatFrame[TK_FLOAT_MOV]
+		self.tradeStat.tickFloatMax = list(_floatMov[_floatMov == _floatDesc['max']].index)[0]
+		self.tradeStat.tickFloatMin = list(_floatMov[_floatMov == _floatDesc['min']].index)[0]
 
 		self.log("              ++++++ Business profit %s ++++++" % self.tradeStat.profit)
 		self.log("              ****** Total profit %s ******" % self.comStat.cumProfit)
@@ -415,7 +447,8 @@ class Futures:
 		self.trdStatFrame = self.trdStatFrame.append(
 					pd.DataFrame([values], columns = self.trdStatCols),
 					ignore_index = True)
-		# tick数据已经汇总并缓存至交易数据，导出并清空
+
+		# 清空临时存储区、统计区，准备记录退出后不在交易中的tick数据
 		self.__clearTickStatFrame()
 
 	# ----------------
@@ -512,8 +545,8 @@ class Futures:
 			self.debug.warn("__tradeStart: adding position denied.")
 			return startTick
 
-		# 将上次交易结束之后未触发交易的tick数据保存至文件中，并
-		# 清空数据区重新统计
+		# 记录退出后不在交易中的tick数据，并且准备开始新交易清空存储区
+		self.__appendTickStatToFrame()
 		self.__clearTickStatFrame()
 
 		# 得到tick中的下一交易时间
@@ -643,8 +676,9 @@ class Futures:
 		:param follow: 跳过startTick，从下一tick开始
 		:return: 真实的开始、结束tick
 		"""
+		# 默认从第一个tick开始
 		retStart = self.tickHelper.firstTick()
-		# 指定的交易时间不一定存在，如不存在则用下一个最接近的tick开始
+
 		if startTick:
 			if isinstance(startTick, float):
 				# 传入时间可能是秒数，先做转化
@@ -656,15 +690,20 @@ class Futures:
 			self.debug.dbg("__getRealStartAndEndTick: startTick type %s, "
 				       "converted to %s" % (type(startTick), startTick))
 
-			# follow为假从指定的最近时间开始，否则紧接startTick执行
+			# 指定的交易时间不一定存在，如不存在则用下一个最接近的tick开始
 			retStart = self.tickHelper.getNextNearTick(startTick, 1)
 			if follow:
+				# follow为假从指定的最近时间开始，否则紧接startTick执行
 				retStart = self.tickHelper.getNexNumTick(startTick, 1)
 
+		# 默认为最后一个tick结束
 		retStop = None
-		# 默认为最后一个tick，如指定则为指定tick或之前最接近的一个tick
 		if stopTick:
+			# 如指定结束时间则从指定tick（时间存在）或之前最接近的tick结束（时间不存在）
 			retStop = self.tickHelper.strToDateTime(stopTick)
+			if self.config.getDataLevel(self.contract) == 'minutes':
+				# 指定时间为日期，分钟级数据需要设置结束时间
+				retStop = datetime(retStop.year, retStop.month, retStop.day, 15, 0, 0)
 
 		return retStart,retStop
 
@@ -678,13 +717,13 @@ class Futures:
 		_trdXlsx = "%s/%s_TRADE_STAT.xlsx" % (self.logDir, self.contract)
 		self.trdStatFrame.T.to_excel(_trdXlsx, float_format = "%.2f")
 
-		# 部分tick不在交易中，没有机会保存至文件中
-		self.__clearTickStatFrame()
+		# 部分tick不在交易中，没有机会存入存储区
+		self.__appendTickStatToFrame()
 		# 将tick数据以excel格式保存
 		_data = "%s/%s" % (self.logDir, self.contract)
-		_csvData = pd.read_csv("%s.csv" % _data, index_col = 0)
-		_csvData.to_excel("%s_TICK_STAT.xlsx" % _data, float_format = "%.2f")
-		os.unlink("%s.csv" % _data)
+		self.tickStatTotal[self.tickStatCols].to_excel("%s_TICK_STAT.xlsx" % _data,
+								float_format = "%.2f")
+		self.__clearTickStatFrame()
 
 	def start (self, startTick = None, stopTick = None, msgQ = None,
 			shmem = None, shmlock = None, storeLog = False, follow = False):
@@ -699,6 +738,11 @@ class Futures:
 		:param follow: 从startTick后一tick开始执行
 		:return: None
 		"""
+		# import cProfile
+		# cp = cProfile.Profile()
+		# cp.clear()
+		# cp.enable()
+
 		self.debug.info("start: startTick %s, stopTick %s" % (startTick, stopTick))
 
 		self.pid = os.getpid()
@@ -745,6 +789,8 @@ class Futures:
 
 		# 退出前处理
 		self.__exit()
+		# cp.disable()
+		# cp.print_stats(sort='cumtime')
 
 	def __orderProfit (self, direction, open, price):
 		"""
@@ -816,12 +862,8 @@ class Futures:
 		self.debug.dbg("__storeTickStat: tick %s, price %s, move %s, pos %s, cum %s, order profit %s" %
 						(tick, price, self.tickStat.floatProfit, _posFloat,
 						 self.tradeStat.cumFloat, self.tickStat.orderProfit))
-		# 记录tick数据，后续汇总分析
-		self.tickStatFrame = self.tickStatFrame.append(
-					pd.DataFrame([values], columns = self.tickStatCols, index = [tick])
-					)
-
-		# self.debug.dbg("statFrame: %s" % self.tickStatFrame)
+		# 加快存储速度，先存入字典，再统一追加到tickStatFrame
+		self.tickStatDict[tick] = dict(zip(self.tickStatCols, values))
 
 	def __getOpenStat(self, tick, next = False):
 		"""
@@ -842,8 +884,8 @@ class Futures:
 				_tf = _tf[pd.Series(_tf.index <= tick, index = _tf.index)]
 				_values = _tf.tail(1)[[TK_RES_POS, TK_RES_CAP, TK_RES_ACT]]
 
-			self.debug.dbg("__getOpenStat: tick %s, _tf:2 %s, _values %s" % (
-								tick, _tf, _values))
+			# self.debug.dbg("__getOpenStat: tick %s, _tf: %s, _values %s" % (
+			# 					tick, _tf, _values))
 
 			(pos, capital, action) = tuple(_values.values.tolist()[0])
 			_tick = _values.index[0]
@@ -859,22 +901,12 @@ class Futures:
 		:param tick: 需恢复到的tick点
 		:return: None
 		"""
-		# tick源当前tick会影响到next tick生成
-		tickObj.setCurTick(tick)
-
-		# 恢复环境，删除tick和以后的所有记录
-		_indexL = list(self.tickStatFrame.index)
-		_drop = _indexL[_indexL.index(tick):]
-		self.tickStatFrame = self.tickStatFrame.drop(_drop, axis = 0)
-		# self.debug.dbg("__tickEnvResume: tickStatFrame %s" % self.tickStatFrame)
+		values = self.tickStatFrame.xs(tick)
+		self.debug.dbg("__tickEnvResume: resume to %s, values \n%s" % (tick, values))
+		self.tradeResumeTickEnv(values)
 
 		# 丢弃当前的统计数据
 		self.tickStat = TickStat()
-
-		# 从数据区恢复上一tick的执行环境
-		values = self.tickStatFrame.tail(1)
-		self.debug.dbg("__tickEnvResume: resume to %s, values %s" % (values.index[0], values))
-		self.tradeResumeTickEnv(values)
 
 	def __schedCmdHandler(self, tick, tickObj = None):
 		"""
@@ -894,12 +926,16 @@ class Futures:
 			"""
 			sched发出返回tick信息请求
 			"""
+			# 将数据合入tickStatFrame以方便查询，但可能被重置所以暂不合入总表
+			self.__appendTickStatToFrame(verified = False)
 			(_tick, self.paraCtrl.pos, self.paraCtrl.capital, self.paraCtrl.action)\
 				= self.__getOpenStat(self.__totick(self.paraCtrl.tick))
 			self.paraCtrl.tick = self.__mktime(_tick)
 			self.paraCtrl.command = EMUL_CA_CMD_CLEAR
 			self.debug.dbg("__schedCmdHandler: TK_STAT: tick %s, pos %s, capital %s, action %s" % (
 					_tick, self.paraCtrl.pos, self.paraCtrl.capital, self.paraCtrl.action))
+			# 数据已追加至tickStatFrame，清空缓存避免重复合入
+			self.tickStatDict.clear()
 
 		elif self.paraCtrl.command == EMUL_CA_CMD_REDO_OSP_MP:
 			"""
@@ -911,34 +947,48 @@ class Futures:
 			self.debug.dbg("__schedCmdHandler: REDO_OSP_MP: fakeSpMode %s" % self.fakeSpMode)
 
 			if self.paraCtrl.redo_next:
+				# 重置@_tick后下一个开仓tick
 				# 清除标志避免影响下次重置
 				self.paraCtrl.redo_next = 0
+				# 将数据合入tickStatFrame以方便查询，但可能被重置所以暂不合入总表
+				self.__appendTickStatToFrame(verified = False)
 				res = self.__getOpenStat(_tick, True)
-				_ospWp = self.tickStat.reqtype & EMUL_REQ_OSP_CLOSE
+				# 数据已追加至tickStatFrame，清空缓存避免重复合入
+				self.tickStatDict.clear()
+				_inOspWp = self.tickStat.reqtype & EMUL_REQ_OSP_CLOSE
 				self.debug.dbg("__schedCmdHandler: reqtype %s, res[0] %s" % (
 								self.tickStat.reqtype, res[0]))
-				if not res[0]:
-					# 在（_tick <= t <= tick）期间没有发生过OSP.open
-					if not _ospWp:
-						# 当前tick不在wp，无需跳转直接切换状态
+				if res[0]:
+					# （_tick <= t <= tick）期间有OSP.open发生
+					_tick = res[0]
+				else:
+					# 虽然（_tick <= t <= tick）期间没有OSP.open发生，但
+					# 有可能合约已在OSP.WP等待中。如果在则需要重置为NSP.NP，
+					# 反之则不用做任何事情
+					if not _inOspWp:
+						# sched.tick至当前tick间无OSP.Open和OSP.WP发生
 						self.paraCtrl.command = EMUL_CA_CMD_CLEAR
 						return None
 
-					#当前tick在wp，需重做为NSP.close
+					# 当前tick在OSP.WP，需重置为NSP.Close
 					_tick = self.__totick(tick)
 			else:
-				# 重置开仓tick，设置标志以不再发送req，保证每tick只发一次req
+				# sched.tick有OSP.Open需重置，但sched
+				# 已处理过该tick，不能再重复发送req
 				self.tagResuming = True
 
+			# self.debug.dbg("__schedCmdHandler: tickStatFrame \n%s" % self.tickStatFrame)
+			# 先回退current，确保sched不会立即进入下一tick
 			prev = tickObj.getPrevNumTick(_tick, 1)
-			# redo操作开始前先回退current，确保sched即使迅速进入下一tick时也需要等待current
 			self.paraCtrl.current = self.__mktime(prev)
-			# 清除命令后sched会立即恢复执行
+			# 同步给sched立即恢复执行
 			self.paraCtrl.command = EMUL_CA_CMD_CLEAR
 			self.debug.dbg("__schedCmdHandler: redo tick %s, prev %s, set current to %s" % (
 								_tick, prev, self.paraCtrl.current))
-			# 将执行环境恢复到指定tick时
-			self.__tickEnvResume(tickObj, _tick)
+			# 恢复环境需要消耗时间，放在清除command后提高sched处理效率
+			self.__tickEnvResume(tickObj, prev)
+			# 重置后缓存中_tick及之后的数据已无效
+			self.__clearTickStatFrame(_tick)
 			return _tick
 
 		return None
