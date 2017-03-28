@@ -34,9 +34,8 @@ class TestFuture(Futures):
 
 	#
 	def tradeResumeTickEnv (self, values):
-		self.lossProtected = values['LossProt'].values[0]
-		self.debug.warn("tradeResumeTickEnv: type %s, lossProtected %s" % (
-						type(values), self.lossProtected))
+		self.lossProtected = values['LossProt']
+		self.debug.warn("tradeResumeTickEnv: lossProtected %s" % self.lossProtected)
 
 	#开始交易信号
 	def signalStartTrading (self,
