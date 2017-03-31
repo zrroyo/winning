@@ -569,22 +569,24 @@ class Emulation:
 		while True:
 			req = self.msgQ.get()
 			pState = self.procStates[req.pid]
-			if req.type & EMUL_REQ_NSP_CLOSE > 0:
-				# 见__broadcastACK中解释
-				pState[PS_LOCK].acquire()
-				pState[PS_CTRL].nr_np -= 1
-				pState[PS_LOCK].release()
-
 			top = self.rStack.top()
 			self.debug.error("__schedule: req: %s, tick %s, type %s" % (
 						pState[PS_CONT], req.tick, req.type))
+
 			if req.mode != pState[PS_CTRL].mode:
-				# OSP状态重置为NSP后，现有队列中所有osp req需被丢弃
+				# OSP进程发生redo操作会切换到NSP状态，可能会有wp及ack
+				# 请求仍在队列中并导致请求状态与实际状态不一致
 				continue
 			elif req.type == EMUL_REQ_ACK:
-				# ack到来，从top请求中移除对应等待进程
+				# 合约进程收到广播后发回ack请求确认
 				act = self.__rmReqWait(top, req)
 			else:
+				if req.type & EMUL_REQ_NSP_CLOSE > 0:
+					# 见__broadcastACK中解释
+					pState[PS_LOCK].acquire()
+					pState[PS_CTRL].nr_np -= 1
+					pState[PS_LOCK].release()
+
 				try:
 					self.rStack.insert(req)
 
@@ -592,14 +594,14 @@ class Emulation:
 							pState[PS_CONT], req.tick,
 							self.procStates[top.pid][PS_CONT], top.tick))
 					if req.tick < top.tick:
-						# 有更小的req到达，需要确认同步
+						# 更早tick的请求到达，为其确认是否可处理
 						act = self.__broadcastACK(top, req)
 					else:
-						# 触发req操作
+						# 从top等待列表中移除该进程
 						act = self.__rmReqWait(top, req)
 				except AttributeError:
 					# 列表中暂无请求，top为空
-					act = self.__broadcastACK(self.rStack.top())
+					act = self.__broadcastACK(req)
 
 			if act == 0 and not self.__handleReqs():
 				break
