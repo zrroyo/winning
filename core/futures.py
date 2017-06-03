@@ -236,7 +236,8 @@ class Futures:
 		:return: 申请成功返回True，否则返回False
 		"""
 		if not self.paraMsgQ:
-			return False
+			# 不在模块测试环境中，合约自身判定为唯一决定因素
+			return True
 
 		req = self.__ReqMsg(tick, pos = volume, capital = capital)
 		self.debug.dbg("__sendParaRequest: tick %s [%s], type %s, vol %s, "
@@ -289,7 +290,7 @@ class Futures:
 		allowed = False
 		while True:
 			self.paraLock.acquire()
-			self.debug.dbg("__sendParaRequest: command %s" % self.paraCtrl.command)
+			# self.debug.dbg("__sendParaRequest: command %s" % self.paraCtrl.command)
 			if self.paraCtrl.command == EMUL_CA_CMD_WP_MOVE_ON:
 				allowed = True if self.paraCtrl.approve == 1 else False
 				self.debug.dbg("__sendParaRequest: WP_MOVE_ON: mode %s, allow %s" % (
@@ -858,9 +859,9 @@ class Futures:
 		values = self.tickStat.values() + self.tradeStoreTickEnv()
 		# 交易单利润需累加，以使下一tick计算浮动赢利
 		self.tradeStat.cumFloat += self.tickStat.orderProfit
-		self.debug.dbg("__storeTickStat: tick %s, price %s, move %s, pos %s, cum %s, order profit %s" %
-						(tick, price, self.tickStat.floatProfit, _posFloat,
-						 self.tradeStat.cumFloat, self.tickStat.orderProfit))
+		# self.debug.dbg("__storeTickStat: tick %s, price %s, move %s, pos %s, cum %s, order profit %s" %
+		# 				(tick, price, self.tickStat.floatProfit, _posFloat,
+		# 				 self.tradeStat.cumFloat, self.tickStat.orderProfit))
 		# 加快存储速度，先存入字典，再统一追加到tickStatFrame
 		self.tickStatDict[tick] = dict(zip(self.tickStatCols, values))
 
