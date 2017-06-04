@@ -1,5 +1,4 @@
-#! /usr/bin/python
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
@@ -22,7 +21,6 @@ from misc.utils import quickInsert
 from tbase import *
 from corecfg import EmulationConfig, ContractDescConfig
 
-
 # 合约调度状态
 EMUL_SCHED_MODE_NSP		= 1
 EMUL_SCHED_MODE_OSP		= 2
@@ -43,44 +41,48 @@ MEUL_FUT_ACT_SKIP	= 0
 EMUL_FUT_ACT_OPEN	= 1
 EMUL_FUT_ACT_CLOSE	= 2
 
+
 class ReqMsg:
-	def __init__ (self):
+	def __init__(self):
 		"""
 		Sched请求数据结构
 		"""
-		self.mode = EMUL_SCHED_MODE_NSP		#合约同步点（SP）状态
-		self.type = EMUL_REQ_INVALID		#请求类型
-		self.tick = None			#请求时tick时间，为秒数
-		self.pid = -1				#合约进程id
-		self.pos = 0				#申请仓位
-		self.capital = 0.0			#申请资金
-		self.wait = {}			#等待进程表
+		self.mode = EMUL_SCHED_MODE_NSP		# 合约同步点（SP）状态
+		self.type = EMUL_REQ_INVALID		# 请求类型
+		self.tick = None			# 请求时tick时间，为秒数
+		self.pid = -1				# 合约进程id
+		self.pos = 0				# 申请仓位
+		self.capital = 0.0			# 申请资金
+		self.wait = {}				# 等待进程表
+
 
 class ReqStack:
-	def __init__ (self, debug = False):
+	def __init__(self, debug = False):
 		"""
 		请求管理队列。
 		:param debug: 打开调试模式
 		"""
-		self.debug = Debug('ReqStack', debug)	#调试接口
-		self.stack = []	#按req.tick从大到小排列
+		# 调试接口
+		self.debug = Debug('ReqStack', debug)
+		# 按req.tick从大到小排列
+		self.stack = []
 
-	def insert (self, req):
+	def insert(self, req):
 		"""
 		在队列中插入请求。
 		:param req: 请求
 		:return: None
 		"""
 		quickInsert(self.stack, req, descend = True, extract = lambda x: x.tick)
-		# 对于特殊请求（比如current为0），需要标记以便快速查找
-	def len (self):
+
+	def len(self):
 		"""
 		返回队列长度。
 		:return: 队列长度
 		"""
 		return len(self.stack)
 
-	def get (self, idx):
+	def get(self, idx):
 		"""
 		返回队列中索引对应请求。
 		:param idx: 索引值
@@ -91,7 +93,7 @@ class ReqStack:
 		except IndexError:
 			return None
 
-	def top (self):
+	def top(self):
 		"""
 		返回队列顶端（tick值最小）请求。
 		:return: 最老（tick值最小）请求
@@ -101,7 +103,7 @@ class ReqStack:
 		except IndexError:
 			return None
 
-	def drop (self, reqs):
+	def drop(self, reqs):
 		"""
 		从栈中丢弃请求。
 		:param reqs: 支持两种方式：1）进程号；2）请求列表。
@@ -115,15 +117,9 @@ class ReqStack:
 		except KeyError:
 			pass
 
-	def rarePids (self):
-		"""
-		返回所有特殊请求的pid
-		:return: pid列表
-		"""
-		return self.rare.keys()
 
 class ResourceMgr:
-	def __init__ (self, positions, capital, debug = False):
+	def __init__(self, positions, capital, debug = False):
 		"""
 		资源管理器，资金、总持仓位
 		:param positions: 仓数
@@ -135,7 +131,7 @@ class ResourceMgr:
 		self.positions = positions
 		self.capital = capital
 
-	def test (self, pos, cap):
+	def test(self, pos, cap):
 		"""
 		测试资源是否足够
 		:param pos: 仓数
@@ -146,7 +142,7 @@ class ResourceMgr:
 			return False
 		return True
 
-	def alloc (self, pos, cap):
+	def alloc(self, pos, cap):
 		"""
 		分配资源
 		:param pos: 仓数
@@ -162,7 +158,7 @@ class ResourceMgr:
 		self.capital -= cap
 		return True
 
-	def free (self, pos, cap):
+	def free(self, pos, cap):
 		"""
 		释放资源
 		:param pos: 仓数
@@ -175,37 +171,40 @@ class ResourceMgr:
 					self.positions, self.capital, pos, cap))
 		return True
 
+
 # sched支持的调度命令
 EMUL_CA_CMD_CLEAR		= 0
 EMUL_CA_CMD_TK_STAT		= 1
 EMUL_CA_CMD_REDO_OSP_MP		= 2
 EMUL_CA_CMD_WP_MOVE_ON		= 4
 
+
 class ControlArea(ctypes.Structure):
 	"""
 	控制合约的共享内存数据结构。各合约单独分配，作为参数传入合约中。
 	"""
-	_fields_ = [('mode', ctypes.c_int8),		#当前同步点工作状态
-		    ('current', ctypes.c_double),	#合约当前已完成tick，执行中的不算
-		    ('ack', ctypes.c_double),		#通知合约在到达ack tick后发出确认请求
-		    ('command', ctypes.c_uint8),	#调度命令
-		    ('tick', ctypes.c_double),		#调度参数，配合command使用
-		    ('redo_next', ctypes.c_uint8),	#调度参数，提示合约重做tick后的第一个OSP.OPEN操作
-		    ('approve', ctypes.c_uint8),	#调度参数，提示操作是否被允许，主要是WP操作
-		    ('nr_np', ctypes.c_uint32),		#记录是否还有NSP.NP消息在队列中
-		    ('action', ctypes.c_int8),		#操作类型，配合TK_STAT命令返回参数
-		    ('pos', ctypes.c_uint32),		#仓位，配合TK_STAT命令返回参数
-		    ('capital', ctypes.c_double)]	#资金，配合TK_STAT命令返回参数
+	_fields_ = [('mode', ctypes.c_int8),		# 当前同步点工作状态
+		('current', ctypes.c_double),		# 合约当前已完成tick，执行中的不算
+		('ack', ctypes.c_double),		# 通知合约在到达ack tick后发出确认请求
+		('command', ctypes.c_uint8),		# 调度命令
+		('tick', ctypes.c_double),		# 调度参数，配合command使用
+		('redo_next', ctypes.c_uint8),		# 调度参数，提示合约重做tick后的第一个OSP.OPEN操作
+		('approve', ctypes.c_uint8),		# 调度参数，提示操作是否被允许，主要是WP操作
+		('nr_np', ctypes.c_uint32),		# 记录是否还有NSP.NP消息在队列中
+		('action', ctypes.c_int8),		# 操作类型，配合TK_STAT命令返回参数
+		('pos', ctypes.c_uint32),		# 仓位，配合TK_STAT命令返回参数
+		('capital', ctypes.c_double)]		# 资金，配合TK_STAT命令返回参数
 
 # 合约运行状态缓存数据结构（列表）中各部分数据对应的索引。
-PS_MP	= 0		#MP控制块
-PS_LOCK	= 1		#共享内存保护锁
-PS_CTRL	= 2		#共享（内存）控制块
-PS_PRI	= 3		#优先级
-PS_CONT	= 4		#合约名
+PS_MP   = 0		# MP控制块
+PS_LOCK = 1		# 共享内存保护锁
+PS_CTRL = 2		# 共享（内存）控制块
+PS_PRI  = 3		# 优先级
+PS_CONT = 4		# 合约名
+
 
 class Emulation(TBase):
-	def __init__ (self, cfg, strategy, debug = False, storeLog = False):
+	def __init__(self, cfg, strategy, debug = False, storeLog = False):
 		"""
 		模拟交易
 		:param cfg: 配置文件
@@ -228,7 +227,7 @@ class Emulation(TBase):
 		# 优先级初始值
 		self.priority = 0
 
-	def __priorityAssigner (self):
+	def __priorityAssigner(self):
 		"""
 		分配合约进程优先级。
 		:return: 优先级数值。越小优先级越高
@@ -237,7 +236,7 @@ class Emulation(TBase):
 		self.priority += 1
 		return ret
 
-	def __setupContractProcess (self, contract, startTick, expireDates, follow = False):
+	def __setupContractProcess(self, contract, startTick, expireDates, follow = False):
 		"""
 		启动合约执行
 		:param contract: 合约名称
@@ -263,7 +262,7 @@ class Emulation(TBase):
 		self.debug.dbg("__setupContractProcess: new process %s, info %s" % (
 							p.pid, self.procStates[p.pid]))
 
-	def __tickReqsHandler (self, wkTick):
+	def __tickReqsHandler(self, wkTick):
 		"""
 		处理队列中所有wkTick时间发生的请求
 		:param wkTick: 目标tick
@@ -312,11 +311,11 @@ class Emulation(TBase):
 		if len(_free):
 			# 有仓位释放才需检查OSP.Open是否满足
 			_Osp_mp_Nsp_wp = [ (v[PS_PRI], k, _alloc[k] if k in _nspWpPids else None) \
-					   for (k, v) in self.procStates.items() \
-					   if v[PS_CTRL].mode == EMUL_SCHED_MODE_OSP or k in _nspWpPids ]
+					for (k, v) in self.procStates.items() \
+					if v[PS_CTRL].mode == EMUL_SCHED_MODE_OSP or k in _nspWpPids ]
 		else:
 			_Osp_mp_Nsp_wp = [ (v[PS_PRI], k, _alloc[k]) \
-					   for (k, v) in self.procStates.items() if k in _nspWpPids ]
+					for (k, v) in self.procStates.items() if k in _nspWpPids ]
 
 		# 需要根据优先级分配资源
 		_Osp_mp_Nsp_wp = sorted(_Osp_mp_Nsp_wp, key = lambda x: x[0])
@@ -390,7 +389,7 @@ class Emulation(TBase):
 		# 返回结束进程id，以便收集状态
 		return _end
 
-	def __handleReqs (self):
+	def __handleReqs(self):
 		"""
 		处理请求
 		:return: 执行完所有合约返回False，否则返回True
@@ -409,10 +408,9 @@ class Emulation(TBase):
 					self.debug.dbg("__handleReqs: procStates %s" % self.procStates)
 					# 启动新合约，并紧接当前tick从下一tick开始执行，直接从当前tick执行与实际不符。
 					self.__setupContractProcess(self.contracts.pop(0),
-							    start, self.expireDates, follow = True)
+								start, self.expireDates, follow = True)
 				except KeyError:
-					self.debug.error("__handleReqs: received unexpected end req: %d" \
-							 		% pid)
+					self.debug.error("__handleReqs: received unexpected end req: %d" % pid)
 					break
 				except IndexError:
 					# 所有合约已完成且队列中无等待请求，执行结束
@@ -424,7 +422,7 @@ class Emulation(TBase):
 				return True
 			start = top.tick
 
-	def __broadcastACK (self, top, new = None):
+	def __broadcastACK(self, top, new = None):
 		"""
 		为请求向各合约进程发送ACK广播，默认为top，如new存在则为new发送。进程在
 		当前tick已完成并 >= ack时需向发送ack请求进行确认。如合约在该tick发送
@@ -466,7 +464,7 @@ class Emulation(TBase):
 					self.procStates[req.pid][PS_CONT], req.pid, req.wait))
 		return len(req.wait)
 
-	def __rmReqWait (self, dest, req):
+	def __rmReqWait(self, dest, req):
 		"""
 		移除dest中的req对应的等待进程。
 		:param dest: 目标请求
@@ -488,7 +486,7 @@ class Emulation(TBase):
 
 		return len(dest.wait)
 
-	def __schedule (self):
+	def __schedule(self):
 		"""
 		所有进程的请求调度处理
 		:return: None
@@ -533,7 +531,7 @@ class Emulation(TBase):
 			if act == 0 and not self.__handleReqs():
 				break
 
-	def start (self, argv, name):
+	def start(self, argv, name):
 		"""
 		模拟测试入口
 		:param argv: 命令参数列表
@@ -547,7 +545,7 @@ class Emulation(TBase):
 		try:
 			for i in range(self.paraLevel):
 				self.__setupContractProcess(self.contracts.pop(0),
-					    	self.startTicks[i], self.expireDates)
+						self.startTicks[i], self.expireDates)
 		except IndexError:
 			pass
 
@@ -560,25 +558,10 @@ class Emulation(TBase):
 		生成全局统计报表
 		:return: None
 		"""
-		xls=  [ f for f in os.listdir(self.logDir) if f.find("TICK_STAT.xlsx") >= 0 ]
+		xls = [ f for f in os.listdir(self.logDir) if f.find("TICK_STAT.xlsx") >= 0 ]
 		self.debug.dbg("report: xls: %s" % xls)
 		cum = pd.read_excel("%s/%s" % (self.logDir, xls.pop(0)))
 		for x in xls:
 			cum = cum.add(pd.read_excel("%s/%s" % (self.logDir, x)), fill_value = 0)
 
 		cum.to_excel("%s/%s" % (self.logDir, "TICK_STAT_OVERALL.xlsx"))
-
-# 测试
-def doTest():
-	global DEF_EMUL_CONFIG_DIR
-	DEF_EMUL_CONFIG_DIR = "../tests"
-
-	testCfg = "%s/test_emul" % DEF_EMUL_CONFIG_DIR
-	emul = Emulation(cfg = testCfg,
-			 strategy = 'testfuture',
-			 dumpName = "test_emul",
-			 debug = True)
-	emul.start()
-
-if __name__ == '__main__':
-	doTest()
