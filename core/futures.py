@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
@@ -26,22 +26,23 @@ from date import Date, Ticks
 from tradestat import *
 from emulation import *
 
-#期货信号
+# 期货信号
 SIG_TRADE_LONG		= 1
 SIG_TRADE_SHORT		= 2
 
+
 class Attribute:
-	def __init__ (self):
+	def __init__(self):
 		"""
 		期货合约（交易）属性
 		"""
-		self.maxPosAllowed = 0		#最大允许持仓单位数
-		self.numPosToAdd = 0		#每加仓单位所代表的手数
-		self.priceVariation = 0		#触发加仓条件的价格差
-		self.multiplier = 0		#合约乘数
-		self.marginRatio = 0.1		#保证金比率
+		self.maxPosAllowed = 0		# 最大允许持仓单位数
+		self.numPosToAdd = 0		# 每加仓单位所代表的手数
+		self.priceVariation = 0		# 触发加仓条件的价格差
+		self.multiplier = 0		# 合约乘数
+		self.marginRatio = 0.1		# 保证金比率
 
-	def set (self, maxPosAllowed, numPosToAdd, priceVariation,
+	def set(self, maxPosAllowed, numPosToAdd, priceVariation,
 			multiplier, marginRatio):
 		"""
 		设置交易属性、参数
@@ -58,8 +59,9 @@ class Attribute:
 		self.multiplier = multiplier
 		self.marginRatio = marginRatio
 
+
 class Futures:
-	def __init__ (self, contract, config, logDir, debug = False):
+	def __init__(self, contract, config, logDir, debug = False):
 		"""
 		期货交易
 		:param contract: 合约名
@@ -67,7 +69,7 @@ class Futures:
 		:param logDir: 日志目录
 		:param debug: 是否调试
 		"""
-		self.debug = Debug('Futures: %s' % contract, debug)	#调试接口
+		self.debug = Debug('Futures: %s' % contract, debug)
 		self.dbgMode = debug
 		self.contract = contract
 		self.logDir = logDir
@@ -84,7 +86,8 @@ class Futures:
 
 		self.contractStart = self.config.getContractStart(contract)
 		self.contractEnd = self.config.getContractEnd(contract)
-		self.attrs = Attribute()	#属性
+		# 属性
+		self.attrs = Attribute()
 		# 持仓管理接口
 		self.posMgr = None
 		# 用于临时目的Tick帮助接口
@@ -144,7 +147,7 @@ class Futures:
 	# 属性方法
 	# ----------------
 	
-	def setAttrs (self, maxPosAllowed, numPosToAdd, priceVariation):
+	def setAttrs(self, maxPosAllowed, numPosToAdd, priceVariation):
 		"""
 		设置外部传入属性
 		:param maxPosAllowed: 最大允许持仓单位数
@@ -153,30 +156,29 @@ class Futures:
 		:return: None
 		"""
 		self.attrs.set(maxPosAllowed = maxPosAllowed,
-			       numPosToAdd = numPosToAdd,
-			       priceVariation = priceVariation,
-			       multiplier = int(self.config.getMultiplier(self.contract)),
-			       marginRatio = float(self.config.getMarginRatio(self.contract)),
-			       )
+				numPosToAdd = numPosToAdd,
+				priceVariation = priceVariation,
+				multiplier = int(self.config.getMultiplier(self.contract)),
+				marginRatio = float(self.config.getMarginRatio(self.contract)))
 		
 		# 初始化持仓管理接口
 		self.posMgr = PositionManager(maxPosAllowed,
-					      prompt = self.contract,
-					      debug = False)
+						prompt = self.contract,
+						debug = False)
 
 	# ----------------
 	# 持仓方法
 	# ----------------
 	
 	# 返回当前仓位
-	def curPositions (self):
+	def curPositions(self):
 		return self.posMgr.numPositions()
 	
 	# 清空持仓
-	def clearPositions (self):
+	def clearPositions(self):
 		return self.posMgr.empty()
 	
-	def getPosition (self, num = None):
+	def getPosition(self, num = None):
 		"""
 		返回第num个仓位，num从１开始记
 		:param num: 仓位索引
@@ -188,7 +190,7 @@ class Futures:
 			
 		return self.posMgr.getPosition(num)
 
-	def __mktime (self, tick):
+	def __mktime(self, tick):
 		"""
 		将tick转化成秒数
 		:param tick: 交易时间
@@ -196,7 +198,7 @@ class Futures:
 		"""
 		return time.mktime(tick.timetuple())
 
-	def __totick (self, time_sec):
+	def __totick(self, time_sec):
 		"""
 		将秒数转化成tick
 		:param time_sec: 秒数
@@ -204,10 +206,10 @@ class Futures:
 		"""
 		_time = time.localtime(time_sec)
 		ret = datetime(_time.tm_year, _time.tm_mon, _time.tm_mday,
-			 	_time.tm_hour, _time.tm_min, _time.tm_sec)
+				_time.tm_hour, _time.tm_min, _time.tm_sec)
 		return self.tickHelper.convertToDBtime(ret)
 
-	def __ReqMsg (self, tick, type = EMUL_REQ_INVALID, pos = 0, capital = 0):
+	def __ReqMsg(self, tick, type = EMUL_REQ_INVALID, pos = 0, capital = 0):
 		"""
 		生成sched请求消息
 		:param tick:
@@ -225,7 +227,7 @@ class Futures:
 		req.capital = capital
 		return req
 
-	def __sendParaRequest (self, tick, type, volume, capital, profit = 0):
+	def __sendParaRequest(self, tick, type, volume, capital, profit = 0):
 		"""
 		向调度器发出交易请求
 		:param tick: 时间
@@ -300,7 +302,7 @@ class Futures:
 			elif self.paraCtrl.command == EMUL_CA_CMD_REDO_OSP_MP:
 				# OSP.Close被sched识别无效，退出进入__tickParaHandler处理
 				self.debug.dbg("__sendParaRequest: REDO_OSP_MP")
-				#记录req类型，以便后续辨别发生重置位置
+				# 记录req类型，以便后续辨别发生重置位置
 				self.tickStat.reqtype = req.type
 				self.paraLock.release()
 				break
@@ -314,7 +316,7 @@ class Futures:
 				time.sleep(0.002)
 		return allowed
 
-	def openPositions (self, tick, price, direction, volume = 1):
+	def openPositions(self, tick, price, direction, volume = 1):
 		"""
 		开仓处理
 		:param tick: 交易时间
@@ -345,7 +347,7 @@ class Futures:
 						price, self.curPositions()))
 		return True
 	
-	def closePositions (self, tick, price, direction, numPos = 1):
+	def closePositions(self, tick, price, direction, numPos = 1):
 		"""
 		平仓处理
 		:param tick: 交易时间
@@ -386,7 +388,7 @@ class Futures:
 
 		return True
 
-	def __appendTickStatToFrame (self, verified = True):
+	def __appendTickStatToFrame(self, verified = True):
 		"""
 		更新tick统计数据区
 		:param verified: 数据是否已经袯验证过不需要重置,可以合入总表
@@ -400,7 +402,7 @@ class Futures:
 		if verified:
 			self.tickStatTotal = self.tickStatTotal.append(self.tickStatFrame)
 
-	def __clearTickStatFrame (self, tick = None):
+	def __clearTickStatFrame(self, tick = None):
 		"""
 		清空临时存储区、统计区
 		:param tick: 交易时间，指定则清空tick及以后数据
@@ -416,7 +418,7 @@ class Futures:
 		_start = list(self.tickStatFrame.index).index(tick)
 		self.tickStatFrame.drop(self.tickStatFrame[_start:].index, inplace = True)
 
-	def __exitTrade (self, tick):
+	def __exitTrade(self, tick):
 		"""
 		交易结束操作
 		:param tick: 结束tick
@@ -454,7 +456,7 @@ class Futures:
 	# 交易方法
 	# ----------------
 
-	def signalStartTrading (self, tick):
+	def signalStartTrading(self, tick):
 		"""
 		触发开始交易信号
 		:param tick: 交易时间
@@ -462,7 +464,7 @@ class Futures:
 		"""
 		return None
 
-	def signalEndTrading (self, tick, direction):
+	def signalEndTrading(self, tick, direction):
 		"""
 		触发结束交易信号
 		:param tick: 交易时间
@@ -471,7 +473,7 @@ class Futures:
 		"""
 		return False
 	
-	def signalCutLoss (self, tick, direction):
+	def signalCutLoss(self, tick, direction):
 		"""
 		触发止损信号
 		:param tick: 交易时间
@@ -480,7 +482,7 @@ class Futures:
 		"""
 		return False
 	
-	def signalAddPosition (self, tick, direction):
+	def signalAddPosition(self, tick, direction):
 		"""
 		触发加仓信号
 		:param tick: 交易时间
@@ -489,7 +491,7 @@ class Futures:
 		"""
 		return False
 	
-	def signalStopProfit (self, tick, direction):
+	def signalStopProfit(self, tick, direction):
 		"""
 		触发止赢信号
 		:param tick: 交易时间
@@ -498,7 +500,7 @@ class Futures:
 		"""
 		return False
 
-	def __signalToDirection (self, signal):
+	def __signalToDirection(self, signal):
 		"""
 		交易信号转换成方向字符串
 		:param signal: 交易信号
@@ -511,7 +513,7 @@ class Futures:
 		else:
 			return None
 
-	def __validSignal (self, signal):
+	def __validSignal(self, signal):
 		"""
 		检查是否是有效信号
 		:param signal: 信号
@@ -524,7 +526,7 @@ class Futures:
 
 		return signal
 
-	def __tradeStart (self, tickSrc, startTick, signal):
+	def __tradeStart(self, tickSrc, startTick, signal):
 		"""
 		新交易触发，开始交易
 		:param startTick: 开始交易时间
@@ -600,7 +602,7 @@ class Futures:
 		# 有一个tick且触发开仓信号则从这里返回
 		return None
 
-	def __tradeAddPositions (self, tick, direction):
+	def __tradeAddPositions(self, tick, direction):
 		"""
 		加仓
 		:param tick: 交易时间
@@ -620,7 +622,7 @@ class Futures:
 
 		return False
 
-	def tradeCutLoss (self, tick, direction):
+	def tradeCutLoss(self, tick, direction):
 		"""
 		止损。必须被重载实现
 		@MUST_OVERRIDE
@@ -630,7 +632,7 @@ class Futures:
 		"""
 		return False
 	
-	def tradeStopProfit (self, tick, direction):
+	def tradeStopProfit(self, tick, direction):
 		"""
 		止赢。必须被重载实现
 		@MUST_OVERRIDE
@@ -640,7 +642,7 @@ class Futures:
 		"""
 		return False
 	
-	def __tradeEnd (self, tick, direction):
+	def __tradeEnd(self, tick, direction):
 		"""
 		交易结束处理
 		:param tick: 交易时间
@@ -651,14 +653,14 @@ class Futures:
 		price = self.data.getClose(tick)
 		self.closePositions(tick, price, direction, self.curPositions())
 
-	def tradeStoreTickEnv (self):
+	def tradeStoreTickEnv(self):
 		"""
 		追加需在tickStatFrame记录的数据，私有变量、统计数据等
 		:return: 数据列表
 		"""
 		return []
 
-	def tradeResumeTickEnv (self, values):
+	def tradeResumeTickEnv(self, values):
 		"""
 		从tickStatFrame中数据恢复执行环境
 		:param values: 待恢复的数据，dict类型
@@ -666,7 +668,7 @@ class Futures:
 		"""
 		pass
 
-	def __getRealStartAndEndTick (self, startTick = None, stopTick = None,
+	def __getRealStartAndEndTick(self, startTick = None, stopTick = None,
 					follow = False):
 		"""
 		估计实际的开始和结束时间
@@ -687,7 +689,7 @@ class Futures:
 				startTick = self.tickHelper.strToDateTime(startTick)
 
 			self.debug.dbg("__getRealStartAndEndTick: startTick type %s, "
-				       "converted to %s" % (type(startTick), startTick))
+					"converted to %s" % (type(startTick), startTick))
 
 			# 指定的交易时间不一定存在，如不存在则用下一个最接近的tick开始
 			retStart = self.tickHelper.getNextNearTick(startTick, 1)
@@ -706,7 +708,7 @@ class Futures:
 
 		return retStart,retStop
 
-	def __exit (self):
+	def __exit(self):
 		"""
 		即将退出合约进程，将交易、tick数据导出保存。
 		:return: None
@@ -724,7 +726,7 @@ class Futures:
 								float_format = "%.2f")
 		self.__clearTickStatFrame()
 
-	def start (self, startTick = None, stopTick = None, msgQ = None,
+	def start(self, startTick = None, stopTick = None, msgQ = None,
 			shmem = None, shmlock = None, storeLog = False, follow = False):
 		"""
 		启动交易入口
@@ -791,7 +793,7 @@ class Futures:
 		# cp.disable()
 		# cp.print_stats(sort='cumtime')
 
-	def __orderProfit (self, direction, open, price):
+	def __orderProfit(self, direction, open, price):
 		"""
 		计算仓位利润
 		:param direction: 多空方向
@@ -807,7 +809,7 @@ class Futures:
 		orderProfit *= self.attrs.numPosToAdd * self.attrs.multiplier
 		return orderProfit
 
-	def __curPosFloatProfit (self, direction, price):
+	def __curPosFloatProfit(self, direction, price):
 		"""
 		计算当前持仓浮动利润
 		:param direction: 方向
@@ -825,7 +827,7 @@ class Futures:
 		ret *= self.attrs.numPosToAdd * self.attrs.multiplier
 		return ret
 
-	def __floatingProfit (self, direction, price):
+	def __floatingProfit(self, direction, price):
 		"""
 		计算浮动利润
 		:param direction: 方向
@@ -834,13 +836,13 @@ class Futures:
 		"""
 		# 当前持仓浮动利润
 		ret = self.__curPosFloatProfit(direction, price)
-		self.debug.dbg("__floatingProfit: position float %s, cumulate %s, order profit %s" %
-			       (ret, self.tradeStat.cumFloat, self.tickStat.orderProfit))
+		self.debug.dbg("__floatingProfit: position float %s, cumulate %s, order profit %s" % (
+				ret, self.tradeStat.cumFloat, self.tickStat.orderProfit))
 		# 当前浮动赢利=累积利润+当前tick持仓利润+当前tick的交易单利润
 		ret += self.tickStat.orderProfit + self.tradeStat.cumFloat
 		return ret
 
-	def __storeTickStat (self, tick, price,	direction):
+	def __storeTickStat(self, tick, price,	direction):
 		"""
 		保存tick统计数据
 		:param tick: 当前tick
@@ -894,7 +896,7 @@ class Futures:
 
 		return _tick, int(pos), capital, int(action)
 
-	def __tickEnvResume (self, tickObj, tick):
+	def __tickEnvResume(self, tickObj, tick):
 		"""
 		将执行环境恢复到交易中的指定tick点，重新执行
 		:param tickObj: tick源
@@ -922,7 +924,7 @@ class Futures:
 			self.debug.dbg("__schedCmdHandler: WP_MOVE_ON: fakeSpMode %s" % self.fakeSpMode)
 
 		elif self.paraCtrl.command == EMUL_CA_CMD_TK_STAT and \
-				tick >= self.paraCtrl.tick:
+			tick >= self.paraCtrl.tick:
 			"""
 			sched发出返回tick信息请求
 			"""
@@ -995,7 +997,7 @@ class Futures:
 
 		return None
 
-	def __tickParaHandler (self, tickObj, tick):
+	def __tickParaHandler(self, tickObj, tick):
 		"""
 		tick并行事件响应
 		:param tickObj: tick源
@@ -1032,7 +1034,7 @@ class Futures:
 		self.tagResuming = False
 		return None
 
-	def __tradeNextTick (self, tickObj, direction = None):
+	def __tradeNextTick(self, tickObj, direction = None):
 		"""
 		返回下一交易时间
 		:param tickObj: tick接口对象
@@ -1073,7 +1075,7 @@ class Futures:
 
 		return nextTick
 
-	def log (self, logMsg, *args):
+	def log(self, logMsg, *args):
 		"""
 		日志统一打印接口
 		:param logMsg: 日志消息
