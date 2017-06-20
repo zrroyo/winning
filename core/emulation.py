@@ -223,7 +223,10 @@ class Emulation(TBase):
 		self.procStates = {}
 		# 资源管理接口
 		self.resource = ResourceMgr(positions = int(self.emuCfg.getParallelAddMaxAllowed()),
-				    	capital = int(self.emuCfg.getParallelCapital()), debug = True)
+					capital = int(self.emuCfg.getParallelCapital()), debug = True)
+
+		# 最大允许合约并行执行数
+		self.paraLevel = int(self.emuCfg.getParallelLevel())
 		# 优先级初始值
 		self.priority = 0
 

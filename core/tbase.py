@@ -55,7 +55,6 @@ class TBase:
 		self.contracts = self.emuCfg.getContracts().strip(',').split(',')
 		self.startTicks = self.emuCfg.getStartTime().strip(',').split(',')
 		self.expireDates = self.emuCfg.getExpireDates().strip(',')
-		self.paraLevel = int(self.emuCfg.getParallelLevel())
 		# 初始化合约描述接口
 		self.descCfg = ContractDescConfig(DEF_CONTRACT_DESC_CFG)
 		# 日志保存目录
