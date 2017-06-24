@@ -444,7 +444,7 @@ class Futures:
 		self.log("              ****** Total profit %s ******" % self.comStat.cumProfit)
 
 		# 将交易数据插入交易表
-		values = self.tradeStat.values(_sum, _floatDesc)
+		values = self.tradeStat.values(_sum, _floatDesc) + self.storeCustomTradeEnv()
 		self.trdStatFrame = self.trdStatFrame.append(
 					pd.DataFrame([values], columns = self.trdStatCols),
 					ignore_index = True)
@@ -653,20 +653,32 @@ class Futures:
 		price = self.data.getClose(tick)
 		self.closePositions(tick, price, direction, self.curPositions())
 
-	def tradeStoreTickEnv(self):
+	def storeCustomTickEnv(self, tick, price, direction):
 		"""
 		追加需在tickStatFrame记录的数据，私有变量、统计数据等
+		:param tick: 当前tick
+		:param price: 当前价格
+		:param direction: 方向
 		:return: 数据列表
 		"""
 		return []
 
-	def tradeResumeTickEnv(self, values):
+	def resumeCustomTickEnv(self, values):
 		"""
 		从tickStatFrame中数据恢复执行环境
 		:param values: 待恢复的数据，dict类型
 		:return: None
 		"""
 		pass
+
+	def storeCustomTradeEnv(self):
+		"""
+
+		:param tick: 当前tick
+		:param price: 当前价格
+		:return: 数据列表
+		"""
+		return []
 
 	def __getRealStartAndEndTick(self, startTick = None, stopTick = None,
 					follow = False):
@@ -858,7 +870,7 @@ class Futures:
 		self.tickStat.floatProfit = self.tickStat.floatProCum + self.tickStat.orderProfit + _posFloat
 		self.tickStat.spMode = self.fakeSpMode
 		# REDO_OSP_MP恢复执行环境时依赖各tick保存策略自定义的数据，如变量等
-		values = self.tickStat.values() + self.tradeStoreTickEnv()
+		values = self.tickStat.values() + self.storeCustomTickEnv(tick, price, direction)
 		# 交易单利润需累加，以使下一tick计算浮动赢利
 		self.tradeStat.cumFloat += self.tickStat.orderProfit
 		# self.debug.dbg("__storeTickStat: tick %s, price %s, move %s, pos %s, cum %s, order profit %s" %
@@ -905,7 +917,7 @@ class Futures:
 		"""
 		values = self.tickStatFrame.xs(tick)
 		self.debug.dbg("__tickEnvResume: resume to %s, values \n%s" % (tick, values))
-		self.tradeResumeTickEnv(values)
+		self.resumeCustomTickEnv(values)
 
 		# 丢弃当前的统计数据
 		self.tickStat = TickStat()
@@ -1063,7 +1075,7 @@ class Futures:
 		# 继续下一tick
 		nextTick = tickObj.getSetNextTick()
 		_nxtNxtTick = tickObj.nextTick()
-		self.debug.dbg("__tradeNextTick: tick %s, nextTick %s" % (tick, nextTick))
+		# self.debug.dbg("__tradeNextTick: tick %s, nextTick %s" % (tick, nextTick))
 
 		if self.stopTick:
 			# 最后tick执行完成
