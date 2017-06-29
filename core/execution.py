@@ -76,7 +76,7 @@ class Execution(TBase):
 			# 支持从配置文件指定合约开始执行时间
 			try:
 				_startTick = self.startTicks.pop(0)
-			except IndexError:
+			except (IndexError, AttributeError):
 				_startTick = None
 
 			# 仅允许最多@jobs个任务同时进行
