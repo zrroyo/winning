@@ -53,8 +53,12 @@ class TBase:
 		self.testCfg = "%s/%s" % (DEF_EMUL_CONFIG_DIR, cfg)
 		self.emuCfg = EmulationConfig(self.testCfg)
 		self.contracts = self.emuCfg.getContracts().strip(',').split(',')
-		self.startTicks = self.emuCfg.getStartTime().strip(',').split(',')
 		self.expireDates = self.emuCfg.getExpireDates().strip(',')
+		try:
+			self.startTicks = self.emuCfg.getStartTime().strip(',').split(',')
+		except AttributeError:
+			self.startTicks = None
+
 		# 初始化合约描述接口
 		self.descCfg = ContractDescConfig(DEF_CONTRACT_DESC_CFG)
 		# 日志保存目录
