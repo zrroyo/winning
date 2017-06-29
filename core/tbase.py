@@ -67,7 +67,7 @@ class TBase:
 	# 所有支持的策略列表
 	@staticmethod
 	def validStrategy():
-		ret = ['testfuture']
+		ret = ['testfuture', 'discover']
 		return ret
 
 	def estimateEndTick(self, contract, expireDates):
@@ -133,6 +133,13 @@ class TBase:
 		if self.strategy == "testfuture":
 			import strategy.test_dev
 			ret = strategy.test_dev.TestFuture(contract = contract,
+						config = self.descCfg,
+						logDir = self.logDir,
+						debug = self.dbgMode)
+
+		elif self.strategy == "discover":
+			import strategy.discover
+			ret = strategy.discover.Discover(contract = contract,
 						config = self.descCfg,
 						logDir = self.logDir,
 						debug = self.dbgMode)
