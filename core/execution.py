@@ -11,6 +11,7 @@ import os
 import sys
 sys.path.append("..")
 import time
+import re
 import thread
 import pandas as pd
 import multiprocessing as mp
@@ -95,6 +96,26 @@ class Execution(TBase):
 		while len(self.procStates):
 			time.sleep(1)
 			continue
+
+	def report(self):
+		"""
+		生成全局统计报表
+		:return: None
+		"""
+		files = os.listdir(self.logDir)
+		ts = [f for f in files if re.search("TRADE_STAT[.]xlsx$", f)]
+		ts = sorted(ts, reverse = True)
+		total = pd.DataFrame()
+		for t in ts:
+			tmp = pd.read_excel(os.path.join(self.logDir, t), index_col = 0)
+			if total.empty:
+				total = tmp
+			else:
+				total = pd.concat((total, tmp), axis = 1)
+
+		total = total.T
+		total.index = range(1, len(total)+1)
+		total.to_excel(os.path.join(self.logDir, "TRANSACTIONS.xlsx"))
 
 
 def threadWaitContract(obj, proc):
