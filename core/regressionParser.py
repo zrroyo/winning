@@ -15,7 +15,7 @@ import time
 
 from misc.debug import Debug
 from misc.execcmd import ExecCommand
-from core.tbase import ExceptionEmulUnknown, DEF_EMUL_CONFIG_DIR
+from core.tbase import DEF_EMUL_CONFIG_DIR
 from core.emulation import Emulation
 from core.execution import Execution
 
@@ -48,36 +48,32 @@ def startRegression(options, strategy, test, argv, name, dbgMode, storeLog):
 	:param storeLog: 保存日志
 	:return: 成功返回True，否则返回False
 	"""
-	try:
-		_start = time.time()
+	_start = time.time()
 
-		if options.emulation:
-			exc = Emulation(cfg = test,
-					strategy = strategy,
-					debug = dbgMode,
-					storeLog = storeLog)
-			exc.start(argv, name)
+	if options.emulation:
+		exc = Emulation(cfg = test,
+				strategy = strategy,
+				debug = dbgMode,
+				storeLog = storeLog)
+		exc.start(argv, name)
+	else:
+		exc = Execution(cfg = test,
+				strategy = strategy,
+				debug = dbgMode,
+				storeLog = storeLog)
+
+		if options.jobs:
+			exc.start(argv, name, jobs = int(options.jobs))
 		else:
-			exc = Execution(cfg = test,
-					strategy = strategy,
-					debug = dbgMode,
-					storeLog = storeLog)
+			exc.start(argv, name)
 
-			if options.jobs:
-				exc.start(argv, name, jobs = int(options.jobs))
-			else:
-				exc.start(argv, name)
-
-		_end = time.time()
-		debug.info("Time Execution: %ss" % (_end - _start))
-		_start = _end
-		exc.report()
-		_end = time.time()
-		debug.info("Time Report: %ss" % (_end - _start))
-		return True
-	except ExceptionEmulUnknown, e:
-		debug.error("startRegression: error: %s!" % e)
-		return False
+	_end = time.time()
+	debug.info("Time Execution: %ss" % (_end - _start))
+	_start = _end
+	exc.report()
+	_end = time.time()
+	debug.info("Time Report: %ss" % (_end - _start))
+	return True
 
 
 def regressionOptionsHandler(options, argv):

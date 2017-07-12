@@ -48,6 +48,9 @@ class Execution(TBase):
 		:return: None
 		"""
 		strategy = self.getInstance(contract)
+		if not strategy:
+			self.debug.error("__setupContractProcess: failed to init instance.")
+			return None
 
 		p = mp.Process(target = strategy.start, args = (startTick,
 					self.estimateEndTick(contract, expireDates),
