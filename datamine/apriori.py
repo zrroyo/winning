@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
@@ -13,23 +13,28 @@ import time
 import itertools
 from misc.debug import Debug
 
-# 关联规则Apriori算法实现
+
 class Apriori:
-	def __init__(self,
-		support,
-		confidence,
-		debug = False,
-		):
+	def __init__(self, support, confidence, debug = False):
+		"""
+		Apriori（关联规则）算法实现
+		:param support:
+		:param confidence:
+		:param debug: 是否打开调试开关
+		"""
 		self.debug = Debug('Apriori', debug)
 		self.support = support
 		self.confidence = confidence
 		self.data = None
-		self.rules = []		#存储规则
+		# 存储规则
+		self.rules = []
 
-	# 把矩阵元素组成unique序列
-	def __unique (self,
-		curKn,	#当前kn矩阵
-		):
+	def __unique(self, curKn):
+		"""
+		把矩阵元素组成unique序列
+		:param curKn: 当前kn矩阵
+		:return: unique序列
+		"""
 		_func_unique = lambda x : list(pd.Series(x).unique())
 		_unique = map(_func_unique, curKn.T.as_matrix())
 		# self.debug.dbg(_unique)
@@ -37,11 +42,13 @@ class Apriori:
 		unique = pd.Series(_unique).unique()
 		return list(unique)
 
-	# 生成下一个kn矩阵
-	def __getNextKn (self,
-		curKn,	#当前kn矩阵
-		unique,	#当前kn矩阵的unique序列
-		):
+	def __getNextKn(self, curKn, unique):
+		"""
+		生成下一个kn矩阵
+		:param curKn: 当前kn矩阵
+		:param unique: 当前kn矩阵的unique序列
+		:return: 下一个kn矩阵
+		"""
 		nextKn = pd.DataFrame()
 		# unique中元素更少，代替curKn循环可提高效率
 		for u in unique:
@@ -55,12 +62,11 @@ class Apriori:
 		nextKn.index = xrange(len(nextKn))
 		return nextKn
 
-	# 过滤kn中的有效组合
-	def __knFilterValid (self,
-		kn,	#kn矩阵
-		):
+	def __knFilterValid(self, kn):
 		"""
-		打印大型矩阵会导致性能严重下降，故关闭打印。
+		过滤kn中的有效组合
+		:param kn: kn矩阵
+		:return: 过滤出符合support的有效组合
 		"""
 		_get_col = lambda x: self.data[x].as_matrix()
 		# self.debug.dbg("__knFilterValid: kn: %s" % kn)
@@ -76,16 +82,15 @@ class Apriori:
 		# self.debug.dbg("__knFilterValid: valid: %s" % valid)
 		valid.index = xrange(len(valid))
 		supports.index = valid.index
-		return valid,supports
+		return valid, supports
 
-	# 计算Confidence（置信度）
-	def __knConfidence (self,
-		valid,		#kn的有效组合矩阵
-		supports,	#支持度
-		):
+	def __knConfidence(self, valid, supports):
 		"""
 		将m x n矩阵转换成n个n-1阶子矩阵，再分别计算其每行的置信度。
 		对于子矩阵C第m行的置信度为(support of valid[m]) / (support of C[m])
+		:param valid: kn的有效组合矩阵
+		:param supports: 支持度
+		:return: None
 		"""
 		# 得到所有子矩阵
 		combs = list(itertools.combinations(valid.columns, len(valid.columns) - 1))
@@ -109,13 +114,15 @@ class Apriori:
 			#存储rules
 			self.__storeRules(valid, f, supports, confidence)
 
-	# 存储rules
-	def __storeRules (self,
-		kn,		#kn矩阵
-		comb,		#子矩阵
-		supports,	#kn支持度
-		confidence,	#置信度
-		):
+	def __storeRules(self, kn, comb, supports, confidence):
+		"""
+		存储rules
+		:param kn: kn矩阵
+		:param comb: 子矩阵
+		:param supports: kn支持度
+		:param confidence: 置信度
+		:return: None
+		"""
 		_orderCol = list(comb.columns) + list(set(kn.columns) - set(comb.columns))
 		_kn = kn[_orderCol]
 		_rules = _kn.T[confidence.index].T
@@ -125,16 +132,21 @@ class Apriori:
 		rules = map(_func_rule, _rules.as_matrix())
 		self.rules += zip(rules, supports, confidence)
 
-	# 列出所有rules
-	def rules_ (self):
+	def rules_(self):
+		"""
+		列出所有rules
+		:return: None
+		"""
 		print "{:<30}{:>10}{:>15} ".format('', 'Support', 'Confidence')
 		for r in self.rules:
 			print "{:<30}{:10.6f}{:15.6f} ".format(r[0], r[1], r[2])
 
-	# 找出所有rules
-	def __findRules (self,
-		k0,	#初始k0矩阵
-		):
+	def __findRules(self, k0):
+		"""
+		找出所有rules
+		:param k0: 初始k0矩阵
+		:return: None
+		"""
 		kn = k0
 		unique = self.__unique(k0)
 		# self.debug.dbg("__findRules: K0: %s" % k0)
@@ -159,10 +171,12 @@ class Apriori:
 			end = time.clock()
 			self.debug.info("__findRules: time: %s" % (end - start))
 
-	# 开始适配
-	def fit (self,
-		datafile,	#数据文件
-		):
+	def fit(self, datafile):
+		"""
+		开始适配
+		:param datafile: 数据文件
+		:return: None
+		"""
 		data = pd.read_csv(datafile, header = None)
 		ct = lambda x : pd.Series(1, index = x[pd.notnull(x)])
 		data = map(ct, data.as_matrix())
