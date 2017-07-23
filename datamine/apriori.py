@@ -50,6 +50,9 @@ class Apriori:
 		:return: 下一个kn矩阵
 		"""
 		nextKn = pd.DataFrame()
+		if curKn.empty:
+			return nextKn
+
 		# unique中元素更少，代替curKn循环可提高效率
 		for u in unique:
 			tmp = pd.concat((curKn, pd.Series(u, index = curKn.index)), axis = 1)
