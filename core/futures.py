@@ -436,7 +436,6 @@ class Futures:
 		# 统计交易数据
 		self.tradeStat.tickEnd = tick
 		self.tradeStat.profit = _sum[TK_ORD_PROFIT]
-		_floatMov = self.tickStatFrame[TK_FLOAT_MOV]
 		self.tradeStat.tickFloatMax = list(_floatMov[_floatMov == _floatDesc['max']].index)[0]
 		self.tradeStat.tickFloatMin = list(_floatMov[_floatMov == _floatDesc['min']].index)[0]
 
@@ -728,14 +727,14 @@ class Futures:
 		# 将交易数据以excel格式保存
 		self.debug.dbg("__exit: trdStatFrame: \n%s" % self.trdStatFrame.T)
 		_trdXlsx = "%s/%s_TRADE_STAT.xlsx" % (self.logDir, self.contract)
-		self.trdStatFrame.T.to_excel(_trdXlsx, float_format = "%.2f")
+		self.trdStatFrame.T.to_excel(_trdXlsx, float_format = "%.3f")
 
 		# 部分tick不在交易中，没有机会存入存储区
 		self.__appendTickStatToFrame()
 		# 将tick数据以excel格式保存
 		_data = "%s/%s" % (self.logDir, self.contract)
 		self.tickStatTotal[self.tickStatCols].to_excel("%s_TICK_STAT.xlsx" % _data,
-								float_format = "%.2f")
+								float_format = "%.3f")
 		self.__clearTickStatFrame()
 
 	def start(self, startTick = None, stopTick = None, msgQ = None,
