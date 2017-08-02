@@ -418,10 +418,12 @@ class Futures:
 		_start = list(self.tickStatFrame.index).index(tick)
 		self.tickStatFrame.drop(self.tickStatFrame[_start:].index, inplace = True)
 
-	def __exitTrade(self, tick):
+	def __exitTrade(self, tick, price, direction):
 		"""
 		交易结束操作
-		:param tick: 结束tick
+		:param tick: 交易时间
+		:param price: 成交价
+		:param direction: 多空方向
 		:return: None
 		"""
 		self.__appendTickStatToFrame()
@@ -443,7 +445,7 @@ class Futures:
 		self.log("              ****** Total profit %s ******" % self.comStat.cumProfit)
 
 		# 将交易数据插入交易表
-		values = self.tradeStat.values(_sum, _floatDesc) + self.storeCustomTradeEnv()
+		values = self.tradeStat.values(_sum, _floatDesc) + self.storeCustomTradeEnv(tick, price, direction)
 		self.trdStatFrame = self.trdStatFrame.append(
 					pd.DataFrame([values], columns = self.trdStatCols),
 					ignore_index = True)
@@ -654,10 +656,10 @@ class Futures:
 
 	def storeCustomTickEnv(self, tick, price, direction):
 		"""
-		追加需在tickStatFrame记录的数据，私有变量、统计数据等
-		:param tick: 当前tick
-		:param price: 当前价格
-		:param direction: 方向
+		将子类（实例）自定义的tick数据纳入统计
+		:param tick: 交易时间
+		:param price: 成交价
+		:param direction: 多空方向
 		:return: 数据列表
 		"""
 		return []
@@ -670,11 +672,12 @@ class Futures:
 		"""
 		pass
 
-	def storeCustomTradeEnv(self):
+	def storeCustomTradeEnv(self, tick, price, direction):
 		"""
-
-		:param tick: 当前tick
-		:param price: 当前价格
+		将子类（实例）自定义的trade数据纳入统计
+		:param tick: 交易时间
+		:param price: 成交价
+		:param direction: 多空方向
 		:return: 数据列表
 		"""
 		return []
@@ -1067,7 +1070,7 @@ class Futures:
 
 		# 该tick完成本次交易结束，清尾
 		if self.tickStat.tagTradeEnd:
-			self.__exitTrade(tick)
+			self.__exitTrade(tick, price, direction)
 		# 确保各tick数据不会互相干扰，分配新数据存储区
 		self.tickStat = TickStat()
 
