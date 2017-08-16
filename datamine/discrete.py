@@ -60,40 +60,47 @@ class Discrete:
 
 		return ret
 
-	def export(self, cols, sections = "{}", alias = None, csvfile = None):
+	def export(self, job, csvfile = None):
 		"""
 		导出数据
-		:param cols: 需转化的数据列
-		:param sections: 指定数据列划分方式，如"{'c1': ['p', 0.4, 0.5, 0.8], 'c2': ['c', 0.03, 0.06]}"
-		:param alias: 统计列使用别名
+		:param job: 导出详细描述。如"((列名, ('c|p', [分位点, ...]), [别名]), [(....)])"
 		:param csvfile: 导出文件名
 		:return: None
 		"""
+		cols = map(lambda x: x[0], job)
 		_data = self.data[cols]
-		self._alias = alias if alias else cols
-		sections = eval(sections)
+		# 初始化导出的别名，没指定则用数据列名
+		self._alias = map(lambda x: x[0] if len(x) < 3 else x[2], job)
 
 		# 确定__convert所需的各列的分位信息：
 		# 1.如果sections参数中有指定该列则用指定划分方式；
 		# 2.否则默认启用分位点（self.quantiles）划分方式
 		self._desc = list()
-		for c in cols:
-			if c not in sections.keys():
-				# 参数中无指定，默认启用分位点方式
-				_sect = _data[c].astype("float").describe(self.quantiles).iloc[3:]
+		for j in job:
+			c = j[0]
+			attr = j[1]
+			jtype = attr[0]
+			try:
+				jbound = sorted(attr[1:])
+			except IndexError, e:
+				jbound = None
+
+			if jtype == 'p':
+				# 分位点划分。参数指定则使用指定值，否则使用默认分位点
+				quantiles = self.quantiles
+				if jbound:
+					quantiles = jbound
+
+				_sect = _data[c].astype("float").describe(quantiles).iloc[3:]
 				self._desc.append(("p", _sect))
+
+			elif jtype == 'c':
+				# 区间划分。将数据划分为'len(jbound)+1'个区间，并由0开始记各区间
+				_sect = pd.Series(jbound)
+				self._desc.append(("c", _sect))
 			else:
-				# 参数中有指定，且指定值中第一个值"c"表示区间划分，"p"表示分位点划分
-				v = sections[c]
-				if v[0] == "c":
-					# 区间划分。将数据划分为 len(分位点)+1 个区间，区间由0开始记
-					_sect = pd.Series(sorted(v[1:]))
-					self._desc.append(("c", _sect))
-				else:
-					# 分位点划分
-					_perc = v[1:] if v[0] == "p" else v
-					_sect = _data[c].astype("float").describe(_perc).iloc[3:]
-					self._desc.append(("p", _sect))
+				self.debug.error("export: found unkown type '%s'" % jtype)
+				return None
 
 		output = map(self.__convert, _data.as_matrix().tolist())
 
@@ -108,14 +115,46 @@ class Discrete:
 
 
 def doTest():
-	dis = Discrete("TESTDATA/discover/p15~11_mink_o15/TRANSACTIONS.xlsx", debug = True,
+	dis = Discrete("TESTDATA/discover/p15~11_mink_o15_3/TRANSACTIONS.xlsx", debug = True,
 			quantiles = [0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 0.95])
 
-	# dis.export(["Float_Min", "Float_Max", "Profit", "FR_Min", "FR_Max"],
-	# 	alias = ["FLMin", "FLMax", "PR", "FRMin", "FRMax"], csvfile = "test.csv")
+	job = (("Float_Min", ['p'], "FLMin"),
+		("Float_Max", ['p'], "FLMax"),
+		("Profit", ['p'], "PR"),
+		("FR_Min", ['p'], "FRMin"),
+		("FR_Max", ['p'], "FRMax"))
+	dis.export(job, csvfile = "test_1.csv")
 
-	dis.export(["Profit", "FR_Max", "FR_Min"], "{'Profit': ['c', 0], 'FR_Max': ['c', 0.03, 0.06, 0.09]}",
-		["PR", "FRMax", "FRMin"], "test.csv_2")
+	job = (("Profit", ['c', 0], "PR"),
+		("FR_Max", ['c', 0.03, 0.06, 0.09], "FRMax"),
+		("FR_Min", ['p'], "FRMin"))
+	dis.export(job, csvfile = "test_2.csv")
+
+	job = (("Profit", ['c', 0], "PR"),
+		("FR_Max", ['c', 0.025, 0.03, 0.035, 0.04, 0.06, 0.09], "FRMax"))
+	dis.export(job, csvfile = "test_3.csv")
+
+	job = (("Profit", ['c', 0], "PR"),
+		("FR_Max", ['c', 0.03], "FRMax"))
+	dis.export(job, csvfile = "test_4.csv")
+
+	job = (("FR_Min", ['c', -0.02, -0.01], "FRMin"),
+		("PFR", ['c', -0.03, -0.02, -0.01, 0]))
+	dis.export(job, csvfile = "test_5.csv")
+
+	job = (("FR_Min", ['c', -0.016], "FRMin"),
+		("PFR", ['c', 0]))
+	dis.export(job, csvfile = "test_6.csv")
+
+	job = (('FR_Max', ['c', 0.018], "FRMax0.018"),
+		('FR_Max', ['c', 0.026], "FRMax0.026"),
+		('FR_Max', ['c', 0.036], "FRMax0.036"),
+		('FR_Max', ['c', 0.045], "FRMax0.045"),
+		# ('FR_Max', ['c', 0.045]),
+		('FR_Max', ['c', 0.050], "FRMax0.050"),
+		('FR_Max', ['c', 0.088], "FRMax0.088"),
+		('FR_Max', ['c', 0.125], "FRMax0.125"))
+	dis.export(job, "test_7.csv")
 
 if __name__ == "__main__":
 	doTest()
