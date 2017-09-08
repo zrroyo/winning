@@ -8,6 +8,7 @@ Start: 2017年 06月 19日 星期一 22:49:45 CST
 
 import sys
 sys.path.append("..")
+import numpy as np
 
 from datetime import datetime, timedelta
 from core.futures import *
@@ -26,29 +27,35 @@ class Main(Futures):
 		Futures.__init__(self, contract, config, logDir, debug)
 		self.debug = Debug("Discover", debug)
 
-		self.initStatFrame(tkCols = ['FloatRatio'], trdCols = ["FR_Min", "FR_Max", "PFR"])
+		self.initStatFrame(tkCols = ['FloatRatio', "OP2_FR"],
+			trdCols = ["FR_Min", "FR_Max", "PFR", "OP2_FR_Min", "OP2_FR_Max", "OP2_PFR"])
 		self.firstTick = self.tickHelper.firstTick()
 		#
-		self.opPrice = 0
+		self.opPrice1 = self.opPrice2 = None
 
-	def invalidSignal(self, tick):
+	def validSignal(self, tick):
+		ret = True
 		if tick - self.firstTick < timedelta(days = 10):
-			return False
+			ret = False
 
-		return True
+		return ret
 
-	def __curFloatRate(self, price, direction):
+	def __curFloatRate(self, price, opPrice, direction):
 		"""
 		计算当前浮动利润率
 		:param price: 当前价格
 		:param direction: 方向
-		:return: 浮动利润率
+		:param opPrice: 加仓价格
+		:return: 浮动利润率|NaN
 		"""
-		ret = 0
+		ret = np.nan
+		if not opPrice:
+			return ret
+
 		if direction == SIG_TRADE_LONG:
-			ret = (price - self.opPrice)/self.opPrice
+			ret = (price - opPrice) / opPrice
 		elif direction == SIG_TRADE_SHORT:
-			ret = (self.opPrice - price)/self.opPrice
+			ret = (opPrice - price) / opPrice
 
 		return ret
 
@@ -60,8 +67,13 @@ class Main(Futures):
 		:param direction: 方向
 		:return: 数据列表
 		"""
-		ret = self.__curFloatRate(price, direction)
-		return [ret]
+		ret = list()
+
+		for p in (self.opPrice1, self.opPrice2):
+			_cfr = self.__curFloatRate(price, p, direction)
+			ret.append(_cfr)
+
+		return ret
 
 	def storeCustomTradeEnv(self, tick, price, direction):
 		"""
@@ -70,11 +82,24 @@ class Main(Futures):
 		:param direction: 多空方向
 		:return: 数据列表
 		"""
-		desc = self.tickStatFrame["FloatRatio"].describe()
-		_min = desc["min"]
-		_max = desc["max"]
-		pfr = self.__curFloatRate(price, direction)
-		return [_min, _max, pfr]
+		ret = list()
+		todo = (("FloatRatio", self.opPrice1), ("OP2_FR", self.opPrice2))
+
+		for col, opPrice in todo:
+			_val = self.tickStatFrame[self.tickStatFrame[col].notnull()][col]
+			if _val.empty:
+				ret += [np.nan] * 3
+				continue
+
+			desc = _val.describe()
+			_min = desc["min"]
+			_max = desc["max"]
+			pfr = self.__curFloatRate(price, opPrice, direction)
+			ret += [_min, _max, pfr]
+
+		#
+		self.opPrice1 = self.opPrice2 = None
+		return ret
 
 	def signalStartTrading(self, tick):
 		"""
@@ -83,8 +108,8 @@ class Main(Futures):
 		:return: SIG_TRADE_SHORT、SIG_TRADE_LONG、None
 		"""
 		ret = None
-		if not self.invalidSignal(tick):
-			return None
+		if not self.validSignal(tick):
+			return ret
 
 		days = 15
 		price = self.data.getClose(tick)
@@ -101,7 +126,7 @@ class Main(Futures):
 			ret = SIG_TRADE_LONG
 
 		if ret:
-			self.opPrice = price
+			self.opPrice1 = price
 
 		return ret
 
@@ -130,4 +155,54 @@ class Main(Futures):
 						tick, days, price, self.data.lowestWithinDays(tick, days)))
 			ret = True
 
+		return ret
+
+	def signalAddPosition(self, tick, direction):
+		"""
+		触发加仓信号
+		:param tick: 交易时间
+		:param direction: 多空方向
+		:return: 触发加仓信号返回True，否则返回False
+		"""
+		ret = False
+		price = self.data.getClose(tick)
+		pos = self.getPosition()
+
+		cfr = self.__curFloatRate(price, pos.price, direction)
+		if cfr >= 0.01 and self.curPositions() < 2:
+			#
+			self.log("	Add Position: %s, cfr %s" % (tick, cfr))
+			self.opPrice2 = price
+			ret = True
+
+		return ret
+
+	def signalCutLoss(self, tick, direction):
+		"""
+		触发止损信号
+		:param tick: 交易时间
+		:param direction: 多空方向
+		:return: 触发止损信号返回True，否则返回False
+		"""
+		ret = False
+		price = self.data.getClose(tick)
+
+		cfr = self.__curFloatRate(price, self.opPrice1, direction)
+		if cfr < -0.016:
+			#
+			self.log("	Cut Loss: %s, cfr %s" % (tick, cfr))
+			ret = True
+
+		return ret
+
+	def tradeCutLoss(self, tick, direction):
+		"""
+		止损。必须被重载实现
+		@MUST_OVERRIDE
+		:param tick: 交易时间
+		:param direction: 方向
+		:return: 成功返回True，否则返回False
+		"""
+		price = self.data.getClose(tick)
+		ret = self.closePositions(tick, price, direction, self.curPositions())
 		return ret
