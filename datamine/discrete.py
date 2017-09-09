@@ -68,7 +68,7 @@ class Discrete:
 		:return: None
 		"""
 		cols = map(lambda x: x[0], job)
-		_data = self.data[cols]
+		_data = self.data[cols].dropna()
 		# 初始化导出的别名，没指定则用数据列名
 		self._alias = map(lambda x: x[0] if len(x) < 3 else x[2], job)
 
