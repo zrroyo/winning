@@ -80,8 +80,8 @@ class PositionManager:
 			self.debug.dbg("current %s" % self.numPositions())
 			return pos
 		except IndexError, e:
-			self.debug.error("popPosition: num %s, current %s\n %s" % (
-							num, self.numPositions(), e))
+			self.debug.dbg("popPosition: num %s, current %s\n" % (
+							num, self.numPositions()))
 			return None
 
 	def valueSum (self, value = 'price'):
@@ -117,8 +117,8 @@ class PositionManager:
 		try:
 			return self.posStack[num - 1]
 		except IndexError, e:
-			self.debug.error("getPosition: num %s, current %s\n %s" % (
-							num, self.numPositions(), e))
+			self.debug.dbg("getPosition: num %s, current %s\n" % (
+							num, self.numPositions()))
 			return None
 		
 	def empty (self):
