@@ -347,26 +347,31 @@ class Futures:
 						price, self.curPositions()))
 		return True
 	
-	def closePositions(self, tick, price, direction, numPos = 1):
+	def closePositions(self, tick, price, direction, nrPos = 1, reverse = False):
 		"""
 		平仓处理
 		:param tick: 交易时间
 		:param price: 成交价
 		:param direction: 多空方向
-		:param numPos: 影响仓数
+		:param nrPos: 仓数
+		:param reverse: 逆序减仓
 		:return: 成功返回True，否则返回False
 		"""
-		# 从第一仓开始按序减仓
-		_close = self.posMgr.posStack[:numPos]
-		_profitL = [ self.__orderProfit(direction, pos.price, price) for pos in _close ]
-		nrClose = len(_profitL)
-		# 确认操作是否被允许
-		# capital = numPos * price * self.attrs.multiplier * self.attrs.marginRatio
-		if not self.__sendParaRequest(tick, EMUL_FUT_ACT_CLOSE, nrClose, 0):
+		# 并行模拟环境需确认资源是否被允许
+		# capital = nrPos * price * self.attrs.multiplier * self.attrs.marginRatio
+		if not self.__sendParaRequest(tick, EMUL_FUT_ACT_CLOSE, nrPos, 0):
 			return False
 
-		# 操作被允许，移除仓位，并更新统计数据
-		self.posMgr.posStack = self.posMgr.posStack[numPos:]
+		# 默认从第一仓开始按序减仓
+		_close = self.posMgr.posStack[:nrPos]
+		_remain = self.posMgr.posStack[nrPos:]
+		if reverse:
+			_close = self.posMgr.posStack[-nrPos:]
+			_remain = self.posMgr.posStack[:-nrPos]
+		# 移除仓位
+		self.posMgr.posStack = _remain
+
+		_profitL = [self.__orderProfit(direction, pos.price, price) for pos in _close]
 		_close = zip(_close, _profitL)
 		for (pos, profit) in _close:
 			self.log("		<<-- Close: open %s, close %s, profit %s -->>" % (
@@ -375,10 +380,11 @@ class Futures:
 		# 平仓需统计交易单相关统计数据
 		closeProfit = sum(_profitL)
 		_profitL = pd.Series(_profitL)
-		self.tickStat.ordWins = len(_profitL[_profitL > 0])
-		self.tickStat.ordLoses = len(_profitL[_profitL < 0])
-		self.tickStat.ordFlat = len(_profitL[_profitL == 0])
-		self.tickStat.orderProfit = closeProfit
+		# 由于各仓位止损、止赢点不同，可以导致同一tick多次平仓
+		self.tickStat.ordWins += len(_profitL[_profitL > 0])
+		self.tickStat.ordLoses += len(_profitL[_profitL < 0])
+		self.tickStat.ordFlat += len(_profitL[_profitL == 0])
+		self.tickStat.orderProfit += closeProfit
 		# 更新累积交易利润
 		self.comStat.cumProfit += closeProfit
 
