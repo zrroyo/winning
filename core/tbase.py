@@ -135,9 +135,22 @@ class TBase:
 		"""
 		pass
 
-	def report(self):
+	def report(self, filter, rptname):
 		"""
 		生成全局统计报表
+		:param filter: 过滤器
+		:param rptname: 导出报告名
 		:return: None
 		"""
-		pass
+		import re
+		import pandas as pd
+		files = os.listdir(self.logDir)
+		ts = [f for f in files if re.search("%s[.]xlsx$" % filter, f)]
+		ts = sorted(ts, reverse = True)
+		total = pd.DataFrame()
+		for t in ts:
+			tmp = pd.read_excel(os.path.join(self.logDir, t), index_col = 0)
+			total = pd.concat((total, tmp), axis = 0)
+
+		total.index = range(1, len(total)+1)
+		total.to_excel(os.path.join(self.logDir, "%s.xlsx" % rptname))
