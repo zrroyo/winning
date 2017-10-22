@@ -746,7 +746,7 @@ class Futures:
 		# 将交易数据以excel格式保存
 		self.debug.dbg("__exit: trdStatFrame: \n%s" % self.trdStatFrame.T)
 		_trdXlsx = "%s/%s_TRADE_STAT.xlsx" % (self.logDir, self.contract)
-		self.trdStatFrame.T.to_excel(_trdXlsx, float_format = "%.5f")
+		self.trdStatFrame.to_excel(_trdXlsx, float_format = "%.5f")
 
 		# 部分tick不在交易中，没有机会存入存储区
 		self.__appendTickStatToFrame()

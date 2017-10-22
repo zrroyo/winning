@@ -70,7 +70,7 @@ def startRegression(options, strategy, test, argv, name, dbgMode, storeLog):
 	_end = time.time()
 	debug.info("Time Execution: %ss" % (_end - _start))
 	_start = _end
-	exc.report()
+	exc.report(options.filter, options.rptname)
 	_end = time.time()
 	debug.info("Time Report: %ss" % (_end - _start))
 	return True
@@ -123,6 +123,10 @@ def regressionOptionsParser(parser, argv):
 			help='Maximum test jobs allowed.')
 	parser.add_option('-S', '--storeLog', action="store_true", dest='storeLog',
 			help='Store logs for each contract.')
+	parser.add_option('-F', '--filter', dest='filter',
+			help='Tag to filter reports.')
+	parser.add_option('-R', '--rptname', dest='rptname',
+			help='Report name for aggregate results.')
 	parser.add_option('-D', '--debug', action="store_true", dest='debug',
 			help='Enable debug mode.')
 
