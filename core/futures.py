@@ -511,13 +511,16 @@ class Futures:
 		"""
 		交易信号转换成方向字符串
 		:param signal: 交易信号
-		:return:信号字串
+		:return: 信号字串
 		"""
-		if signal == SIG_TRADE_SHORT:
-			return 'Short'
-		elif signal == SIG_TRADE_LONG:
-			return 'Long'
-		else:
+		sigMap = {
+			SIG_TRADE_SHORT: 'Short',
+			SIG_TRADE_LONG: 'Long'
+			}
+
+		try:
+			return sigMap[signal]
+		except KeyError, e:
 			return None
 
 	def __validSignal(self, signal):
@@ -728,6 +731,13 @@ class Futures:
 
 		return retStart,retStop
 
+	def customExit(self):
+		"""
+		子策略自定义的退出处理
+		:return: None
+		"""
+		pass
+
 	def __exit(self):
 		"""
 		即将退出合约进程，将交易、tick数据导出保存。
@@ -745,6 +755,8 @@ class Futures:
 		self.tickStatTotal[self.tickStatCols].to_excel("%s_TICK_STAT.xlsx" % _data,
 								float_format = "%.5f")
 		self.__clearTickStatFrame()
+		# 子策略自定义的退出处理
+		self.customExit()
 
 	def start(self, startTick = None, stopTick = None, msgQ = None,
 			shmem = None, shmlock = None, storeLog = False, follow = False):
