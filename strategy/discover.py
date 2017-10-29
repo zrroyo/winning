@@ -26,12 +26,17 @@ class Main(Futures):
 		"""
 		Futures.__init__(self, contract, config, logDir, debug)
 		self.debug = Debug("Discover", debug)
-
-		self.initStatFrame(tkCols = ['FloatRatio', "OP2_FR"],
-			trdCols = ["FR_Min", "FR_Max", "PFR", "OP2_FR_Min", "OP2_FR_Max", "OP2_PFR"])
+		self.tkCols = ['FloatRatio', "OP2_FR"]
+		self.initStatFrame(tkCols = self.tkCols, trdCols = ["TRD_ID"])
 		self.firstTick = self.tickHelper.firstTick()
 		#
-		self.opPrice1 = self.opPrice2 = None
+		self.opPrice = list()
+		#
+		self.toCutLoss = None
+		#
+		self.pLastCut = None
+		#
+		self.posStatFrame = pd.DataFrame()
 
 	def validSignal(self, tick):
 		ret = True
@@ -68,11 +73,86 @@ class Main(Futures):
 		:return: 数据列表
 		"""
 		ret = list()
+		# 统计的数据列受tkCols控制
+		_maxPos = len(self.tkCols)
 
-		for p in (self.opPrice1, self.opPrice2):
+		for i in range(_maxPos):
+			try:
+				p = self.opPrice[i]
+			except IndexError, e:
+				p = None
 			_cfr = self.__curFloatRate(price, p, direction)
 			ret.append(_cfr)
 
+		if self.toCutLoss:
+			# 已发生止损，仓位已平，缓存的开仓使用完毕需移除，避免下一tick重复记入
+			self.opPrice = self.opPrice[:self.toCutLoss-1]
+			# toCutLoss仅用于保证止损时能得到开仓价并计算出pfr，用完需清除避免影响下一tick
+			self.toCutLoss = None
+
+		if self.curPositions() == 0:
+			# 交易已经结束
+			self.opPrice = list()
+
+		return ret
+
+	def __genTradeStat(self, price, direction, col, stCol):
+		"""
+
+		:param price: 成交价
+		:param direction: 多空方向
+		:param col: 目标列
+		:param stCol: 统计列
+		:return: 统计数据矩阵
+		"""
+		val = self.tickStatFrame[[col]]
+		oldIndex = val.index
+		val.index = range(len(val))
+		# val.to_excel("/tmp/genTradeStat_val.xls")
+		nnIdx = set(val[val[col].notnull()].index)
+		# 得到有效的数值区间
+		_index = val.index
+		val.index = list(_index[1:]) + [_index[-1] + 1]
+		isnIdx1 = set(val[val[col].isnull()].index)
+		val.index = [-1] + list(_index[:-1])
+		isnIdx2 = set(val[val[col].isnull()].index)
+		val.index = _index
+		_ceiling = sorted(list(nnIdx.intersection(isnIdx1)))
+		_floor = sorted(list(nnIdx.intersection(isnIdx2)))
+
+		if len(_ceiling) == 0 or len(_floor) == 0:
+			# 上沿为空、下沿为空或都为空的情况下数据区间唯一
+			todo = [val[val[col].notnull()]]
+		else:
+			_bound = list()
+			if _floor[0] < _ceiling[0]:
+				# 第一个数据区间从‘0’索引开始
+				_bound.append((0, _floor[0]))
+				_floor = _floor[1:]
+
+			if _ceiling[-1] > _floor[-1]:
+				# 最后一个数据区间到结束
+				_floor += [_index[-1]]
+
+			_bound += zip(_ceiling, _floor)
+			todo = map(lambda x: val.iloc[x[0]: x[1]+1], _bound)
+
+		_ret = list()
+		for t in todo:
+			if t.empty:
+				_ret.append([np.nan] * 3)
+				continue
+
+			desc = t[col].describe()
+			_min = desc["min"]
+			_max = desc["max"]
+			# 数据区间中的第一个为开仓tick，价格即为开仓价
+			_opTick = oldIndex[t.index[0]]
+			_opPrice = self.data.getClose(_opTick)
+			pfr = self.__curFloatRate(price, _opPrice, direction)
+			_ret.append([_min, _max, pfr])
+
+		ret = pd.DataFrame(_ret, columns = stCol)
 		return ret
 
 	def storeCustomTradeEnv(self, tick, price, direction):
@@ -82,24 +162,24 @@ class Main(Futures):
 		:param direction: 多空方向
 		:return: 数据列表
 		"""
-		ret = list()
-		todo = (("FloatRatio", self.opPrice1), ("OP2_FR", self.opPrice2))
+		trdID = "%s_%s" % (self.contract, len(self.trdStatFrame) + 1)
+		todo = {'FloatRatio': ["FR_Min", "FR_Max", "PFR"],
+			'OP2_FR': ["OP2_FR_Min", "OP2_FR_Max", "OP2_PFR"]}
 
-		for col, opPrice in todo:
-			_val = self.tickStatFrame[self.tickStatFrame[col].notnull()][col]
-			if _val.empty:
-				ret += [np.nan] * 3
-				continue
+		ret = pd.DataFrame()
+		for c in self.tkCols:
+			cols = todo[c]
+			_ret = self.__genTradeStat(price, direction, c, cols)
+			ret = pd.concat([ret, _ret], axis = 1)
 
-			desc = _val.describe()
-			_min = desc["min"]
-			_max = desc["max"]
-			pfr = self.__curFloatRate(price, opPrice, direction)
-			ret += [_min, _max, pfr]
-
+		# 插入交易号
+		ret = pd.concat([pd.DataFrame(pd.Series([trdID] * len(ret)), columns=['TRD_ID']), ret], axis = 1)
 		#
-		self.opPrice1 = self.opPrice2 = None
-		return ret
+		self.posStatFrame = self.posStatFrame.append(ret, ignore_index = True)
+		#
+		self.opPrice = list()
+		#
+		return [trdID]
 
 	def signalStartTrading(self, tick):
 		"""
@@ -126,7 +206,7 @@ class Main(Futures):
 			ret = SIG_TRADE_LONG
 
 		if ret:
-			self.opPrice1 = price
+			self.opPrice.append(price)
 
 		return ret
 
@@ -165,15 +245,28 @@ class Main(Futures):
 		:return: 触发加仓信号返回True，否则返回False
 		"""
 		ret = False
+		thresholds = [0.01, 0.01]
 		price = self.data.getClose(tick)
 		pos = self.getPosition()
 
-		cfr = self.__curFloatRate(price, pos.price, direction)
-		if cfr >= 0.01 and self.curPositions() < 2:
-			#
-			self.log("	Add Position: %s, cfr %s" % (tick, cfr))
-			self.opPrice2 = price
-			ret = True
+		if self.pLastCut:
+			# 需保证新开仓价优于最近一次止损价，否则会有止损点无效风险
+			if (direction == SIG_TRADE_LONG and price <= self.pLastCut) or (\
+				direction == SIG_TRADE_SHORT and price >= self.pLastCut):
+				return ret
+
+		try:
+			_thr = thresholds[self.curPositions()]
+			cfr = self.__curFloatRate(price, pos.price, direction)
+			# 利润浮动需大于仓位对应阈值，并且需大于该仓位上一次开仓价（否则会导致止损失效）
+			if cfr >= _thr:
+				self.log("	Add Position: %s, cfr %s" % (tick, cfr))
+				self.opPrice.append(price)
+				# 止损后才需设置以预防止损失效
+				self.pLastCut = None
+				ret = True
+		except IndexError, e:
+			ret = False
 
 		return ret
 
@@ -184,13 +277,29 @@ class Main(Futures):
 		:param direction: 多空方向
 		:return: 触发止损信号返回True，否则返回False
 		"""
-		ret = False
 		price = self.data.getClose(tick)
+		thresholds = [-0.016, -0.015]
+		self.toCutLoss = None
+		cfr = list()
 
-		cfr = self.__curFloatRate(price, self.opPrice1, direction)
-		if cfr < -0.016:
-			#
-			self.log("	Cut Loss: %s, cfr %s" % (tick, cfr))
+		for posIdx in range(1, self.curPositions() + 1):
+			pos = self.getPosition(posIdx)
+			_cfr = self.__curFloatRate(price, pos.price, direction)
+			try:
+				_thr = thresholds[posIdx - 1]
+				cfr.append(_cfr)
+				if _cfr < _thr:
+					self.toCutLoss = posIdx
+					# 记录止损点，作为加仓条件以避免止损无效
+					self.pLastCut = pos.price
+					break
+			except IndexError, e:
+				break
+
+		ret = False
+		if self.toCutLoss:
+			self.log("	Cut Loss: %s, price %s, cut from %s, cfr %s" % (
+						tick, price, self.toCutLoss, cfr))
 			ret = True
 
 		return ret
@@ -204,5 +313,15 @@ class Main(Futures):
 		:return: 成功返回True，否则返回False
 		"""
 		price = self.data.getClose(tick)
-		ret = self.closePositions(tick, price, direction, self.curPositions())
+		nrPos = self.curPositions() - self.toCutLoss + 1
+		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
 		return ret
+
+	def customExit(self):
+		"""
+
+		:return: None
+		"""
+		# 将tick数据以excel格式保存
+		_data = "%s/%s" % (self.logDir, self.contract)
+		self.posStatFrame.to_excel("%s_POS_STAT.xlsx" % _data, float_format = "%.5f")
