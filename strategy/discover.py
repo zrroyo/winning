@@ -147,9 +147,9 @@ class Main(Futures):
 			_min = desc["min"]
 			_max = desc["max"]
 			# 数据区间中的第一个为开仓tick，价格即为开仓价
-			_opTick = oldIndex[t.index[0]]
-			_opPrice = self.data.getClose(_opTick)
-			pfr = self.__curFloatRate(price, _opPrice, direction)
+			# _opTick = oldIndex[t.index[0]]
+			# _opPrice = self.data.getClose(_opTick)
+			pfr = t.iloc[-1][col]
 			_ret.append([_min, _max, pfr])
 
 		ret = pd.DataFrame(_ret, columns = stCol)
@@ -245,7 +245,7 @@ class Main(Futures):
 		:return: 触发加仓信号返回True，否则返回False
 		"""
 		ret = False
-		thresholds = [0.01, 0.01]
+		thresholds = [None, 0.018]
 		price = self.data.getClose(tick)
 		pos = self.getPosition()
 
