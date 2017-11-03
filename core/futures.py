@@ -371,7 +371,7 @@ class Futures:
 		# 移除仓位
 		self.posMgr.posStack = _remain
 
-		_profitL = [self.__orderProfit(direction, pos.price, price) for pos in _close]
+		_profitL = [self.orderProfit(direction, pos.price, price) for pos in _close]
 		_close = zip(_close, _profitL)
 		for (pos, profit) in _close:
 			self.log("		<<-- Close: open %s, close %s, profit %s -->>" % (
@@ -825,7 +825,7 @@ class Futures:
 		# cp.disable()
 		# cp.print_stats(sort='cumtime')
 
-	def __orderProfit(self, direction, open, price):
+	def orderProfit(self, direction, open, price):
 		"""
 		计算仓位利润
 		:param direction: 多空方向
@@ -833,13 +833,13 @@ class Futures:
 		:param price: 当前价
 		:return: 单仓利润
 		"""
-		orderProfit = price - open
+		ret = price - open
 		if direction == SIG_TRADE_SHORT:
-			orderProfit = open - price
+			ret = open - price
 
 		# 单价获利 * 每单手数 * 合约乘数
-		orderProfit *= self.attrs.numPosToAdd * self.attrs.multiplier
-		return orderProfit
+		ret *= self.attrs.numPosToAdd * self.attrs.multiplier
+		return ret
 
 	def __curPosFloatProfit(self, direction, price):
 		"""
