@@ -26,7 +26,7 @@ class Main(Futures):
 		"""
 		Futures.__init__(self, contract, config, logDir, debug)
 		self.debug = Debug("Discover", debug)
-		self.tkCols = ['FloatRatio', "OP2_FR"]
+		self.tkCols = ["OP1_FR", "OP2_FR", "OP3_FR", "OP4_FR"]
 		self.initStatFrame(tkCols = self.tkCols, trdCols = ["TRD_ID"])
 		self.firstTick = self.tickHelper.firstTick()
 		#
@@ -96,10 +96,9 @@ class Main(Futures):
 
 		return ret
 
-	def __genTradeStat(self, price, direction, col, stCol):
+	def __genTradeStat(self, direction, col, stCol):
 		"""
-
-		:param price: 成交价
+		生成(各仓位的)交易统计数据
 		:param direction: 多空方向
 		:param col: 目标列
 		:param stCol: 统计列
@@ -140,17 +139,20 @@ class Main(Futures):
 		_ret = list()
 		for t in todo:
 			if t.empty:
-				_ret.append([np.nan] * 3)
+				_ret.append([np.nan] * 4)
 				continue
 
 			desc = t[col].describe()
 			_min = desc["min"]
 			_max = desc["max"]
 			# 数据区间中的第一个为开仓tick，价格即为开仓价
-			# _opTick = oldIndex[t.index[0]]
-			# _opPrice = self.data.getClose(_opTick)
+			_opTick = oldIndex[t.index[0]]
+			_endTick = oldIndex[t.index[-1]]
+			_opPrice = self.data.getClose(_opTick)
+			_endPrice = self.data.getClose(_endTick)
+			profit = self.orderProfit(direction, _opPrice, _endPrice)
 			pfr = t.iloc[-1][col]
-			_ret.append([_min, _max, pfr])
+			_ret.append([_min, _max, pfr, profit])
 
 		ret = pd.DataFrame(_ret, columns = stCol)
 		return ret
@@ -163,13 +165,18 @@ class Main(Futures):
 		:return: 数据列表
 		"""
 		trdID = "%s_%s" % (self.contract, len(self.trdStatFrame) + 1)
-		todo = {'FloatRatio': ["FR_Min", "FR_Max", "PFR"],
-			'OP2_FR': ["OP2_FR_Min", "OP2_FR_Max", "OP2_PFR"]}
+		todo = {
+			'OP1_FR': ["OP1_FR_Min", "OP1_FR_Max", "OP1_PFR", "OP1_PROFIT"],
+			'OP2_FR': ["OP2_FR_Min", "OP2_FR_Max", "OP2_PFR", "OP2_PROFIT"],
+			'OP3_FR': ["OP3_FR_Min", "OP3_FR_Max", "OP3_PFR", "OP3_PROFIT"],
+			'OP4_FR': ["OP4_FR_Min", "OP4_FR_Max", "OP4_PFR", "OP4_PROFIT"],
+			'OP5_FR': ["OP5_FR_Min", "OP5_FR_Max", "OP5_PFR", "OP5_PROFIT"]
+			}
 
 		ret = pd.DataFrame()
 		for c in self.tkCols:
 			cols = todo[c]
-			_ret = self.__genTradeStat(price, direction, c, cols)
+			_ret = self.__genTradeStat(direction, c, cols)
 			ret = pd.concat([ret, _ret], axis = 1)
 
 		# 插入交易号
@@ -245,7 +252,7 @@ class Main(Futures):
 		:return: 触发加仓信号返回True，否则返回False
 		"""
 		ret = False
-		thresholds = [None, 0.018]
+		thresholds = [None, 0.013]
 		price = self.data.getClose(tick)
 		pos = self.getPosition()
 
@@ -278,7 +285,8 @@ class Main(Futures):
 		:return: 触发止损信号返回True，否则返回False
 		"""
 		price = self.data.getClose(tick)
-		thresholds = [-0.016, -0.015]
+		thresholds = [-0.016, -0.013]
+		# thresholds = []
 		self.toCutLoss = None
 		cfr = list()
 
