@@ -7,6 +7,7 @@ from optparse import OptionParser
 from dataMgr.importerParser import importerOptionsParser
 from dataMgr.dataParser import dataOptionsParser
 from core.regressionParser import regressionOptionsParser
+from core.analyze import analyzeOptionsParser
 # from ctp.ctpParser import ctpOptionsParser
 
 parser = OptionParser()
@@ -20,6 +21,8 @@ def parseArgs ():
 		dataOptionsParser(parser)
 	elif arg1 == 'regress':
 		regressionOptionsParser(parser, sys.argv)
+	elif arg1 == 'analyze':
+		analyzeOptionsParser(parser, sys.argv)
 	# elif arg1 == 'ctp':
 	# 	ctpOptionsParser(parser)
 	else:
