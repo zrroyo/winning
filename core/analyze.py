@@ -26,13 +26,15 @@ debug = Debug('Analyze', False)
 shell = ExecCommand()
 
 
-def drawCandlestick(conn, contract, periods, title):
+def drawCandlestick(conn, contract, periods, title, path, show):
 	"""
 	画蜡烛图
 	:param conn: 数据库句柄
 	:param contract: 合约名
 	:param periods: 时间区间
 	:param title: 图标题
+	:param path: 图片保存路径
+	:param show: 显示图片
 	:return: None
 	"""
 	# 可直接获取Timestamp中的日期
@@ -49,8 +51,9 @@ def drawCandlestick(conn, contract, periods, title):
 	values['Time'] = xticks
 	_values = values.as_matrix()
 
-	# 支持中文字体
+	# 中文显示
 	plt.rcParams['font.sans-serif'] = 'simhei'
+	plt.rcParams['font.family'] = 'sans-serif'
 	# 窗口大小，每格0.4寸
 	_width = 0.4 * (len(values) + 1)
 	plt.figure(figsize = (_width, 7))
@@ -64,7 +67,7 @@ def drawCandlestick(conn, contract, periods, title):
 	# 设置X轴刻度标签为显示时间，并倾斜60度
 	plt.xticks(xticks, rotation = 60)
 	ca.set_xticklabels(xtkLables)
-	plt.ylabel(u"价格")
+	plt.ylabel(u"价格（元）")
 	plt.xlabel(u"时间")
 	# 绘图
 	mpf.candlestick_ochl(ca, _values, width = 1, colorup = 'red', colordown = 'green')
@@ -83,16 +86,20 @@ def drawCandlestick(conn, contract, periods, title):
 	plt.annotate("Min: %s" % int(_min.Low), xy = (xticks[_min.index[0]], _min.Low-1),
 		xytext = (xticks[_min.index[0]], _min.Low-30),
 		arrowprops = dict(arrowstyle = '->', connectionstyle = "arc3,rad=.2"))
-	# fig.set_size_inches(8.5, 7)
+	# # 添加网格线后看不清楚影线
 	# plt.grid(True)
-	plt.show()
+	fig.set_size_inches(_width, 7)
+	fig.savefig(os.path.join(path, "%s.png" % title))
+	if show:
+		plt.show()
 
 
-def draw(path, transactions):
+def draw(path, transactions, show):
 	"""
 	画图
 	:param path: 数据路径
 	:param transactions: 交易列表，用逗号分隔
+	:param show: 显示图片
 	:return: None
 	"""
 	sql = SQL()
@@ -102,10 +109,11 @@ def draw(path, transactions):
 	for t in _trans:
 		_t = t.split('_')
 		xls = "_".join(_t[0:2])
-		dest = os.path.join(os.getcwd(), "TESTDATA", path, "%s_TRADE_STAT.xlsx" % xls)
-		values = pd.read_excel(dest)
+		_path = os.path.join(os.getcwd(), "TESTDATA", path)
+		xls = os.path.join(_path, "%s_TRADE_STAT.xlsx" % xls)
+		values = pd.read_excel(xls)
 		values = values[values.TRD_ID == t][['Tick_Start', 'Tick_End']]
-		drawCandlestick(sql.conn, _t[0], list(values.iloc[0]), t)
+		drawCandlestick(sql.conn, _t[0], list(values.iloc[0]), t, _path, show)
 
 
 def analyzeOptionsHandler(options, argv):
@@ -124,7 +132,7 @@ def analyzeOptionsHandler(options, argv):
 		return False
 
 	if options.draw:
-		draw(options.path, options.draw)
+		draw(options.path, options.draw, options.show)
 
 
 def analyzeOptionsParser(parser, argv):
@@ -137,6 +145,8 @@ def analyzeOptionsParser(parser, argv):
 			help='Path in which the test data are stored.')
 	parser.add_option('-d', '--draw', dest='draw',
 			help='Draw the candlestick chart for a transaction.')
+	parser.add_option('-s', '--show', action="store_true", dest='show',
+			help='Show pictures.')
 	parser.add_option('-D', '--debug', action="store_true", dest='debug',
 			help='Enable debug mode.')
 
