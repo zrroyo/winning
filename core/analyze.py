@@ -75,8 +75,8 @@ def drawCandlestick(conn, contract, periods, title, path, show):
 	plt.plot(xticks, list(values['Close']), "b-")
 
 	# 设置Max、Min标签
-	_max = values[values.High == max(values.High)]
-	_min = values[values.Low == min(values.Low)]
+	_max = values[values.High == max(values.High)].head(1)
+	_min = values[values.Low == min(values.Low)].head(1)
 	# 增大y轴以放置Max、Min标签
 	_ylim = plt.ylim()
 	plt.ylim(_ylim[0]-40, _ylim[1]+20)
