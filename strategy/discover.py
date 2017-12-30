@@ -152,7 +152,8 @@ class Main(Futures):
 			_endPrice = self.data.getClose(_endTick)
 			profit = self.orderProfit(direction, _opPrice, _endPrice)
 			pfr = t.iloc[-1][col]
-			_ret.append([_min, _max, pfr, profit, (pfr - _max)])
+			_ret.append([_opTick, _opPrice, _endTick, _endPrice, _min, _max, pfr,
+				profit, (pfr - _max)])
 
 		ret = pd.DataFrame(_ret, columns = stCol)
 		return ret
@@ -166,11 +167,16 @@ class Main(Futures):
 		"""
 		trdID = "%s_%s" % (self.contract, len(self.trdStatFrame) + 1)
 		todo = {
-			'OP1_FR': ["OP1_FR_Min", "OP1_FR_Max", "OP1_PFR", "OP1_PROFIT", "OP1_FR_DD"],
-			'OP2_FR': ["OP2_FR_Min", "OP2_FR_Max", "OP2_PFR", "OP2_PROFIT", "OP2_FR_DD"],
-			'OP3_FR': ["OP3_FR_Min", "OP3_FR_Max", "OP3_PFR", "OP3_PROFIT", "OP3_FR_DD"],
-			'OP4_FR': ["OP4_FR_Min", "OP4_FR_Max", "OP4_PFR", "OP4_PROFIT", "OP4_FR_DD"],
-			'OP5_FR': ["OP5_FR_Min", "OP5_FR_Max", "OP5_PFR", "OP5_PROFIT", "OP5_FR_DD"]
+			'OP1_FR': ["OP1_OP_TICK", "OP1_OP_PRICE", "OP1_CLS_TICK", "OP1_CLS_PRICE",
+				"OP1_FR_Min", "OP1_FR_Max", "OP1_PFR", "OP1_PROFIT", "OP1_FR_DD"],
+			'OP2_FR': ["OP2_OP_TICK", "OP2_OP_PRICE", "OP2_CLS_TICK", "OP2_CLS_PRICE",
+				"OP2_FR_Min", "OP2_FR_Max", "OP2_PFR", "OP2_PROFIT", "OP2_FR_DD"],
+			'OP3_FR': ["OP3_OP_TICK", "OP3_OP_PRICE", "OP3_CLS_TICK", "OP3_CLS_PRICE",
+				"OP3_FR_Min", "OP3_FR_Max", "OP3_PFR", "OP3_PROFIT", "OP3_FR_DD"],
+			'OP4_FR': ["OP4_OP_TICK", "OP4_OP_PRICE", "OP4_CLS_TICK", "OP4_CLS_PRICE",
+				"OP4_FR_Min", "OP4_FR_Max", "OP4_PFR", "OP4_PROFIT", "OP4_FR_DD"],
+			'OP5_FR': ["OP5_OP_TICK", "OP5_OP_PRICE", "OP5_CLS_TICK", "OP5_CLS_PRICE",
+				"OP5_FR_Min", "OP5_FR_Max", "OP5_PFR", "OP5_PROFIT", "OP5_FR_DD"]
 			}
 
 		ret = pd.DataFrame()
