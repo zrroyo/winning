@@ -82,8 +82,8 @@ def _drawCandlestick(conn, transactions, contract, periods, title, path, positio
 	plt.rcParams['font.sans-serif'] = 'simhei'
 	plt.rcParams['font.family'] = 'sans-serif'
 	# 窗口大小，每格0.4寸
-	_width = 0.4 * (len(values) + 1)
-	plt.figure(figsize = (_width, 7))
+	_width = 0.3 * (len(values) + 1)
+	plt.figure(figsize = (_width, 6))
 	fig = plt.gcf()
 	fig.add_subplot()
 	ca = plt.gca()
@@ -121,7 +121,7 @@ def _drawCandlestick(conn, transactions, contract, periods, title, path, positio
 	if grid:
 		plt.grid(True)
 	# 保存图片
-	fig.set_size_inches(_width, 7)
+	fig.set_size_inches(_width, 6)
 	fig.savefig(os.path.join(path, "%s_%s.png" % (title, position)))
 	if show:
 		plt.show()
