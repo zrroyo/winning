@@ -26,15 +26,42 @@ debug = Debug('Draw', False)
 shell = ExecCommand()
 
 
-def drawCandlestick(conn, contract, periods, title, path, show):
+def _drawPositionLine(transactions, tradeId, pos, xticks, xlables, values):
+	"""
+	绘制持仓趋势线
+	:param transactions: 交易汇总数据表
+	:param tradeId: 交易id
+	:param pos: 仓位，'OP1', 'OP2', 'OP3', 'OP4', 'OP5'
+	:return: None
+	"""
+	posInfo = transactions[(transactions['TRD_ID'] == tradeId) & (transactions["%s_FR_Max" % pos].notnull())]\
+		[["%s_OP_TICK" % pos, "%s_OP_PRICE" % pos, "%s_CLS_TICK" % pos, "%s_CLS_PRICE" % pos]]
+	posVal = posInfo.as_matrix()
+
+	for val in posVal:
+		_open = str(val[0]).split(' ')[0]
+		_close = str(val[2]).split(' ')[0]
+		_start = xlables.index(_open)
+		_end = xlables.index(_close)
+		_xticks = xticks[_start : _end+1]
+		_yVal = values[_start : _end+1]
+		_yVal[0] = val[1]
+		_yVal[-1] = val[3]
+		plt.plot(_xticks, _yVal, "bo-")
+
+
+def _drawCandlestick(conn, transactions, contract, periods, title, path, position, show, grid):
 	"""
 	画蜡烛图
 	:param conn: 数据库句柄
+	:param transactions: 交易汇总数据表
 	:param contract: 合约名
 	:param periods: 时间区间
 	:param title: 图标题
 	:param path: 图片保存路径
+	:param position: 需绘制的仓位
 	:param show: 显示图片
+	:param grid: 显示网格线
 	:return: None
 	"""
 	# 可直接获取Timestamp中的日期
@@ -60,9 +87,9 @@ def drawCandlestick(conn, contract, periods, title, path, show):
 	fig = plt.gcf()
 	fig.add_subplot()
 	ca = plt.gca()
-	ca.set_title(title)
+	ca.set_title("%s %s" % (title, position))
 	# 设置离底端距离，预留X轴标题设置空间
-	fig.subplots_adjust(bottom=0.2)
+	fig.subplots_adjust(bottom = 0.2)
 	ca.xaxis_date()
 	# 设置X轴刻度标签为显示时间，并倾斜60度
 	plt.xticks(xticks, rotation = 60)
@@ -72,7 +99,10 @@ def drawCandlestick(conn, contract, periods, title, path, show):
 	# 绘图
 	mpf.candlestick_ochl(ca, _values, width = 1, colorup = 'red', colordown = 'green')
 	# 收盘价趋势线
-	plt.plot(xticks, list(values['Close']), "b-")
+	plt.plot(xticks, list(values['Close']), "m--")
+	# 绘制持仓线
+	if position:
+		_drawPositionLine(transactions, title, position, xticks, xtkLables, list(values['Close']))
 
 	# 设置Max、Min标签
 	_max = values[values.High == max(values.High)].head(1)
@@ -86,34 +116,46 @@ def drawCandlestick(conn, contract, periods, title, path, show):
 	plt.annotate("Min: %s" % int(_min.Low), xy = (xticks[_min.index[0]], _min.Low-1),
 		xytext = (xticks[_min.index[0]], _min.Low-30),
 		arrowprops = dict(arrowstyle = '->', connectionstyle = "arc3,rad=.2"))
-	# # 添加网格线后看不清楚影线
-	# plt.grid(True)
+
+	# 添加网格线
+	if grid:
+		plt.grid(True)
+	# 保存图片
 	fig.set_size_inches(_width, 7)
-	fig.savefig(os.path.join(path, "%s.png" % title))
+	fig.savefig(os.path.join(path, "%s_%s.png" % (title, position)))
 	if show:
 		plt.show()
 
 
-def draw(path, transactions, show):
+def _draw(path, todo, position, show, grid):
 	"""
 	画图
 	:param path: 数据路径
-	:param transactions: 交易列表，用逗号分隔
+	:param todo: 交易列表，用逗号分隔
+	:param position: 需绘制的仓位
 	:param show: 显示图片
+	:param grid: 显示网格线
 	:return: None
 	"""
 	sql = SQL()
 	sql.connect("history2")
+	path = os.path.join(os.getcwd(), "TESTDATA", path)
+	transactions = pd.read_excel(os.path.join(path, "TRANSACTIONS.xlsx"))
 
-	_trans = transactions.split(',')
+	_trans = todo.split(',')
+	prev = None
+	values = None
 	for t in _trans:
 		_t = t.split('_')
-		xls = "_".join(_t[0:2])
-		_path = os.path.join(os.getcwd(), "TESTDATA", path)
-		xls = os.path.join(_path, "%s_TRADE_STAT.xlsx" % xls)
-		values = pd.read_excel(xls)
-		values = values[values.TRD_ID == t][['Tick_Start', 'Tick_End']]
-		drawCandlestick(sql.conn, _t[0], list(values.iloc[0]), t, _path, show)
+		_contract = "_".join(_t[0:2])
+		if not prev or prev != _contract:
+			prev = _contract
+			_xls = os.path.join(path, "%s_TRADE_STAT.xlsx" % _contract)
+			values = pd.read_excel(_xls)
+
+		_ticks = values[values.TRD_ID == t][['Tick_Start', 'Tick_End']]
+		_drawCandlestick(sql.conn, transactions, _t[0],
+				list(_ticks.iloc[0]), t, path, position, show, grid)
 
 
 def drawOptionsHandler(options, argv):
@@ -131,8 +173,13 @@ def drawOptionsHandler(options, argv):
 		debug.error("Please specify the path in which test data are stored.")
 		return False
 
+	validPos = ['OP1', 'OP2', 'OP3', 'OP4', 'OP5']
+	if options.pos and options.pos not in validPos:
+		debug.error("validPos: %s" % validPos)
+		return False
+
 	if options.draw:
-		draw(options.path, options.draw, options.show)
+		_draw(options.path, options.draw, options.pos, options.show, options.grid)
 
 
 def drawOptionsParser(parser, argv):
@@ -145,6 +192,10 @@ def drawOptionsParser(parser, argv):
 			help='Path in which the test data are stored.')
 	parser.add_option('-d', '--draw', dest='draw',
 			help='Draw the candlestick chart for a transaction.')
+	parser.add_option('-P', '--pos', dest='pos',
+			help='Position to draw.')
+	parser.add_option('-g', '--grid', action="store_true", dest='grid',
+			help='Enable grid in pictures.')
 	parser.add_option('-s', '--show', action="store_true", dest='show',
 			help='Show pictures.')
 	parser.add_option('-D', '--debug', action="store_true", dest='debug',
