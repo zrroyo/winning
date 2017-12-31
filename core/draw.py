@@ -4,7 +4,7 @@
 Author: Zhengwang Ruan <ruan.zhengwang@gmail.com>
 Start: 2017年 12月 23日 星期六 13:30:32 CST
 
-数据分析模块
+绘图模块
 """
 
 import os
@@ -21,7 +21,7 @@ from misc.execcmd import ExecCommand
 from db.sql import SQL
 
 # 默认关闭debug信息
-debug = Debug('Analyze', False)
+debug = Debug('Draw', False)
 # shell命令执行接口
 shell = ExecCommand()
 
@@ -116,7 +116,7 @@ def draw(path, transactions, show):
 		drawCandlestick(sql.conn, _t[0], list(values.iloc[0]), t, _path, show)
 
 
-def analyzeOptionsHandler(options, argv):
+def drawOptionsHandler(options, argv):
 	"""
 	命令解析函数
 	:param options: 选项集
@@ -125,7 +125,7 @@ def analyzeOptionsHandler(options, argv):
 	"""
 	if options.debug:
 		global debug
-		debug = Debug('Regression', True)
+		debug = Debug('Draw', True)
 
 	if not options.path:
 		debug.error("Please specify the path in which test data are stored.")
@@ -135,7 +135,7 @@ def analyzeOptionsHandler(options, argv):
 		draw(options.path, options.draw, options.show)
 
 
-def analyzeOptionsParser(parser, argv):
+def drawOptionsParser(parser, argv):
 	"""
 	命令解析入口
 	:param parser: OptionParser接口对象
@@ -151,4 +151,4 @@ def analyzeOptionsParser(parser, argv):
 			help='Enable debug mode.')
 
 	(options, args) = parser.parse_args()
-	analyzeOptionsHandler(options, argv)
+	drawOptionsHandler(options, argv)
