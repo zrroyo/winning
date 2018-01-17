@@ -39,7 +39,7 @@ class TBase:
 		self.storeLog = storeLog
 		self.strategy = strategy
 		#
-		self.testCfg = "%s/%s" % (DEF_EMUL_CONFIG_DIR, cfg)
+		self.testCfg = os.path.join(DEF_EMUL_CONFIG_DIR, cfg)
 		self.emuCfg = EmulationConfig(self.testCfg)
 		self.contracts = self.emuCfg.getContracts().strip(',').split(',')
 		self.expireDates = self.emuCfg.getExpireDates().strip(',')
@@ -47,6 +47,11 @@ class TBase:
 			self.startTicks = self.emuCfg.getStartTime().strip(',').split(',')
 		except AttributeError:
 			self.startTicks = None
+
+		try:
+			self.endTicks = self.emuCfg.getEndTime().strip(',').split(',')
+		except AttributeError:
+			self.endTicks = None
 
 		# 初始化合约描述接口
 		self.descCfg = ContractDescConfig(DEF_CONTRACT_DESC_CFG)
@@ -94,7 +99,7 @@ class TBase:
 		if not name:
 			name = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
-		self.logDir = "%s/%s" % (DEF_TEST_OUT_DIR, name)
+		self.logDir = os.path.join(DEF_TEST_OUT_DIR, name)
 		if os.path.exists(self.logDir):
 			self.debug.error("'%s' already exists!" % self.logDir)
 			return False

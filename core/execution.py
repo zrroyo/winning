@@ -37,12 +37,12 @@ class Execution(TBase):
 		#
 		self.lock = thread.allocate_lock()
 
-	def __setupContractProcess(self, contract, startTick, expireDates):
+	def __setupContractProcess(self, contract, startTick, endTick):
 		"""
 		启动合约执行
 		:param contract: 合约名称
 		:param startTick: 开始交易时间
-		:param expireDates: 合约结束日期
+		:param endTick: 合约结束时间
 		:return: None
 		"""
 		strategy = self.getInstance(contract)
@@ -50,8 +50,7 @@ class Execution(TBase):
 			self.debug.error("__setupContractProcess: failed to init instance.")
 			return None
 
-		p = mp.Process(target = strategy.start, args = (startTick,
-					self.estimateEndTick(contract, expireDates),
+		p = mp.Process(target = strategy.start, args = (startTick, endTick,
 					None, None, None, self.storeLog, False))
 		p.name = contract
 		p.start()
@@ -75,11 +74,20 @@ class Execution(TBase):
 			return False
 
 		for c in self.contracts:
-			# 支持从配置文件指定合约开始执行时间
+			# 支持从配置文件中指定开始时间
 			try:
 				_startTick = self.startTicks.pop(0)
 			except (IndexError, AttributeError):
 				_startTick = None
+
+			# 支持从配置文件中指定结束开始
+			try:
+				_endTick = self.endTicks.pop(0)
+			except (IndexError, AttributeError):
+				_endTick = None
+
+			if not _endTick:
+				_endTick = self.estimateEndTick(c, self.expireDates)
 
 			# 仅允许最多@jobs个任务同时进行
 			while 1:
@@ -91,7 +99,7 @@ class Execution(TBase):
 				time.sleep(0.1)
 
 			# 启动合约进程
-			self.__setupContractProcess(c, _startTick, self.expireDates)
+			self.__setupContractProcess(c, _startTick, _endTick)
 
 		# 等待所有合约执行完毕
 		while len(self.procStates):
