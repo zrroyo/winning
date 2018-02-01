@@ -44,12 +44,12 @@ class TBase:
 		self.contracts = self.emuCfg.getContracts().strip(',').split(',')
 		self.expireDates = self.emuCfg.getExpireDates().strip(',')
 		try:
-			self.startTicks = self.emuCfg.getStartTime().strip(',').split(',')
+			self.startTicks = self.emuCfg.getStartTime().split(',')
 		except AttributeError:
 			self.startTicks = None
 
 		try:
-			self.endTicks = self.emuCfg.getEndTime().strip(',').split(',')
+			self.endTicks = self.emuCfg.getEndTime().split(',')
 		except AttributeError:
 			self.endTicks = None
 
