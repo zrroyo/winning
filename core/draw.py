@@ -17,13 +17,17 @@ import matplotlib.finance as mpf
 from matplotlib.pylab import date2num
 
 from misc.debug import Debug
-from misc.execcmd import ExecCommand
 from db.sql import SQL
 
 # 默认关闭debug信息
 debug = Debug('Draw', False)
-# shell命令执行接口
-shell = ExecCommand()
+
+
+class TypeUnknown(Exception):
+	"""
+	未识别的指定类型，配合 '-P T:win/lose' 使用
+	"""
+	pass
 
 
 def _drawPositionLine(transactions, tradeId, pos, xticks, xlables, values):
@@ -127,7 +131,7 @@ def _drawCandlestick(conn, transactions, contract, periods, title, path, positio
 		plt.show()
 
 
-def _draw(path, todo, position, show, grid):
+def _draw(path, todo, position, show, grid, subdir = None):
 	"""
 	画图
 	:param path: 数据路径
@@ -135,6 +139,7 @@ def _draw(path, todo, position, show, grid):
 	:param position: 需绘制的仓位
 	:param show: 显示图片
 	:param grid: 显示网格线
+	:param subdir: 保存图片的子目录
 	:return: None
 	"""
 	sql = SQL()
@@ -143,6 +148,29 @@ def _draw(path, todo, position, show, grid):
 	transactions = pd.read_excel(os.path.join(path, "TRANSACTIONS.xlsx"))
 
 	_trans = todo.split(',')
+	# 支持用 T:win/lose 的形式动态选择交易列表
+	if todo.startswith("T:"):
+		_type = todo[2:]
+		field = "%s_PROFIT" % position
+		_dt = transactions
+		if _type == "win":
+			_transTmp = _dt[(_dt[field] >= 0) & (_dt[field].notnull())]
+		elif _type == "lose":
+			_transTmp = _dt[(_dt[field] < 0) & (_dt[field].notnull())]
+		else:
+			raise TypeUnknown("Found unknown type %s" % _type)
+
+		_trans = list(_transTmp['TRD_ID'].unique())
+
+	_path = path
+	# 创建子目录保存图片
+	if subdir:
+		_path = os.path.join(path, subdir)
+		try:
+			os.mkdir(_path)
+		except OSError, e:
+			pass
+
 	prev = None
 	values = None
 	for t in _trans:
@@ -155,7 +183,7 @@ def _draw(path, todo, position, show, grid):
 
 		_ticks = values[values.TRD_ID == t][['Tick_Start', 'Tick_End']]
 		_drawCandlestick(sql.conn, transactions, _t[0],
-				list(_ticks.iloc[0]), t, path, position, show, grid)
+				list(_ticks.iloc[0]), t, _path, position, show, grid)
 
 
 def drawOptionsHandler(options, argv):
@@ -179,7 +207,8 @@ def drawOptionsHandler(options, argv):
 		return False
 
 	if options.draw:
-		_draw(options.path, options.draw, options.pos, options.show, options.grid)
+		_draw(options.path, options.draw, options.pos,
+				options.show, options.grid, options.name)
 
 
 def drawOptionsParser(parser, argv):
@@ -194,6 +223,8 @@ def drawOptionsParser(parser, argv):
 			help='Draw the candlestick chart for a transaction.')
 	parser.add_option('-P', '--pos', dest='pos',
 			help='Position to draw.')
+	parser.add_option('-n', '--name', dest='name',
+			help='Name of subdir to store pictures.')
 	parser.add_option('-g', '--grid', action="store_true", dest='grid',
 			help='Enable grid in pictures.')
 	parser.add_option('-s', '--show', action="store_true", dest='show',
