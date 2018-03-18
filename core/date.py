@@ -292,6 +292,21 @@ class Date:
 			self.debug.dbg("getNextNearDate: %s" % e)
 			return None
 
+	def dayLasts (self, origin, now):
+		"""
+		交易持续的天数，不包括起始时间点
+		:param origin: 起始时间
+		:param now: 现在时间
+		:return: 交易持续天数
+		"""
+		strSql = "SELECT COUNT(DISTINCT(DATE_FORMAT(%s, " % F_TIME + \
+			"'%Y%m%d'))) AS DAY_LAST " + "FROM %s WHERE %s >= '%s' AND %s <= '%s'" % (
+			self.table, F_TIME, origin, F_TIME, now)
+		self.db.execSql(strSql)
+		ret = self.db.fetch(0)[0] - 1
+		return ret
+
+
 class Ticks(Date):
 	def curTick (self):
 		"""
@@ -313,7 +328,26 @@ class Ticks(Date):
 		:return: 最后一个Tick
 		"""
 		return self.lastDate()
-	
+
+	def dayLastTick(self, tick):
+		"""
+		获取交易日的最后一个tick
+		:param tick: 交易时间
+		:return: 交易日的最后一个tick
+		"""
+		try:
+			if isinstance(tick, str):
+				date = self.strToDateTime(tick)
+
+			strSql = "select %s from %s where date(%s) = '%s' order by %s desc limit 1" % (
+					F_TIME, self.table, F_TIME, tick.date(), F_TIME)
+			self.db.execSql(strSql)
+			ret = self.db.fetch()[0]
+			return ret
+		except TypeError, e:
+			self.debug.dbg("dayLastTick: %s" % e)
+			return None
+
 	def isFirstTick (self, tick):
 		"""
 		是否是第一个交易时间
