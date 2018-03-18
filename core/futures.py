@@ -507,7 +507,7 @@ class Futures:
 		"""
 		return False
 
-	def __signalToDirection(self, signal):
+	def _signalToDirection(self, signal):
 		"""
 		交易信号转换成方向字符串
 		:param signal: 交易信号
@@ -545,7 +545,7 @@ class Futures:
 		:return: 执行到结尾返回None，否则为交易结束时tick
 		"""
 		self.debug.dbg("__tradeStart: Start Trading: [%s][%s]" % (
-					self.__signalToDirection(signal), startTick))
+					self._signalToDirection(signal), startTick))
 
 		# 各交易单独分配数据统计区域
 		self.tradeStat = TradeStat()
@@ -570,7 +570,7 @@ class Futures:
 				1）触发退出交易信号；2）到达最后一个tick不允许退出外的任何操作；
 				"""
 				self.debug.dbg("__tradeStart: End Trading: [%s][%s] stop tick %s" % (
-						self.__signalToDirection(signal), nextTick, self.stopTick))
+						self._signalToDirection(signal), nextTick, self.stopTick))
 				self.__tradeEnd(nextTick, signal)
 				return nextTick
 				
@@ -579,7 +579,7 @@ class Futures:
 				止损
 				"""
 				self.debug.dbg("__tradeStart: Cut Loss: [%s][%s]" % (
-							self.__signalToDirection(signal), nextTick))
+							self._signalToDirection(signal), nextTick))
 				self.tradeCutLoss(nextTick, signal)
 				# 防止止损操作重载时统计信息遗漏
 				self.tickStat.cutLoss = 1
@@ -592,7 +592,7 @@ class Futures:
 				加仓
 				"""
 				self.debug.dbg("__tradeStart: Add Position: [%s][%s]" % (
-							self.__signalToDirection(signal), nextTick))
+							self._signalToDirection(signal), nextTick))
 				self.__tradeAddPositions(nextTick, signal)
 
 			elif self.signalStopProfit(nextTick, signal):
@@ -600,7 +600,7 @@ class Futures:
 				止赢
 				"""
 				self.debug.dbg("__tradeStart: Stop Profit: [%s][%s]" % (
-							self.__signalToDirection(signal), nextTick))
+							self._signalToDirection(signal), nextTick))
 				self.tradeStopProfit(nextTick, signal)
 				# 防止止损操作重载时统计信息遗漏
 				self.tickStat.stopWin = 1
