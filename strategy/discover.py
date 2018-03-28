@@ -37,6 +37,8 @@ class Main(Futures):
 		self.pLastCut = None
 		#
 		self.posStatFrame = pd.DataFrame()
+		#
+		self.dayLastTick = None
 
 	def validSignal(self, tick):
 		ret = True
@@ -291,24 +293,42 @@ class Main(Futures):
 		:return: 触发止损信号返回True，否则返回False
 		"""
 		price = self.data.getClose(tick)
-		thresholds = [-0.016, -0.013]
-		# thresholds = []
+		#
+		thresholds = [[-0.016, 3], [-0.013, 3]]
 		self.toCutLoss = None
 		cfr = list()
 
-		for posIdx in range(1, self.curPositions() + 1):
+		#
+		if not self.dayLastTick or self.dayLastTick.date() != tick.date():
+			self.dayLastTick = self.tickHelper.dayLastTick(tick)
+
+		posList = list(range(1, self.curPositions() + 1))
+		posList.reverse()
+		for posIdx in posList:
 			pos = self.getPosition(posIdx)
 			_cfr = self.__curFloatRate(price, pos.price, direction)
-			try:
-				_thr = thresholds[posIdx - 1]
-				cfr.append(_cfr)
-				if _cfr < _thr:
-					self.toCutLoss = posIdx
-					# 记录止损点，作为加仓条件以避免止损无效
-					self.pLastCut = pos.price
+			_thr, _maxObsDays = thresholds[posIdx - 1]
+			cfr.append(_cfr)
+			if not _thr or _cfr >= _thr:
+				if not _maxObsDays or tick != self.dayLastTick:
+					# MOD策略未使能
 					break
-			except IndexError, e:
-				break
+
+				_alert = price < pos.price if direction == SIG_TRADE_LONG else price > pos.price
+				if not _alert:
+					#
+					break
+
+				_dayLasts = self.tickHelper.dayLasts(pos.time, tick)
+				if _dayLasts < _maxObsDays:
+					break
+
+				self.debug.dbg("signalCutLoss: pos %s (time %s, price %s), _dayLasts %s > %s" % (
+					posIdx, pos.time, pos.price, _dayLasts, _maxObsDays))
+
+			self.toCutLoss = posIdx
+			# 记录止损点，作为加仓条件以避免止损无效
+			self.pLastCut = pos.price
 
 		ret = False
 		if self.toCutLoss:
