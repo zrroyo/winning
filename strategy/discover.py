@@ -191,9 +191,9 @@ class Main(Futures):
 		ret = pd.concat([pd.DataFrame(pd.Series([trdID] * len(ret)), columns=['TRD_ID']), ret], axis = 1)
 		#
 		self.posStatFrame = self.posStatFrame.append(ret, ignore_index = True)
-		#
+		# 交易结束，清除所有与本交易相关标记
 		self.opPrice = list()
-		#
+		self.pLastCut = None
 		return [trdID]
 
 	def signalStartTrading(self, tick):
