@@ -266,14 +266,9 @@ class Main(Futures):
 
 		if self.pLastCut:
 			# 需保证新开仓价优于最近一次止损价，否则会有止损点无效风险
-			_repetitiveSigThr = self.pLastCut * 1.01 if direction == SIG_TRADE_LONG \
-					else self.pLastCut * 0.99
-			if (direction == SIG_TRADE_LONG and price < _repetitiveSigThr) or (
-				direction == SIG_TRADE_SHORT and price > _repetitiveSigThr):
+			if (direction == SIG_TRADE_LONG and price <= self.pLastCut) or (\
+				direction == SIG_TRADE_SHORT and price >= self.pLastCut):
 				return ret
-
-			self.debug.dbg("signalAddPosition: direction %s, price %s, _repetitiveSigThr %s" % (
-				self._signalToDirection(direction), price, _repetitiveSigThr))
 
 		try:
 			_thr = thresholds[self.curPositions()]
