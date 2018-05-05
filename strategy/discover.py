@@ -26,7 +26,20 @@ class Main(Futures):
 		"""
 		Futures.__init__(self, contract, config, logDir, debug)
 		self.debug = Debug("Discover", debug)
-		self.tkCols = ["OP1_FR", "OP2_FR", "OP3_FR", "OP4_FR"]
+		# tick级统计项目
+		self.tkCols = ["OP1_FR", "OP1_SP", "OP2_FR", "OP2_SP", "OP3_FR", "OP3_SP", "OP4_FR", "OP4_SP"]
+		# trade级统计项目
+		self.trdStatItems = {
+			'OP1_FR': ["OP1_OP_TICK", "OP1_OP_PRICE", "OP1_CLS_TICK", "OP1_CLS_PRICE",
+				"OP1_FR_Min", "OP1_FR_Max", "OP1_PFR", "OP1_PROFIT", "OP1_FR_DD", "OP1_SP"],
+			'OP2_FR': ["OP2_OP_TICK", "OP2_OP_PRICE", "OP2_CLS_TICK", "OP2_CLS_PRICE",
+				"OP2_FR_Min", "OP2_FR_Max", "OP2_PFR", "OP2_PROFIT", "OP2_FR_DD", "OP2_SP"],
+			'OP3_FR': ["OP3_OP_TICK", "OP3_OP_PRICE", "OP3_CLS_TICK", "OP3_CLS_PRICE",
+				"OP3_FR_Min", "OP3_FR_Max", "OP3_PFR", "OP3_PROFIT", "OP3_FR_DD", "OP3_SP"],
+			'OP4_FR': ["OP4_OP_TICK", "OP4_OP_PRICE", "OP4_CLS_TICK", "OP4_CLS_PRICE",
+				"OP4_FR_Min", "OP4_FR_Max", "OP4_PFR", "OP4_PROFIT", "OP4_FR_DD", "OP4_SP"],
+			}
+
 		self.initStatFrame(tkCols = self.tkCols, trdCols = ["TRD_ID"])
 		self.firstTick = self.tickHelper.firstTick()
 		#
@@ -39,6 +52,8 @@ class Main(Futures):
 		self.posStatFrame = pd.DataFrame()
 		#
 		self.dayLastTick = None
+		#
+		self.posStopProfit = dict()
 
 	def validSignal(self, tick):
 		ret = True
@@ -75,8 +90,8 @@ class Main(Futures):
 		:return: 数据列表
 		"""
 		ret = list()
-		# 统计的数据列受tkCols控制
-		_maxPos = len(self.tkCols)
+		# 统计的数据列受trdStatTodo控制
+		_maxPos = len(self.trdStatItems)
 
 		for i in range(_maxPos):
 			try:
@@ -84,17 +99,33 @@ class Main(Futures):
 			except IndexError, e:
 				p = None
 			_cfr = self.__curFloatRate(price, p, direction)
-			ret.append(_cfr)
+			#
+			_sp = np.nan
+			try:
+				if self.posStopProfit[i + 1]:
+					_sp = 1
+					# 每个仓位仅在止赢条件成立tick进行统计
+					self.posStopProfit[i + 1] = False
+			except KeyError:
+				pass
+			ret += [_cfr, _sp]
 
 		if self.toCutLoss:
 			# 已发生止损，仓位已平，缓存的开仓使用完毕需移除，避免下一tick重复记入
 			self.opPrice = self.opPrice[:self.toCutLoss-1]
+			#
+			for p in self.posStopProfit.keys():
+				if p >= self.toCutLoss:
+					del self.posStopProfit[p]
+
 			# toCutLoss仅用于保证止损时能得到开仓价并计算出pfr，用完需清除避免影响下一tick
 			self.toCutLoss = None
 
 		if self.curPositions() == 0:
 			# 交易已经结束
 			self.opPrice = list()
+			#
+			self.posStopProfit.clear()
 
 		return ret
 
@@ -154,8 +185,15 @@ class Main(Futures):
 			_endPrice = self.data.getClose(_endTick)
 			profit = self.orderProfit(direction, _opPrice, _endPrice)
 			pfr = t.iloc[-1][col]
+			#
+			_spVals = self.tickStatFrame[(self.tickStatFrame.index >= _opTick) & \
+						(self.tickStatFrame.index <= _endTick)]
+			_spCol = "%s_SP" % col[0:3]
+			_spVals = _spVals[[_spCol]]
+			_spVals = _spVals[_spVals[_spCol].notnull()]
+			_spRet = _spVals.index[0] if len(_spVals) else np.nan
 			_ret.append([_opTick, _opPrice, _endTick, _endPrice, _min, _max, pfr,
-				profit, (pfr - _max)])
+				profit, (pfr - _max), _spRet])
 
 		ret = pd.DataFrame(_ret, columns = stCol)
 		return ret
@@ -168,22 +206,10 @@ class Main(Futures):
 		:return: 数据列表
 		"""
 		trdID = "%s_%s" % (self.contract, len(self.trdStatFrame) + 1)
-		todo = {
-			'OP1_FR': ["OP1_OP_TICK", "OP1_OP_PRICE", "OP1_CLS_TICK", "OP1_CLS_PRICE",
-				"OP1_FR_Min", "OP1_FR_Max", "OP1_PFR", "OP1_PROFIT", "OP1_FR_DD"],
-			'OP2_FR': ["OP2_OP_TICK", "OP2_OP_PRICE", "OP2_CLS_TICK", "OP2_CLS_PRICE",
-				"OP2_FR_Min", "OP2_FR_Max", "OP2_PFR", "OP2_PROFIT", "OP2_FR_DD"],
-			'OP3_FR': ["OP3_OP_TICK", "OP3_OP_PRICE", "OP3_CLS_TICK", "OP3_CLS_PRICE",
-				"OP3_FR_Min", "OP3_FR_Max", "OP3_PFR", "OP3_PROFIT", "OP3_FR_DD"],
-			'OP4_FR': ["OP4_OP_TICK", "OP4_OP_PRICE", "OP4_CLS_TICK", "OP4_CLS_PRICE",
-				"OP4_FR_Min", "OP4_FR_Max", "OP4_PFR", "OP4_PROFIT", "OP4_FR_DD"],
-			'OP5_FR': ["OP5_OP_TICK", "OP5_OP_PRICE", "OP5_CLS_TICK", "OP5_CLS_PRICE",
-				"OP5_FR_Min", "OP5_FR_Max", "OP5_PFR", "OP5_PROFIT", "OP5_FR_DD"]
-			}
 
 		ret = pd.DataFrame()
-		for c in self.tkCols:
-			cols = todo[c]
+		for c in sorted(self.trdStatItems.keys()):
+			cols = self.trdStatItems[c]
 			_ret = self.__genTradeStat(direction, c, cols)
 			ret = pd.concat([ret, _ret], axis = 1)
 
@@ -294,37 +320,21 @@ class Main(Futures):
 		"""
 		price = self.data.getClose(tick)
 		#
-		thresholds = [[-0.016, 3], [-0.013, 3]]
+		thresholds = [-0.016, -0.016]
 		self.toCutLoss = None
 		cfr = list()
 
-		#
-		if not self.dayLastTick or self.dayLastTick.date() != tick.date():
-			self.dayLastTick = self.tickHelper.dayLastTick(tick)
-
+		# 从最后一仓开始逆序检查
 		posList = list(range(1, self.curPositions() + 1))
 		posList.reverse()
 		for posIdx in posList:
 			pos = self.getPosition(posIdx)
 			_cfr = self.__curFloatRate(price, pos.price, direction)
-			_thr, _maxObsDays = thresholds[posIdx - 1]
+			_thr = thresholds[posIdx - 1]
 			cfr.append(_cfr)
-			if not _thr or _cfr >= _thr:
-				if not _maxObsDays or tick != self.dayLastTick:
-					# MOD策略未使能
-					break
-
-				_alert = price < pos.price if direction == SIG_TRADE_LONG else price > pos.price
-				if not _alert:
-					#
-					break
-
-				_dayLasts = self.tickHelper.dayLasts(pos.time, tick)
-				if _dayLasts < _maxObsDays:
-					break
-
-				self.debug.dbg("signalCutLoss: pos %s (time %s, price %s), _dayLasts %s > %s" % (
-					posIdx, pos.time, pos.price, _dayLasts, _maxObsDays))
+			if _cfr >= _thr:
+				# 如果不满足则之前仓位也不会满足
+				break
 
 			self.toCutLoss = posIdx
 			# 记录止损点，作为加仓条件以避免止损无效
@@ -350,6 +360,53 @@ class Main(Futures):
 		nrPos = self.curPositions() - self.toCutLoss + 1
 		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
 		return ret
+
+	def signalStopProfit(self, tick, direction):
+		"""
+		触发止赢信号
+		:param tick: 交易时间
+		:param direction: 多空方向
+		:return: 触发止赢信号返回True，否则返回False
+		"""
+		if not self.dayLastTick or self.dayLastTick.date() != tick.date():
+			self.dayLastTick = self.tickHelper.dayLastTick(tick)
+
+		ret = False
+		if tick != self.dayLastTick:
+			return ret
+
+		price = self.data.getClose(tick)
+		#
+		thresholds = [3, 3]
+		self.toCutLoss = None
+
+		# 从最后一仓开始逆序检查
+		posList = list(range(1, self.curPositions() + 1))
+		posList.reverse()
+		for posIdx in posList:
+			try:
+				self.posStopProfit[posIdx]
+				# 止赢条件之前已成立，无需再次判定
+				continue
+			except KeyError:
+				# 止赢条件之前未成立，需再次判定
+				pass
+
+			pos = self.getPosition(posIdx)
+			thr = thresholds[posIdx - 1]
+			_alert = price < pos.price if direction == SIG_TRADE_LONG else price > pos.price
+			if not _alert:
+				#
+				break
+
+			_dayLasts = self.tickHelper.dayLasts(pos.time, tick)
+			if _dayLasts < thr:
+				break
+
+			self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), _dayLasts %s > %s" % (
+				posIdx, tick, price, _dayLasts, thr))
+			#
+			self.posStopProfit[posIdx] = True
 
 	def customExit(self):
 		"""
