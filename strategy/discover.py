@@ -45,7 +45,7 @@ class Main(Futures):
 		#
 		self.opPrice = list()
 		#
-		self.toCutLoss = None
+		self.toCutPos = None
 		#
 		self.pLastCut = None
 		#
@@ -110,16 +110,16 @@ class Main(Futures):
 				pass
 			ret += [_cfr, _sp]
 
-		if self.toCutLoss:
+		if self.toCutPos:
 			# 已发生止损，仓位已平，缓存的开仓使用完毕需移除，避免下一tick重复记入
-			self.opPrice = self.opPrice[:self.toCutLoss-1]
+			self.opPrice = self.opPrice[:self.toCutPos-1]
 			#
 			for p in self.posStopProfit.keys():
-				if p >= self.toCutLoss:
+				if p >= self.toCutPos:
 					del self.posStopProfit[p]
 
 			# toCutLoss仅用于保证止损时能得到开仓价并计算出pfr，用完需清除避免影响下一tick
-			self.toCutLoss = None
+			self.toCutPos = None
 
 		if self.curPositions() == 0:
 			# 交易已经结束
@@ -286,6 +286,13 @@ class Main(Futures):
 		:return: 触发加仓信号返回True，否则返回False
 		"""
 		ret = False
+		try:
+			# 当前最高仓位已进入止赢模式，停止加仓（否则止赢模式失效）
+			self.posStopProfit[self.curPositions()]
+			return ret
+		except KeyError:
+			pass
+
 		thresholds = [None, 0.013]
 		price = self.data.getClose(tick)
 		pos = self.getPosition()
@@ -302,12 +309,14 @@ class Main(Futures):
 			# 利润浮动需大于仓位对应阈值，并且需大于该仓位上一次开仓价（否则会导致止损失效）
 			if cfr >= _thr:
 				self.log("	Add Position: %s, cfr %s" % (tick, cfr))
-				self.opPrice.append(price)
-				# 止损后才需设置以预防止损失效
-				self.pLastCut = None
 				ret = True
 		except IndexError, e:
 			ret = False
+
+		if ret:
+			self.opPrice.append(price)
+			# 止损后才需设置以预防止损失效
+			self.pLastCut = None
 
 		return ret
 
@@ -321,7 +330,7 @@ class Main(Futures):
 		price = self.data.getClose(tick)
 		#
 		thresholds = [-0.016, -0.016]
-		self.toCutLoss = None
+		self.toCutPos = None
 		cfr = list()
 
 		# 从最后一仓开始逆序检查
@@ -336,14 +345,14 @@ class Main(Futures):
 				# 如果不满足则之前仓位也不会满足
 				break
 
-			self.toCutLoss = posIdx
+			self.toCutPos = posIdx
 			# 记录止损点，作为加仓条件以避免止损无效
 			self.pLastCut = pos.price
 
 		ret = False
-		if self.toCutLoss:
+		if self.toCutPos:
 			self.log("	Cut Loss: %s, price %s, cut from %s, cfr %s" % (
-						tick, price, self.toCutLoss, cfr))
+						tick, price, self.toCutPos, cfr))
 			ret = True
 
 		return ret
@@ -357,7 +366,7 @@ class Main(Futures):
 		:return: 成功返回True，否则返回False
 		"""
 		price = self.data.getClose(tick)
-		nrPos = self.curPositions() - self.toCutLoss + 1
+		nrPos = self.curPositions() - self.toCutPos + 1
 		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
 		return ret
 
@@ -371,14 +380,13 @@ class Main(Futures):
 		if not self.dayLastTick or self.dayLastTick.date() != tick.date():
 			self.dayLastTick = self.tickHelper.dayLastTick(tick)
 
-		ret = False
+		ret = True
 		if tick != self.dayLastTick:
 			return ret
 
 		price = self.data.getClose(tick)
 		#
 		thresholds = [3, 3]
-		self.toCutLoss = None
 
 		# 从最后一仓开始逆序检查
 		posList = list(range(1, self.curPositions() + 1))
@@ -407,6 +415,47 @@ class Main(Futures):
 				posIdx, tick, price, _dayLasts, thr))
 			#
 			self.posStopProfit[posIdx] = True
+
+		return ret
+
+	def tradeStopProfit(self, tick, direction):
+		"""
+		止赢。必须被重载实现
+		@MUST_OVERRIDE
+		:param tick: 交易时间
+		:param direction: 方向
+		:return: 成功返回True，否则返回False
+		"""
+		if not len(self.posStopProfit):
+			#
+			return
+
+		price = self.data.getClose(tick)
+		thresholds = [None, 0.0142]
+
+		# 从最后一仓开始逆序检查
+		posList = list(range(1, self.curPositions() + 1))
+		posList.reverse()
+		for posIdx in posList:
+			if self.posStopProfit[posIdx]:
+				# 止赢为True说明刚开始进入止赢模式，条件不可能成立
+				break
+
+			pos = self.getPosition(posIdx)
+			thr = thresholds[posIdx - 1]
+			_alert = (price / pos.price) >= (1 + thr) if direction == SIG_TRADE_LONG \
+				else 1 - (pos.price / price) >= thr
+			if not _alert:
+				# 更低的仓位由于价格可能成立，但打乱仓位间的关系会影响统计，故忽略
+				break
+
+			self.toCutPos = posIdx
+
+		if self.toCutPos:
+			self.log("	Stop Profit: %s, price %s, stop from %s, posStopProfit %s" % (
+						tick, price, self.toCutPos, self.posStopProfit))
+			nrPos = self.curPositions() - self.toCutPos + 1
+			self.closePositions(tick, price, direction, nrPos, reverse = True)
 
 	def customExit(self):
 		"""
