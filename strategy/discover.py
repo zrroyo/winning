@@ -110,21 +110,20 @@ class Main(Futures):
 				pass
 			ret += [_cfr, _sp]
 
-		if self.toCutPos:
-			# 已发生止损，仓位已平，缓存的开仓使用完毕需移除，避免下一tick重复记入
-			self.opPrice = self.opPrice[:self.toCutPos-1]
-			#
+		# 检查tick内是否发生平仓
+		if len(self.opPrice) > self.curPositions():
+			# tick内发生平仓，缓存的开仓使用完毕需移除，避免下一tick重复记入
+			_curPos = self.curPositions()
+			self.opPrice = self.opPrice[:_curPos]
+			# 清理已平仓位的止赢标记
 			for p in self.posStopProfit.keys():
-				if p >= self.toCutPos:
+				if p > _curPos:
 					del self.posStopProfit[p]
-
-			# toCutLoss仅用于保证止损时能得到开仓价并计算出pfr，用完需清除避免影响下一tick
-			self.toCutPos = None
 
 		if self.curPositions() == 0:
 			# 交易已经结束
 			self.opPrice = list()
-			#
+			# 清理已平仓位的止赢标记
 			self.posStopProfit.clear()
 
 		return ret
@@ -330,7 +329,7 @@ class Main(Futures):
 		price = self.data.getClose(tick)
 		#
 		thresholds = [-0.016, -0.016]
-		self.toCutPos = None
+		toCut = None
 		cfr = list()
 
 		# 从最后一仓开始逆序检查
@@ -345,14 +344,15 @@ class Main(Futures):
 				# 如果不满足则之前仓位也不会满足
 				break
 
-			self.toCutPos = posIdx
+			toCut = posIdx
 			# 记录止损点，作为加仓条件以避免止损无效
 			self.pLastCut = pos.price
 
 		ret = False
-		if self.toCutPos:
+		if toCut:
 			self.log("	Cut Loss: %s, price %s, cut from %s, cfr %s" % (
-						tick, price, self.toCutPos, cfr))
+						tick, price, toCut, cfr))
+			self.toCutPos = toCut
 			ret = True
 
 		return ret
@@ -432,6 +432,7 @@ class Main(Futures):
 
 		price = self.data.getClose(tick)
 		thresholds = [None, 0.0142]
+		toStop = None
 
 		# 从最后一仓开始逆序检查
 		posList = list(range(1, self.curPositions() + 1))
@@ -449,12 +450,12 @@ class Main(Futures):
 				# 更低的仓位由于价格可能成立，但打乱仓位间的关系会影响统计，故忽略
 				break
 
-			self.toCutPos = posIdx
+			toStop = posIdx
 
-		if self.toCutPos:
+		if toStop:
 			self.log("	Stop Profit: %s, price %s, stop from %s, posStopProfit %s" % (
-						tick, price, self.toCutPos, self.posStopProfit))
-			nrPos = self.curPositions() - self.toCutPos + 1
+						tick, price, toStop, self.posStopProfit))
+			nrPos = self.curPositions() - toStop + 1
 			self.closePositions(tick, price, direction, nrPos, reverse = True)
 
 	def customExit(self):
