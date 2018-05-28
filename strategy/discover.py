@@ -42,7 +42,9 @@ class Main(Futures):
 
 		self.initStatFrame(tkCols = self.tkCols, trdCols = ["TRD_ID"])
 		self.firstTick = self.tickHelper.firstTick()
-		#
+		# 开仓价备份。如tick内发生平仓操作则会立即从仓位管理队列中移出，这导致在tick结束时
+		# 不能统计波动率等指标，故设置了开仓价备份并在统计时优先使用。但在即将进入下一tick
+		# 时需确保该备份与仓位管理中完全一致。
 		self.opPrice = list()
 		#
 		self.toCutPos = None
@@ -96,8 +98,12 @@ class Main(Futures):
 		for i in range(_maxPos):
 			try:
 				p = self.opPrice[i]
-			except IndexError, e:
+			except IndexError:
+				_pos = self.getPosition(i + 1)
 				p = None
+				if _pos:
+					p = _pos.price
+
 			_cfr = self.__curFloatRate(price, p, direction)
 			#
 			_sp = np.nan
@@ -110,21 +116,19 @@ class Main(Futures):
 				pass
 			ret += [_cfr, _sp]
 
-		# 检查tick内是否发生平仓
-		if len(self.opPrice) > self.curPositions():
-			# tick内发生平仓，缓存的开仓使用完毕需移除，避免下一tick重复记入
-			_curPos = self.curPositions()
+		# tick结束，更新仓位备份，确保与仓位管理中完全一致
+		_curPos = self.curPositions()
+		if _curPos > len(self.opPrice):
+			# 发生加仓，备份中补充新增仓位
+			_pos = self.getPosition(_curPos)
+			self.opPrice.append(_pos.price)
+		elif _curPos < len(self.opPrice):
+			# 发生平仓，备份中删除已平仓位
 			self.opPrice = self.opPrice[:_curPos]
 			# 清理已平仓位的止赢标记
 			for p in self.posStopProfit.keys():
 				if p > _curPos:
 					del self.posStopProfit[p]
-
-		if self.curPositions() == 0:
-			# 交易已经结束
-			self.opPrice = list()
-			# 清理已平仓位的止赢标记
-			self.posStopProfit.clear()
 
 		return ret
 
@@ -217,7 +221,6 @@ class Main(Futures):
 		#
 		self.posStatFrame = self.posStatFrame.append(ret, ignore_index = True)
 		# 交易结束，清除所有与本交易相关标记
-		self.opPrice = list()
 		self.pLastCut = None
 		return [trdID]
 
@@ -244,9 +247,6 @@ class Main(Futures):
 			self.log("%s Hit Long Signal: Close %s, Highest %s, priceVariation %d" % (
 				tick, price, self.data.highestWithinDays(tick, days), self.attrs.priceVariation))
 			ret = SIG_TRADE_LONG
-
-		if ret:
-			self.opPrice.append(price)
 
 		return ret
 
@@ -313,7 +313,6 @@ class Main(Futures):
 			ret = False
 
 		if ret:
-			self.opPrice.append(price)
 			# 止损后才需设置以预防止损失效
 			self.pLastCut = None
 
