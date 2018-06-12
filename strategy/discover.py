@@ -14,6 +14,10 @@ from datetime import datetime, timedelta
 from core.futures import *
 from db.tbldesc import *
 
+#
+LAST_CUT_TYPE_CL = 0
+LAST_CUT_TYPE_SP = 1
+
 
 class Main(Futures):
 	def __init__(self, contract, config, logDir, debug = False):
@@ -54,6 +58,8 @@ class Main(Futures):
 		self.posStatFrame = pd.DataFrame()
 		#
 		self.dayLastTick = None
+		# 止赢参数
+		self.spThresholds = ((3, None, None), (3, 0.0143, 0.0361))
 		#
 		self.posStopProfit = dict()
 
@@ -297,9 +303,17 @@ class Main(Futures):
 		pos = self.getPosition()
 
 		if self.pLastCut:
+			_ignore = True
+			plc, cutType = self.pLastCut
 			# 需保证新开仓价优于最近一次止损价，否则会有止损点无效风险
-			if (direction == SIG_TRADE_LONG and price <= self.pLastCut) or (\
-				direction == SIG_TRADE_SHORT and price >= self.pLastCut):
+			if cutType == LAST_CUT_TYPE_CL:
+				_ignore = (price <= plc * 1.01) if direction == SIG_TRADE_LONG \
+					else (price >= plc * 0.99)
+			elif cutType == LAST_CUT_TYPE_SP:
+				cfr = self.__curFloatRate(price, pos.price, direction)
+				_thr = self.spThresholds[self.curPositions()][2]
+				_ignore = cfr <= _thr
+			if _ignore:
 				return ret
 
 		try:
@@ -345,7 +359,7 @@ class Main(Futures):
 
 			toCut = posIdx
 			# 记录止损点，作为加仓条件以避免止损无效
-			self.pLastCut = pos.price
+			self.pLastCut = (pos.price, LAST_CUT_TYPE_CL)
 
 		ret = False
 		if toCut:
@@ -384,8 +398,6 @@ class Main(Futures):
 			return ret
 
 		price = self.data.getClose(tick)
-		#
-		thresholds = [3, 3]
 
 		# 从最后一仓开始逆序检查
 		posList = list(range(1, self.curPositions() + 1))
@@ -400,7 +412,7 @@ class Main(Futures):
 				pass
 
 			pos = self.getPosition(posIdx)
-			thr = thresholds[posIdx - 1]
+			thr = self.spThresholds[posIdx - 1][0]
 			_alert = price < pos.price if direction == SIG_TRADE_LONG else price > pos.price
 			if not _alert:
 				#
@@ -430,7 +442,6 @@ class Main(Futures):
 			return
 
 		price = self.data.getClose(tick)
-		thresholds = [None, 0.0142]
 		toStop = None
 
 		# 从最后一仓开始逆序检查
@@ -442,7 +453,10 @@ class Main(Futures):
 				break
 
 			pos = self.getPosition(posIdx)
-			thr = thresholds[posIdx - 1]
+			thr = self.spThresholds[posIdx - 1][1]
+			if not thr:
+				continue
+
 			_alert = (price / pos.price) >= (1 + thr) if direction == SIG_TRADE_LONG \
 				else 1 - (pos.price / price) >= thr
 			if not _alert:
@@ -450,6 +464,7 @@ class Main(Futures):
 				break
 
 			toStop = posIdx
+			self.pLastCut = (pos.price, LAST_CUT_TYPE_SP)
 
 		if toStop:
 			self.log("	Stop Profit: %s, price %s, stop from %s, posStopProfit %s" % (
