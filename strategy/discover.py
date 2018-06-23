@@ -51,15 +51,13 @@ class Main(Futures):
 		# 时需确保该备份与仓位管理中完全一致。
 		self.opPrice = list()
 		#
-		self.toCutPos = None
-		#
 		self.pLastCut = None
 		#
 		self.posStatFrame = pd.DataFrame()
 		#
 		self.dayLastTick = None
-		# 止赢参数
-		self.spThresholds = ((3, None, None), (3, 0.0143, 0.0361))
+		# 止赢参数。第一仓不支持止赢，其它不能为None
+		self.spThresholds = ((None, None, None), (3, 0.0143, 0.0361))
 		#
 		self.posStopProfit = dict()
 
@@ -309,10 +307,16 @@ class Main(Futures):
 			if cutType == LAST_CUT_TYPE_CL:
 				_ignore = (price <= plc * 1.01) if direction == SIG_TRADE_LONG \
 					else (price >= plc * 0.99)
+				if not _ignore:
+					self.debug.dbg("signalAddPosition: [%s] last CL, price %s, plc %s" %(
+						self._signalToDirection(direction), price, plc))
 			elif cutType == LAST_CUT_TYPE_SP:
-				cfr = self.__curFloatRate(price, pos.price, direction)
+				cfr = self.__curFloatRate(price, plc, direction)
 				_thr = self.spThresholds[self.curPositions()][2]
 				_ignore = cfr <= _thr
+				if not _ignore:
+					self.debug.dbg("signalAddPosition: [%s] last SP, cfr %s, _thr %s" %(
+						self._signalToDirection(direction), cfr, _thr))
 			if _ignore:
 				return ret
 
@@ -337,7 +341,7 @@ class Main(Futures):
 		触发止损信号
 		:param tick: 交易时间
 		:param direction: 多空方向
-		:return: 触发止损信号返回True，否则返回False
+		:return: 未触发止损信号返回False，否则返回自定义参数
 		"""
 		price = self.data.getClose(tick)
 		#
@@ -365,22 +369,43 @@ class Main(Futures):
 		if toCut:
 			self.log("	Cut Loss: %s, price %s, cut from %s, cfr %s" % (
 						tick, price, toCut, cfr))
-			self.toCutPos = toCut
-			ret = True
+			ret = [toCut]
 
 		return ret
 
-	def tradeCutLoss(self, tick, direction):
+	def tradeCutLoss(self, tick, direction, args):
 		"""
 		止损。必须被重载实现
 		@MUST_OVERRIDE
 		:param tick: 交易时间
 		:param direction: 方向
+		:param args: 自定义参数
 		:return: 成功返回True，否则返回False
 		"""
+		toCut = args[0]
 		price = self.data.getClose(tick)
-		nrPos = self.curPositions() - self.toCutPos + 1
+		nrPos = self.curPositions() - toCut + 1
 		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
+		return ret
+
+	def __couldStopProfit(self, price, pos, threshold, direction):
+		"""
+		是否能够止赢
+		:param price: 当前价
+		:param pos: 持仓
+		:param threshold: 阈值
+		:param direction: 多空方向
+		:return: 能返回True，否则返回False
+		"""
+		ret = False
+		if not threshold:
+			return ret
+
+		cfr = self.__curFloatRate(price, pos.price, direction)
+		if cfr >= threshold:
+			self.debug.dbg("__couldStopProfit: signal %s, pos.price %s, cur price %s, ret %s" % (
+					self._signalToDirection(direction), pos.price, price, ret))
+			ret = True
 		return ret
 
 	def signalStopProfit(self, tick, direction):
@@ -388,89 +413,73 @@ class Main(Futures):
 		触发止赢信号
 		:param tick: 交易时间
 		:param direction: 多空方向
-		:return: 触发止赢信号返回True，否则返回False
+		:return: 未触发止损信号返回False，否则返回自定义参数
 		"""
+		ret = False
+
 		if not self.dayLastTick or self.dayLastTick.date() != tick.date():
 			self.dayLastTick = self.tickHelper.dayLastTick(tick)
 
-		ret = True
-		if tick != self.dayLastTick:
-			return ret
-
 		price = self.data.getClose(tick)
+		toSP = None
+		_skipSP = False
 
 		# 从最后一仓开始逆序检查
 		posList = list(range(1, self.curPositions() + 1))
 		posList.reverse()
 		for posIdx in posList:
+			pos = self.getPosition(posIdx)
+			(thrDL, thrSP) = self.spThresholds[posIdx - 1][0:2]
 			try:
 				self.posStopProfit[posIdx]
-				# 止赢条件之前已成立，无需再次判定
-				continue
+				if not _skipSP and self.__couldStopProfit(price, pos, thrSP, direction):
+					toSP = posIdx
+					self.pLastCut = (pos.price, LAST_CUT_TYPE_SP)
+				else:
+					# 一旦止赢条件不成立则跳过前面的仓位，否则会位统计会发生混乱
+					_skipSP = True
 			except KeyError:
-				# 止赢条件之前未成立，需再次判定
-				pass
+				# posStopProfit中无记录标志说明仓位的止赢条件之前未成立，需再次判定
+				if tick != self.dayLastTick:
+					# 仅在交易日的最后一个tick检查是否触发
+					break
 
-			pos = self.getPosition(posIdx)
-			thr = self.spThresholds[posIdx - 1][0]
-			_alert = price < pos.price if direction == SIG_TRADE_LONG else price > pos.price
-			if not _alert:
+				if not thrDL:
+					break
+
+				_alert = price < pos.price if direction == SIG_TRADE_LONG else price > pos.price
+				if not _alert:
+					#
+					break
+
+				_dayLasts = self.tickHelper.dayLasts(pos.time, tick)
+				if _dayLasts < thrDL:
+					break
+
+				self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), _dayLasts %s >= %s" % (
+					posIdx, tick, price, _dayLasts, thrDL))
 				#
-				break
+				self.posStopProfit[posIdx] = True
 
-			_dayLasts = self.tickHelper.dayLasts(pos.time, tick)
-			if _dayLasts < thr:
-				break
-
-			self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), _dayLasts %s > %s" % (
-				posIdx, tick, price, _dayLasts, thr))
-			#
-			self.posStopProfit[posIdx] = True
-
+		if toSP:
+			ret = [toSP]
 		return ret
 
-	def tradeStopProfit(self, tick, direction):
+	def tradeStopProfit(self, tick, direction, args):
 		"""
 		止赢。必须被重载实现
 		@MUST_OVERRIDE
 		:param tick: 交易时间
 		:param direction: 方向
+		:param args: 自定义参数
 		:return: 成功返回True，否则返回False
 		"""
-		if not len(self.posStopProfit):
-			#
-			return
-
+		toCut = args[0]
 		price = self.data.getClose(tick)
-		toStop = None
-
-		# 从最后一仓开始逆序检查
-		posList = list(range(1, self.curPositions() + 1))
-		posList.reverse()
-		for posIdx in posList:
-			if self.posStopProfit[posIdx]:
-				# 止赢为True说明刚开始进入止赢模式，条件不可能成立
-				break
-
-			pos = self.getPosition(posIdx)
-			thr = self.spThresholds[posIdx - 1][1]
-			if not thr:
-				continue
-
-			_alert = (price / pos.price) >= (1 + thr) if direction == SIG_TRADE_LONG \
-				else 1 - (pos.price / price) >= thr
-			if not _alert:
-				# 更低的仓位由于价格可能成立，但打乱仓位间的关系会影响统计，故忽略
-				break
-
-			toStop = posIdx
-			self.pLastCut = (pos.price, LAST_CUT_TYPE_SP)
-
-		if toStop:
-			self.log("	Stop Profit: %s, price %s, stop from %s, posStopProfit %s" % (
-						tick, price, toStop, self.posStopProfit))
-			nrPos = self.curPositions() - toStop + 1
-			self.closePositions(tick, price, direction, nrPos, reverse = True)
+		self.log("	Stop Profit: %s, price %s, stop from %s" % (tick, price, toCut))
+		nrPos = self.curPositions() - toCut + 1
+		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
+		return ret
 
 	def customExit(self):
 		"""
