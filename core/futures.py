@@ -485,7 +485,7 @@ class Futures:
 		触发止损信号
 		:param tick: 交易时间
 		:param direction: 多空方向
-		:return: 触发止损信号返回True，否则返回False
+		:return: 未触发止损信号返回False，否则返回自定义参数
 		"""
 		return False
 	
@@ -503,7 +503,7 @@ class Futures:
 		触发止赢信号
 		:param tick: 交易时间
 		:param direction: 多空方向
-		:return: 触发止赢信号返回True，否则返回False
+		:return: 未触发止损信号返回False，否则返回自定义参数
 		"""
 		return False
 
@@ -560,11 +560,13 @@ class Futures:
 		self.__appendTickStatToFrame()
 		self.__clearTickStatFrame()
 
-		# 得到tick中的下一交易时间
-		nextTick = self.__tradeNextTick(tickSrc, signal)
+		while 1:
+			# 得到tick中的下一交易时间
+			nextTick = self.__tradeNextTick(tickSrc, signal)
+			if not nextTick:
+				# 已到数据表结尾或交易退出，否则一直交易
+				break
 
-		# 除非到数据表结尾或交易退出，否则一直交易
-		while nextTick:
 			if self.signalEndTrading(nextTick, signal) or self.stopTick:
 				"""
 				1）触发退出交易信号；2）到达最后一个tick不允许退出外的任何操作；
@@ -572,45 +574,48 @@ class Futures:
 				self.debug.dbg("__tradeStart: End Trading: [%s][%s] stop tick %s" % (
 						self._signalToDirection(signal), nextTick, self.stopTick))
 				self.__tradeEnd(nextTick, signal)
-				return nextTick
-				
-			elif self.signalCutLoss(nextTick, signal):
+				break
+
+			_ret = self.signalCutLoss(nextTick, signal)
+			if _ret:
 				"""
 				止损
 				"""
 				self.debug.dbg("__tradeStart: Cut Loss: [%s][%s]" % (
 							self._signalToDirection(signal), nextTick))
-				self.tradeCutLoss(nextTick, signal)
+				self.tradeCutLoss(nextTick, signal, args = _ret)
 				# 防止止损操作重载时统计信息遗漏
 				self.tickStat.cutLoss = 1
 				# 如果止损后仓位为０，说明交易结束，返回当前tick
 				if self.curPositions() == 0:
-					return nextTick
+					break
+				continue
 
-			elif self.signalAddPosition(nextTick, signal):
+			if self.signalAddPosition(nextTick, signal):
 				"""
 				加仓
 				"""
 				self.debug.dbg("__tradeStart: Add Position: [%s][%s]" % (
 							self._signalToDirection(signal), nextTick))
 				self.__tradeAddPositions(nextTick, signal)
+				continue
 
-			elif self.signalStopProfit(nextTick, signal):
+			_ret = self.signalStopProfit(nextTick, signal)
+			if _ret:
 				"""
 				止赢
 				"""
 				self.debug.dbg("__tradeStart: Stop Profit: [%s][%s]" % (
 							self._signalToDirection(signal), nextTick))
-				self.tradeStopProfit(nextTick, signal)
+				self.tradeStopProfit(nextTick, signal, args = _ret)
 				# 防止止损操作重载时统计信息遗漏
 				self.tickStat.stopWin = 1
+				# 如果止损后仓位为０，说明交易结束，返回当前tick
+				if self.curPositions() == 0:
+					break
+				continue
 
-			nextTick = self.__tradeNextTick(tickSrc, signal)
-		
-		# 正常结束时不从这返回，因为交易结束要么正常触发结束信号，
-		# 要么是最后一个tick(stopTick被设置)。但如果数据表中仅
-		# 有一个tick且触发开仓信号则从这里返回
-		return None
+		return nextTick
 
 	def __tradeAddPositions(self, tick, direction):
 		"""
@@ -632,22 +637,24 @@ class Futures:
 
 		return False
 
-	def tradeCutLoss(self, tick, direction):
+	def tradeCutLoss(self, tick, direction, args):
 		"""
 		止损。必须被重载实现
 		@MUST_OVERRIDE
 		:param tick: 交易时间
 		:param direction: 方向
+		:param args: 自定义参数
 		:return: 成功返回True，否则返回False
 		"""
 		return False
 	
-	def tradeStopProfit(self, tick, direction):
+	def tradeStopProfit(self, tick, direction, args):
 		"""
 		止赢。必须被重载实现
 		@MUST_OVERRIDE
 		:param tick: 交易时间
 		:param direction: 方向
+		:param args: 自定义参数
 		:return: 成功返回True，否则返回False
 		"""
 		return False
