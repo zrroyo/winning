@@ -51,8 +51,6 @@ class Main(Futures):
 		# 时需确保该备份与仓位管理中完全一致。
 		self.opPrice = list()
 		#
-		self.toCutPos = None
-		#
 		self.pLastCut = None
 		#
 		self.posStatFrame = pd.DataFrame()
@@ -337,7 +335,7 @@ class Main(Futures):
 		触发止损信号
 		:param tick: 交易时间
 		:param direction: 多空方向
-		:return: 触发止损信号返回True，否则返回False
+		:return: 未触发止损信号返回False，否则返回自定义参数
 		"""
 		price = self.data.getClose(tick)
 		#
@@ -365,21 +363,22 @@ class Main(Futures):
 		if toCut:
 			self.log("	Cut Loss: %s, price %s, cut from %s, cfr %s" % (
 						tick, price, toCut, cfr))
-			self.toCutPos = toCut
-			ret = True
+			ret = [toCut]
 
 		return ret
 
-	def tradeCutLoss(self, tick, direction):
+	def tradeCutLoss(self, tick, direction, args):
 		"""
 		止损。必须被重载实现
 		@MUST_OVERRIDE
 		:param tick: 交易时间
 		:param direction: 方向
+		:param args: 自定义参数
 		:return: 成功返回True，否则返回False
 		"""
+		toCut = args[0]
 		price = self.data.getClose(tick)
-		nrPos = self.curPositions() - self.toCutPos + 1
+		nrPos = self.curPositions() - toCut + 1
 		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
 		return ret
 
@@ -406,7 +405,7 @@ class Main(Futures):
 		触发止赢信号
 		:param tick: 交易时间
 		:param direction: 多空方向
-		:return: 触发止赢信号返回True，否则返回False
+		:return: 未触发止损信号返回False，否则返回自定义参数
 		"""
 		ret = False
 
@@ -451,22 +450,23 @@ class Main(Futures):
 				self.posStopProfit[posIdx] = True
 
 		if toSP:
-			self.toCutPos = toSP
-			ret = True
+			ret = [toSP]
 		return ret
 
-	def tradeStopProfit(self, tick, direction):
+	def tradeStopProfit(self, tick, direction, args):
 		"""
 		止赢。必须被重载实现
 		@MUST_OVERRIDE
 		:param tick: 交易时间
 		:param direction: 方向
+		:param args: 自定义参数
 		:return: 成功返回True，否则返回False
 		"""
+		toCut = args[0]
 		price = self.data.getClose(tick)
 		self.log("	Stop Profit: %s, price %s, stop from %s, posStopProfit %s" % (
-					tick, price, self.toCutPos, self.posStopProfit))
-		nrPos = self.curPositions() - self.toCutPos + 1
+					tick, price, toCut, self.posStopProfit))
+		nrPos = self.curPositions() - toCut + 1
 		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
 		return ret
 
