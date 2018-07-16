@@ -56,8 +56,8 @@ class Main(Futures):
 		self.posStatFrame = pd.DataFrame()
 		#
 		self.dayLastTick = None
-		# 止赢参数
-		self.spThresholds = ((3, None, None), (3, 0.0143, 0.0361))
+		# 止赢参数。第一仓不支持止赢，其它不能为None
+		self.spThresholds = ((None, None, None), (3, 0.0143, 0.0361))
 		#
 		self.posStopProfit = dict()
 
@@ -307,10 +307,16 @@ class Main(Futures):
 			if cutType == LAST_CUT_TYPE_CL:
 				_ignore = (price <= plc * 1.01) if direction == SIG_TRADE_LONG \
 					else (price >= plc * 0.99)
+				if not _ignore:
+					self.debug.dbg("signalAddPosition: [%s] last CL, price %s, plc %s" %(
+						self._signalToDirection(direction), price, plc))
 			elif cutType == LAST_CUT_TYPE_SP:
-				cfr = self.__curFloatRate(price, pos.price, direction)
+				cfr = self.__curFloatRate(price, plc, direction)
 				_thr = self.spThresholds[self.curPositions()][2]
 				_ignore = cfr <= _thr
+				if not _ignore:
+					self.debug.dbg("signalAddPosition: [%s] last SP, cfr %s, _thr %s" %(
+						self._signalToDirection(direction), cfr, _thr))
 			if _ignore:
 				return ret
 
@@ -384,20 +390,22 @@ class Main(Futures):
 
 	def __couldStopProfit(self, price, pos, threshold, direction):
 		"""
-
-		:param price:
-		:param pos:
-		:param threshold:
-		:param direction:
-		:return:
+		是否能够止赢
+		:param price: 当前价
+		:param pos: 持仓
+		:param threshold: 阈值
+		:param direction: 多空方向
+		:return: 能返回True，否则返回False
 		"""
 		ret = False
 		if not threshold:
 			return ret
 
-		ret = (price / pos.price) - 1 >= threshold if direction == SIG_TRADE_LONG \
-			else 1 - (price / pos.price) >= threshold
-
+		cfr = self.__curFloatRate(price, pos.price, direction)
+		if cfr >= threshold:
+			self.debug.dbg("__couldStopProfit: signal %s, pos.price %s, cur price %s, ret %s" % (
+					self._signalToDirection(direction), pos.price, price, ret))
+			ret = True
 		return ret
 
 	def signalStopProfit(self, tick, direction):
@@ -421,11 +429,12 @@ class Main(Futures):
 		posList.reverse()
 		for posIdx in posList:
 			pos = self.getPosition(posIdx)
-			thr = self.spThresholds[posIdx - 1][0]
+			(thrDL, thrSP) = self.spThresholds[posIdx - 1][0:2]
 			try:
 				self.posStopProfit[posIdx]
-				if not _skipSP and self.__couldStopProfit(price, pos, thr, direction):
+				if not _skipSP and self.__couldStopProfit(price, pos, thrSP, direction):
 					toSP = posIdx
+					self.pLastCut = (pos.price, LAST_CUT_TYPE_SP)
 				else:
 					# 一旦止赢条件不成立则跳过前面的仓位，否则会位统计会发生混乱
 					_skipSP = True
@@ -435,17 +444,20 @@ class Main(Futures):
 					# 仅在交易日的最后一个tick检查是否触发
 					break
 
+				if not thrDL:
+					break
+
 				_alert = price < pos.price if direction == SIG_TRADE_LONG else price > pos.price
 				if not _alert:
 					#
 					break
 
 				_dayLasts = self.tickHelper.dayLasts(pos.time, tick)
-				if _dayLasts < thr:
+				if _dayLasts < thrDL:
 					break
 
-				self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), _dayLasts %s > %s" % (
-					posIdx, tick, price, _dayLasts, thr))
+				self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), _dayLasts %s >= %s" % (
+					posIdx, tick, price, _dayLasts, thrDL))
 				#
 				self.posStopProfit[posIdx] = True
 
@@ -464,8 +476,7 @@ class Main(Futures):
 		"""
 		toCut = args[0]
 		price = self.data.getClose(tick)
-		self.log("	Stop Profit: %s, price %s, stop from %s, posStopProfit %s" % (
-					tick, price, toCut, self.posStopProfit))
+		self.log("	Stop Profit: %s, price %s, stop from %s" % (tick, price, toCut))
 		nrPos = self.curPositions() - toCut + 1
 		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
 		return ret
