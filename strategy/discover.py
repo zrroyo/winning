@@ -35,13 +35,17 @@ class Main(Futures):
 		# trade级统计项目
 		self.trdStatItems = {
 			'OP1_FR': ["OP1_OP_TICK", "OP1_OP_PRICE", "OP1_CLS_TICK", "OP1_CLS_PRICE",
-				"OP1_FR_Min", "OP1_FR_Max", "OP1_PFR", "OP1_PROFIT", "OP1_FR_DD", "OP1_SP"],
+				"OP1_FR_Min", "OP1_FR_Max", "OP1_PFR", "OP1_PROFIT", "OP1_FR_DD", "OP1_SP",
+				"OP1_FR_Max_TICK", "OP1_FR_Min_TICK"],
 			'OP2_FR': ["OP2_OP_TICK", "OP2_OP_PRICE", "OP2_CLS_TICK", "OP2_CLS_PRICE",
-				"OP2_FR_Min", "OP2_FR_Max", "OP2_PFR", "OP2_PROFIT", "OP2_FR_DD", "OP2_SP"],
+				"OP2_FR_Min", "OP2_FR_Max", "OP2_PFR", "OP2_PROFIT", "OP2_FR_DD", "OP2_SP",
+				"OP2_FR_Max_TICK", "OP2_FR_Min_TICK"],
 			'OP3_FR': ["OP3_OP_TICK", "OP3_OP_PRICE", "OP3_CLS_TICK", "OP3_CLS_PRICE",
-				"OP3_FR_Min", "OP3_FR_Max", "OP3_PFR", "OP3_PROFIT", "OP3_FR_DD", "OP3_SP"],
+				"OP3_FR_Min", "OP3_FR_Max", "OP3_PFR", "OP3_PROFIT", "OP3_FR_DD", "OP3_SP",
+				"OP3_FR_Max_TICK", "OP3_FR_Min_TICK"],
 			'OP4_FR': ["OP4_OP_TICK", "OP4_OP_PRICE", "OP4_CLS_TICK", "OP4_CLS_PRICE",
-				"OP4_FR_Min", "OP4_FR_Max", "OP4_PFR", "OP4_PROFIT", "OP4_FR_DD", "OP4_SP"],
+				"OP4_FR_Min", "OP4_FR_Max", "OP4_PFR", "OP4_PROFIT", "OP4_FR_DD", "OP4_SP",
+				"OP4_FR_Max_TICK", "OP4_FR_Min_TICK"],
 			}
 
 		self.initStatFrame(tkCols = self.tkCols, trdCols = ["TRD_ID"])
@@ -182,9 +186,10 @@ class Main(Futures):
 				_ret.append([np.nan] * len(stCol))
 				continue
 
-			desc = t[col].describe()
-			_min = desc["min"]
-			_max = desc["max"]
+			_min = t[col].min()
+			_max = t[col].max()
+			_tickMin = oldIndex[t[t[col] == t[col].min()].index[0]]
+			_tickMax = oldIndex[t[t[col] == t[col].max()].index[0]]
 			# 数据区间中的第一个为开仓tick，价格即为开仓价
 			_opTick = oldIndex[t.index[0]]
 			_endTick = oldIndex[t.index[-1]]
@@ -200,7 +205,7 @@ class Main(Futures):
 			_spVals = _spVals[_spVals[_spCol].notnull()]
 			_spRet = _spVals.index[0] if len(_spVals) else np.nan
 			_ret.append([_opTick, _opPrice, _endTick, _endPrice, _min, _max, pfr,
-				profit, (pfr - _max), _spRet])
+				profit, (pfr - _max), _spRet, _tickMax, _tickMin])
 
 		ret = pd.DataFrame(_ret, columns = stCol)
 		return ret
