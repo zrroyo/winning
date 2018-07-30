@@ -36,16 +36,16 @@ class Main(Futures):
 		self.trdStatItems = {
 			'OP1_FR': ["OP1_OP_TICK", "OP1_OP_PRICE", "OP1_CLS_TICK", "OP1_CLS_PRICE",
 				"OP1_FR_Min", "OP1_FR_Max", "OP1_PFR", "OP1_PROFIT", "OP1_FR_DD", "OP1_SP",
-				"OP1_FR_Max_TICK", "OP1_FR_Min_TICK"],
+				"OP1_FR_Max_TICK", "OP1_FR_Min_TICK", "OP1_SP_FR"],
 			'OP2_FR': ["OP2_OP_TICK", "OP2_OP_PRICE", "OP2_CLS_TICK", "OP2_CLS_PRICE",
 				"OP2_FR_Min", "OP2_FR_Max", "OP2_PFR", "OP2_PROFIT", "OP2_FR_DD", "OP2_SP",
-				"OP2_FR_Max_TICK", "OP2_FR_Min_TICK"],
+				"OP2_FR_Max_TICK", "OP2_FR_Min_TICK", "OP2_SP_FR"],
 			'OP3_FR': ["OP3_OP_TICK", "OP3_OP_PRICE", "OP3_CLS_TICK", "OP3_CLS_PRICE",
 				"OP3_FR_Min", "OP3_FR_Max", "OP3_PFR", "OP3_PROFIT", "OP3_FR_DD", "OP3_SP",
-				"OP3_FR_Max_TICK", "OP3_FR_Min_TICK"],
+				"OP3_FR_Max_TICK", "OP3_FR_Min_TICK", "OP3_SP_FR"],
 			'OP4_FR': ["OP4_OP_TICK", "OP4_OP_PRICE", "OP4_CLS_TICK", "OP4_CLS_PRICE",
 				"OP4_FR_Min", "OP4_FR_Max", "OP4_PFR", "OP4_PROFIT", "OP4_FR_DD", "OP4_SP",
-				"OP4_FR_Max_TICK", "OP4_FR_Min_TICK"],
+				"OP4_FR_Max_TICK", "OP4_FR_Min_TICK", "OP4_SP_FR"],
 			}
 
 		self.initStatFrame(tkCols = self.tkCols, trdCols = ["TRD_ID"])
@@ -117,9 +117,9 @@ class Main(Futures):
 			_sp = np.nan
 			try:
 				if self.posStopProfit[i + 1]:
-					_sp = 1
+					_sp = self.posStopProfit[i + 1]
 					# 每个仓位仅在止赢条件成立tick进行统计
-					self.posStopProfit[i + 1] = False
+					self.posStopProfit[i + 1] = None
 			except KeyError:
 				pass
 			ret += [_cfr, _sp]
@@ -203,9 +203,9 @@ class Main(Futures):
 			_spCol = "%s_SP" % col[0:3]
 			_spVals = _spVals[[_spCol]]
 			_spVals = _spVals[_spVals[_spCol].notnull()]
-			_spRet = _spVals.index[0] if len(_spVals) else np.nan
+			(_spRet, _spFR )= (_spVals.index[0], list(_spVals[_spCol])[0]) if len(_spVals) else (np.nan, np.nan)
 			_ret.append([_opTick, _opPrice, _endTick, _endPrice, _min, _max, pfr,
-				profit, (pfr - _max), _spRet, _tickMax, _tickMin])
+				profit, (pfr - _max), _spRet, _tickMax, _tickMin, _spFR])
 
 		ret = pd.DataFrame(_ret, columns = stCol)
 		return ret
@@ -461,10 +461,11 @@ class Main(Futures):
 				if _dayLasts < thrDL:
 					break
 
-				self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), _dayLasts %s >= %s" % (
-					posIdx, tick, price, _dayLasts, thrDL))
+				_fr = self.__curFloatRate(price, pos.price, direction)
+				self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), DL %s, FR %s" % (
+					posIdx, tick, price, _dayLasts, _fr))
 				#
-				self.posStopProfit[posIdx] = True
+				self.posStopProfit[posIdx] = _fr
 
 		if toSP:
 			ret = [toSP]
