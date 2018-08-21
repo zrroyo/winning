@@ -61,7 +61,10 @@ class Main(Futures):
 		#
 		self.dayLastTick = None
 		# 止赢参数。第一仓不支持止赢，其它不能为None
-		self.spThresholds = ((None, None, None, None), (3, -0.00586, 0.0143, 0.0361))
+		self.spThresholds = (
+			(None, None, None, None, None),
+			(3, -0.003, -0.00803, 0.0180, 0.0361)
+			)
 		#
 		self.posStopProfit = dict()
 
@@ -116,10 +119,10 @@ class Main(Futures):
 			#
 			_sp = np.nan
 			try:
-				if self.posStopProfit[i + 1]:
-					_sp = self.posStopProfit[i + 1]
+				if self.posStopProfit[i + 1][0]:
+					_sp = self.posStopProfit[i + 1][1]
 					# 每个仓位仅在止赢条件成立tick进行统计
-					self.posStopProfit[i + 1] = None
+					self.posStopProfit[i + 1][0] = None
 			except KeyError:
 				pass
 			ret += [_cfr, _sp]
@@ -317,7 +320,7 @@ class Main(Futures):
 						self._signalToDirection(direction), price, plc))
 			elif cutType == LAST_CUT_TYPE_SP:
 				cfr = self.__curFloatRate(price, plc, direction)
-				_thr = self.spThresholds[self.curPositions()][3]
+				_thr = self.spThresholds[self.curPositions()][4]
 				_ignore = cfr <= _thr
 				if not _ignore:
 					self.debug.dbg("signalAddPosition: [%s] last SP, cfr %s, _thr %s" %(
@@ -393,23 +396,25 @@ class Main(Futures):
 		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
 		return ret
 
-	def __couldStopProfit(self, price, pos, threshold, direction):
+	def __couldStopProfit(self, price, pos, espType, thrSP, direction):
 		"""
 		是否能够止赢
 		:param price: 当前价
 		:param pos: 持仓
-		:param threshold: 阈值
+		:param espType: esp类型，1或2
+		:param thrSP: 止赢阈值
 		:param direction: 多空方向
 		:return: 能返回True，否则返回False
 		"""
 		ret = False
-		if not threshold:
+		if not espType or not thrSP:
 			return ret
 
 		cfr = self.__curFloatRate(price, pos.price, direction)
-		if cfr >= threshold:
-			self.debug.dbg("__couldStopProfit: signal %s, pos.price %s, cur price %s, ret %s" % (
-					self._signalToDirection(direction), pos.price, price, ret))
+		if (espType == 1 and cfr >= thrSP) or (espType == 2 and cfr > 0):
+			self.debug.dbg("__couldStopProfit: signal %s, price (pos %s, cur %s), esp %s, thrSP %s" % (
+					self._signalToDirection(direction), pos.price, price, espType,
+					thrSP if espType == 1 else 0))
 			ret = True
 		return ret
 
@@ -421,7 +426,6 @@ class Main(Futures):
 		:return: 未触发止损信号返回False，否则返回自定义参数
 		"""
 		ret = False
-		_ret = {}
 
 		if not self.dayLastTick or self.dayLastTick.date() != tick.date():
 			self.dayLastTick = self.tickHelper.dayLastTick(tick)
@@ -435,50 +439,50 @@ class Main(Futures):
 		posList.reverse()
 		for posIdx in posList:
 			pos = self.getPosition(posIdx)
-			(thrDL, thrESP, thrSP) = self.spThresholds[posIdx - 1][0:3]
+			(thrDL, thrESP1, thrESP2, thrSP) = self.spThresholds[posIdx - 1][0:4]
 			try:
-				self.posStopProfit[posIdx]
-				if not _skipSP and self.__couldStopProfit(price, pos, thrSP, direction):
+				espType = self.posStopProfit[posIdx][2]
+				if not _skipSP and self.__couldStopProfit(price, pos, espType, thrSP, direction):
 					toSP = posIdx
-					_ret[posIdx] = (pos.price, LAST_CUT_TYPE_SP)
+					self.pLastCut = (pos.price, LAST_CUT_TYPE_SP)
 				else:
-					# 一旦止赢条件不成立则跳过前面的仓位，否则会位统计会发生混乱
+					# 不允许隔仓SP，否则仓位统计会发生混乱
 					_skipSP = True
 			except KeyError:
-				# posStopProfit中无记录标志说明仓位的止赢条件之前未成立，需再次判定
+				# 该仓没有ESP，以下仓位由于隔仓不允许SP
+				_skipSP = True
 				if tick != self.dayLastTick:
-					# 仅在交易日的最后一个tick检查是否触发
+					# 仅在交易日的最后一个tick检查是否触发ESP
 					break
 
 				if toSP:
-					# 高仓位已经触发止赢，价格必然高于低仓位，SP/SPCL条件不可能成立
-					continue
-
-				if not thrDL:
+					# 高仓位已经触发止赢，价格必然高于低仓位，ESP条件不可能成立
 					break
 
-				_alert = price < pos.price if direction == SIG_TRADE_LONG else price > pos.price
-				if not _alert:
-					#
+				if not thrDL:
+					# 为了避免仓位混乱，除第一个仓位外都必须设置SP相关参数，否则引起仓位混乱
+					break
+
+				espType = 1
+				_fr = self.__curFloatRate(price, pos.price, direction)
+				if _fr > thrESP1:
+					# 低仓位ESP条件仍有可能满足
 					continue
+				elif _fr < thrESP2:
+					espType = 2
 
 				_dayLasts = self.tickHelper.dayLasts(pos.time, tick)
 				if _dayLasts < thrDL:
+					#
 					continue
 
-				_fr = self.__curFloatRate(price, pos.price, direction)
-				if _fr < thrESP:
-					# 触发SPCL
-					_ret[posIdx] = (pos.price, LAST_CUT_TYPE_CL)
-
-				self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), DL %s, FR %s" % (
-					posIdx, tick, price, _dayLasts, _fr))
+				self.debug.dbg("signalStopProfit: pos %s, cur (tick %s, price %s), DL %s, FR %s, esp %s" % (
+					posIdx, tick, price, _dayLasts, _fr, espType))
 				#
-				self.posStopProfit[posIdx] = _fr
+				self.posStopProfit[posIdx] = [True, _fr, espType]
 
-		if self.curPositions() in _ret.keys():
-			# 最高仓位不需要TOSP或TOSPCL，则忽略低仓位
-			ret = _ret
+		if toSP:
+			ret = [toSP]
 		return ret
 
 	def tradeStopProfit(self, tick, direction, args):
@@ -490,20 +494,12 @@ class Main(Futures):
 		:param args: 自定义参数
 		:return: 成功返回True，否则返回False
 		"""
+		toCut = args[0]
 		price = self.data.getClose(tick)
-		posList = list(range(1, self.curPositions() + 1))
-		posList.reverse()
-		for posIdx in posList:
-			if posIdx not in args.keys():
-				# 不允许隔仓止赢，否则仓位关系会错乱
-				break
-
-			self.log("	Stop Profit [%s]: %s, price %s, pos %s" % (
-				'SP' if args[posIdx][1] == LAST_CUT_TYPE_SP else 'SPCL', tick, price, posIdx))
-			self.closePositions(tick, price, direction, 1, reverse = True)
-			#
-			self.pLastCut = args[posIdx]
-		return True
+		self.log("	Stop Profit: %s, price %s, stop from %s" % (tick, price, toCut))
+		nrPos = self.curPositions() - toCut + 1
+		ret = self.closePositions(tick, price, direction, nrPos, reverse = True)
+		return ret
 
 	def customExit(self):
 		"""
