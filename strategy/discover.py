@@ -63,7 +63,8 @@ class Main(Futures):
 		# 止赢参数。第一仓不支持止赢，其它不能为None
 		self.spThresholds = (
 			(None, None, None, None, None),
-			(3, -0.003, -0.00803, 0.0180, 0.0361)
+			(3, -0.003, -0.00803, 0.0180, 0.0361),
+			(2, -0.007, -1, 0.04, 0.06),
 			)
 		#
 		self.posStopProfit = dict()
@@ -304,7 +305,7 @@ class Main(Futures):
 		except KeyError:
 			pass
 
-		thresholds = [None, 0.013]
+		thresholds = [None, 0.013, 0.0129]
 		price = self.data.getClose(tick)
 		pos = self.getPosition()
 
@@ -353,7 +354,7 @@ class Main(Futures):
 		"""
 		price = self.data.getClose(tick)
 		#
-		thresholds = [-0.016, -0.016]
+		thresholds = [-0.016, -0.016, -0.025]
 		toCut = None
 		cfr = list()
 
