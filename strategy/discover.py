@@ -65,6 +65,7 @@ class Main(Futures):
 			(None, None, None, None, None),
 			(3, -0.003, -0.00803, 0.0180, 0.0361),
 			(2, -0.007, -1, 0.04, 0.06),
+			(2, 0, -1, 0.04, 0.08),
 			)
 		#
 		self.posStopProfit = dict()
@@ -305,7 +306,7 @@ class Main(Futures):
 		except KeyError:
 			pass
 
-		thresholds = [None, 0.013, 0.0129]
+		thresholds = [None, 0.013, 0.0129, 0.013]
 		price = self.data.getClose(tick)
 		pos = self.getPosition()
 
@@ -354,7 +355,7 @@ class Main(Futures):
 		"""
 		price = self.data.getClose(tick)
 		#
-		thresholds = [-0.016, -0.016, -0.025]
+		thresholds = [-0.016, -0.016, -0.025, -0.03]
 		toCut = None
 		cfr = list()
 
