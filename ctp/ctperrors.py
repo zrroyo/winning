@@ -1,71 +1,76 @@
-#! /usr/bin/python
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
-'''
+"""
 CTP(返回的）错误解析模块
-'''
+"""
 
-from xml.dom.minidom import parse
+import xml.dom.minidom as xdm
 
-#CTP错误解析类
-class CtpErrorParser:
-	
-	errorNodes = None	#存储所有已定义的错误节点(minidom格式)
-	errorList = []		#错误ID列表
-	
-	def __init__ (self,
-		xmlFile,	#定义错误ID的xml文件
-		):
+
+class CtpErrorParser(object):
+	"""
+	CTP错误解析类
+	"""
+	# 存储所有已定义的错误节点(minidom格式)
+	errorNodes = None
+	# 错误ID列表
+	errorList = []
+
+	def __init__(self, xmlFile):
+		"""
+		:param xmlFile: 定义错误ID的xml文件
+		"""
 		try:
-			self.dom = parse(xmlFile)
+			self.dom = xdm.parse(xmlFile)
 			self.__initAllErrors()
 		except:
-			print u'打开xml文件失败'
+			print(u'打开xml文件失败')
 		
-	#解析错误ID完成初始化
-	def __initAllErrors (self):
-		#得到所有已定义的错误节点
+	def __initAllErrors(self):
+		"""
+		解析错误ID完成初始化
+		"""
+		# 得到所有已定义的错误节点
 		self.errorNodes = self.dom.getElementsByTagName('error')
 		
-		#生成错误ID列表，用于快速检查
+		# 生成错误ID列表，用于快速检查
 		for node in self.errorNodes:
 			self.errorList.append(node.getAttribute('value'))
-		#print self.errorNodes
-		#print self.errorList
-	
-	#返回指定错误ID对应的错误提示
-	def getErrorMsgById (self,
-		ErrorId,	#错误ID号
-		):
-		
-		#检查是否是已知错误ID
+
+	def getErrorMsgById(self, ErrorId):
+		"""
+		返回指定错误ID对应的错误提示
+		:param ErrorId: 错误ID号
+		"""
+		# 检查是否是已知错误ID
 		if str(ErrorId) not in self.errorList:
 			return u'遇到未定义错误 ErrorId＝%d' % ErrorId
 		
-		#检索错误ID对应的错误提示
+		# 检索错误ID对应的错误提示
 		for node in self.errorNodes:
-			#print node.getAttribute('value')
 			if node.getAttribute('value') == str(ErrorId):
 				return node.getAttribute('prompt')
 			
-	#返回复合的错误提示
-	def errorMsgFactory (self,
-		ErrorId,	#错误ID号
-		):
+	def errorMsgFactory(self, ErrorId):
+		"""
+		返回复合的错误提示
+		:param ErrorId: 错误ID号
+		"""
 		errMsg = 'ErrID=%d,ErrMsg=%s' % (ErrorId, self.getErrorMsgById(ErrorId))
 		return errMsg
-		
-#def doTest():
-	#parser = CtpErrorParser('futures/error.xml')
-		
-	#print parser.getErrorMsgById(0)
-	#print parser.getErrorMsgById(2001)
-	#print parser.getErrorMsgById(333)
-	
-	#print parser.errorMsgFactory(0)
-	#print parser.errorMsgFactory(2001)
-	#print parser.errorMsgFactory(333)
-		
-#if __name__ == '__main__':
-	#doTest()
-		
+
+
+# def doTest():
+# 	parser = CtpErrorParser('futures/error.xml')
+#
+# 	print parser.getErrorMsgById(0)
+# 	print parser.getErrorMsgById(2001)
+# 	print parser.getErrorMsgById(333)
+#
+# 	print parser.errorMsgFactory(0)
+# 	print parser.errorMsgFactory(2001)
+# 	print parser.errorMsgFactory(333)
+#
+# if __name__ == '__main__':
+# 	doTest()
+#
