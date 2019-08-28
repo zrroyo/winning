@@ -673,6 +673,8 @@ static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_22UnSubscribeMarketData(struct __p
 static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_24ReqUserLogin(struct __pyx_obj_3ctp_6_MdApi_MdApi *__pyx_v_self, PyObject *__pyx_v_pReqUserLogin, int __pyx_v_nRequestID); 
 static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_26ReqUserLogout(struct __pyx_obj_3ctp_6_MdApi_MdApi *__pyx_v_self, PyObject *__pyx_v_pUserLogout, int __pyx_v_nRequestID); 
 static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_28GetApiVersion(struct __pyx_obj_3ctp_6_MdApi_MdApi *__pyx_v_self);
+static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_30SubscribeForQuoteRsp(struct __pyx_obj_3ctp_6_MdApi_MdApi *__pyx_v_self, PyObject *__pyx_v_pInstrumentIDs);
+static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_32UnSubscribeForQuoteRsp(struct __pyx_obj_3ctp_6_MdApi_MdApi *__pyx_v_self, PyObject *__pyx_v_pInstrumentIDs);
 static PyObject *__pyx_tp_new_3ctp_6_MdApi_MdApi(PyTypeObject *t, PyObject *a, PyObject *k);
 static char __pyx_k_1[] = "";
 static char __pyx_k_2[] = "OnRspUnSubMarketData";
@@ -692,6 +694,8 @@ static char __pyx_k__OnFrontConnected[] = "OnFrontConnected";
 static char __pyx_k__OnHeartBeatWarning[] = "OnHeartBeatWarning";
 static char __pyx_k__OnRspSubMarketData[] = "OnRspSubMarketData";
 static char __pyx_k__OnFrontDisconnected[] = "OnFrontDisconnected";
+static char __pyx_k__self[] = "self";
+static char __pyx_k__pInstrumentIDs[] = "pInstrumentIDs";
 static PyObject *__pyx_n_s_2;
 static PyObject *__pyx_n_s_3;
 static PyObject *__pyx_n_s__OnFrontConnected;
@@ -709,6 +713,8 @@ static PyObject *__pyx_n_s__nRequestID;
 static PyObject *__pyx_n_s__pReqUserLogin;
 static PyObject *__pyx_n_s__pUserLogout;
 static PyObject *__pyx_n_s__pszFlowPath;
+static PyObject *__pyx_n_s__self;
+static PyObject *__pyx_n_s__pInstrumentIDs;
 PyObject *_init(CYTHON_UNUSED PyObject *__pyx_v_self, PyObject *__pyx_v_m) {
   PyObject *__pyx_v_fa = NULL;
   PyObject *__pyx_r = NULL;
@@ -1809,6 +1815,318 @@ static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_28GetApiVersion(struct __pyx_obj_3
   return __pyx_r;
 }
 
+static PyObject *__pyx_pw_3ctp_6_MdApi_5MdApi_31SubscribeForQuoteRsp(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds);
+static char __pyx_doc_3ctp_6_MdApi_5MdApi_30SubscribeForQuoteRsp[] = "\350\256\242\351\230\205\350\257\242\344\273\267\343\200\202";
+static PyObject *__pyx_pw_3ctp_6_MdApi_5MdApi_31SubscribeForQuoteRsp(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  CYTHON_UNUSED PyObject *__pyx_v_self = 0;
+  CYTHON_UNUSED PyObject *__pyx_v_pInstrumentIDs = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("SubscribeForQuoteRsp (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s__self,&__pyx_n_s__pInstrumentIDs,0};
+    PyObject* values[2] = {0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s__self)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        case  1:
+        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s__pInstrumentIDs)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("SubscribeForQuoteRsp", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 89; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "SubscribeForQuoteRsp") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 89; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+    }
+    __pyx_v_self = values[0];
+    __pyx_v_pInstrumentIDs = values[1];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("SubscribeForQuoteRsp", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 89; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("MdApi.MdApi.SubscribeForQuoteRsp", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_3ctp_6_MdApi_5MdApi_30SubscribeForQuoteRsp((struct __pyx_obj_3ctp_6_MdApi_MdApi *)__pyx_v_self, __pyx_v_pInstrumentIDs);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_30SubscribeForQuoteRsp(struct __pyx_obj_3ctp_6_MdApi_MdApi *__pyx_v_self, PyObject *__pyx_v_pInstrumentIDs) {
+  int __pyx_v_nCount;
+  char **__pyx_v_ppInstrumentID;
+  long __pyx_v_i;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  int __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
+  char *__pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("SubscribeForQuoteRsp", 0);
+  __pyx_t_1 = ((__pyx_v_self->spi == NULL) != 0);
+  if (__pyx_t_1) {
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+    goto __pyx_L0;
+    goto __pyx_L3;
+  }
+  __pyx_L3:;
+  __pyx_t_2 = PyObject_Length(__pyx_v_pInstrumentIDs); if (unlikely(__pyx_t_2 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_nCount = __pyx_t_2;
+  __pyx_v_ppInstrumentID = ((char **)malloc(((sizeof(char *)) * __pyx_v_nCount)));
+  __pyx_t_3 = CheckMemory(__pyx_v_ppInstrumentID); if (unlikely(__pyx_t_3 == 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  {
+    __pyx_t_3 = __pyx_v_nCount;
+    for (__pyx_v_i = 0; __pyx_v_i < __pyx_t_3; __pyx_v_i++) {
+      __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_pInstrumentIDs, __pyx_v_i, sizeof(long), PyInt_FromLong, 0, 1, 1); if (!__pyx_t_4) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L5;}
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_5 = __Pyx_PyObject_AsString(__pyx_t_4); if (unlikely((!__pyx_t_5) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L5;}
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      (__pyx_v_ppInstrumentID[__pyx_v_i]) = __pyx_t_5;
+    }
+    {
+        #ifdef WITH_THREAD
+        PyThreadState *_save;
+        Py_UNBLOCK_THREADS
+        #endif
+        {
+          __pyx_v_nCount = __pyx_v_self->api->SubscribeForQuoteRsp(__pyx_v_ppInstrumentID, __pyx_v_nCount);
+        }
+        {
+          #ifdef WITH_THREAD
+          Py_BLOCK_THREADS
+          #endif
+        }
+    }
+  }
+  {
+    int __pyx_why;
+    PyObject *__pyx_exc_type, *__pyx_exc_value, *__pyx_exc_tb;
+    int __pyx_exc_lineno;
+    __pyx_exc_type = 0; __pyx_exc_value = 0; __pyx_exc_tb = 0; __pyx_exc_lineno = 0;
+    __pyx_why = 0; goto __pyx_L6;
+    __pyx_L5: {
+      __pyx_why = 4;
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_ErrFetch(&__pyx_exc_type, &__pyx_exc_value, &__pyx_exc_tb);
+      __pyx_exc_lineno = __pyx_lineno;
+      goto __pyx_L6;
+    }
+    __pyx_L6:;
+    free(__pyx_v_ppInstrumentID);
+    switch (__pyx_why) {
+      case 4: {
+        __Pyx_ErrRestore(__pyx_exc_type, __pyx_exc_value, __pyx_exc_tb);
+        __pyx_lineno = __pyx_exc_lineno;
+        __pyx_exc_type = 0;
+        __pyx_exc_value = 0;
+        __pyx_exc_tb = 0;
+        goto __pyx_L1_error;
+      }
+    }
+  }
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_4 = PyInt_FromLong(__pyx_v_nCount); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_r = __pyx_t_4;
+  __pyx_t_4 = 0;
+  goto __pyx_L0;
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("ctp._MdApi.MdApi.SubscribeForQuoteRsp", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pw_3ctp_6_MdApi_5MdApi_33UnSubscribeForQuoteRsp(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds);
+static char __pyx_doc_3ctp_6_MdApi_5MdApi_32UnSubscribeForQuoteRsp[] = "\351\200\200\350\256\242\350\257\242\344\273\267\343\200\202";
+static PyObject *__pyx_pw_3ctp_6_MdApi_5MdApi_33UnSubscribeForQuoteRsp(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  CYTHON_UNUSED PyObject *__pyx_v_self = 0;
+  CYTHON_UNUSED PyObject *__pyx_v_pInstrumentIDs = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("UnSubscribeForQuoteRsp (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s__self,&__pyx_n_s__pInstrumentIDs,0};
+    PyObject* values[2] = {0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s__self)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        case  1:
+        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s__pInstrumentIDs)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("UnSubscribeForQuoteRsp", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "UnSubscribeForQuoteRsp") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+    }
+    __pyx_v_self = values[0];
+    __pyx_v_pInstrumentIDs = values[1];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("UnSubscribeForQuoteRsp", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("MdApi.MdApi.UnSubscribeForQuoteRsp", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_3ctp_6_MdApi_5MdApi_32UnSubscribeForQuoteRsp((struct __pyx_obj_3ctp_6_MdApi_MdApi *)__pyx_v_self, __pyx_v_pInstrumentIDs);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_3ctp_6_MdApi_5MdApi_32UnSubscribeForQuoteRsp(struct __pyx_obj_3ctp_6_MdApi_MdApi *__pyx_v_self, PyObject *__pyx_v_pInstrumentIDs) {
+  int __pyx_v_nCount;
+  char **__pyx_v_ppInstrumentID;
+  long __pyx_v_i;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  int __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
+  char *__pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("UnSubscribeForQuoteRsp", 0);
+  __pyx_t_1 = ((__pyx_v_self->spi == NULL) != 0);
+  if (__pyx_t_1) {
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+    goto __pyx_L0;
+    goto __pyx_L3;
+  }
+  __pyx_L3:;
+  __pyx_t_2 = PyObject_Length(__pyx_v_pInstrumentIDs); if (unlikely(__pyx_t_2 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_nCount = __pyx_t_2;
+  __pyx_v_ppInstrumentID = ((char **)malloc(((sizeof(char *)) * __pyx_v_nCount)));
+  __pyx_t_3 = CheckMemory(__pyx_v_ppInstrumentID); if (unlikely(__pyx_t_3 == 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  {
+    __pyx_t_3 = __pyx_v_nCount;
+    for (__pyx_v_i = 0; __pyx_v_i < __pyx_t_3; __pyx_v_i++) {
+      __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_pInstrumentIDs, __pyx_v_i, sizeof(long), PyInt_FromLong, 0, 1, 1); if (!__pyx_t_4) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L5;}
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_5 = __Pyx_PyObject_AsString(__pyx_t_4); if (unlikely((!__pyx_t_5) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L5;}
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      (__pyx_v_ppInstrumentID[__pyx_v_i]) = __pyx_t_5;
+    }
+    {
+        #ifdef WITH_THREAD
+        PyThreadState *_save;
+        Py_UNBLOCK_THREADS
+        #endif
+        {
+          __pyx_v_nCount = __pyx_v_self->api->UnSubscribeForQuoteRsp(__pyx_v_ppInstrumentID, __pyx_v_nCount);
+        }
+        {
+          #ifdef WITH_THREAD
+          Py_BLOCK_THREADS
+          #endif
+        }
+    }
+  }
+  {
+    int __pyx_why;
+    PyObject *__pyx_exc_type, *__pyx_exc_value, *__pyx_exc_tb;
+    int __pyx_exc_lineno;
+    __pyx_exc_type = 0; __pyx_exc_value = 0; __pyx_exc_tb = 0; __pyx_exc_lineno = 0;
+    __pyx_why = 0; goto __pyx_L6;
+    __pyx_L5: {
+      __pyx_why = 4;
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_ErrFetch(&__pyx_exc_type, &__pyx_exc_value, &__pyx_exc_tb);
+      __pyx_exc_lineno = __pyx_lineno;
+      goto __pyx_L6;
+    }
+    __pyx_L6:;
+    free(__pyx_v_ppInstrumentID);
+    switch (__pyx_why) {
+      case 4: {
+        __Pyx_ErrRestore(__pyx_exc_type, __pyx_exc_value, __pyx_exc_tb);
+        __pyx_lineno = __pyx_exc_lineno;
+        __pyx_exc_type = 0;
+        __pyx_exc_value = 0;
+        __pyx_exc_tb = 0;
+        goto __pyx_L1_error;
+      }
+    }
+  }
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_4 = PyInt_FromLong(__pyx_v_nCount); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_r = __pyx_t_4;
+  __pyx_t_4 = 0;
+  goto __pyx_L0;
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("ctp._MdApi.MdApi.UnSubscribeForQuoteRsp", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
 int MdSpi_OnFrontConnected(PyObject *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
@@ -2424,6 +2742,8 @@ static PyMethodDef __pyx_methods_3ctp_6_MdApi_MdApi[] = {
   {__Pyx_NAMESTR("ReqUserLogin"), (PyCFunction)__pyx_pw_3ctp_6_MdApi_5MdApi_25ReqUserLogin, METH_VARARGS|METH_KEYWORDS, __Pyx_DOCSTR(0)},
   {__Pyx_NAMESTR("ReqUserLogout"), (PyCFunction)__pyx_pw_3ctp_6_MdApi_5MdApi_27ReqUserLogout, METH_VARARGS|METH_KEYWORDS, __Pyx_DOCSTR(0)},
   {__Pyx_NAMESTR("GetApiVersion"), (PyCFunction)__pyx_pw_3ctp_6_MdApi_5MdApi_29GetApiVersion, METH_NOARGS, __Pyx_DOCSTR(0)},
+  {__Pyx_NAMESTR("SubscribeForQuoteRsp"), (PyCFunction)__pyx_pw_3ctp_6_MdApi_5MdApi_31SubscribeForQuoteRsp, METH_VARARGS|METH_KEYWORDS, __pyx_doc_3ctp_6_MdApi_5MdApi_30SubscribeForQuoteRsp},
+  {__Pyx_NAMESTR("UnSubscribeForQuoteRsp"), (PyCFunction)__pyx_pw_3ctp_6_MdApi_5MdApi_33UnSubscribeForQuoteRsp, METH_VARARGS|METH_KEYWORDS, __pyx_doc_3ctp_6_MdApi_5MdApi_32UnSubscribeForQuoteRsp},
   {0, 0, 0, 0}
 };
 static PyTypeObject __pyx_type_3ctp_6_MdApi_MdApi = {
@@ -2519,6 +2839,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s__pReqUserLogin, __pyx_k__pReqUserLogin, sizeof(__pyx_k__pReqUserLogin), 0, 0, 1, 1},
   {&__pyx_n_s__pUserLogout, __pyx_k__pUserLogout, sizeof(__pyx_k__pUserLogout), 0, 0, 1, 1},
   {&__pyx_n_s__pszFlowPath, __pyx_k__pszFlowPath, sizeof(__pyx_k__pszFlowPath), 0, 0, 1, 1},
+  {&__pyx_n_s__self, __pyx_k__self, sizeof(__pyx_k__self), 0, 0, 1, 1},
+  {&__pyx_n_s__pInstrumentIDs, __pyx_k__pInstrumentIDs, sizeof(__pyx_k__pInstrumentIDs), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {
