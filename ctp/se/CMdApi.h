@@ -14,6 +14,9 @@ static inline int MdSpi_OnRspError(PyObject *, CThostFtdcRspInfoField *, int, bo
 static inline int MdSpi_OnRspSubMarketData(PyObject *, CThostFtdcSpecificInstrumentField *, CThostFtdcRspInfoField *, int, bool);
 static inline int MdSpi_OnRspUnSubMarketData(PyObject *, CThostFtdcSpecificInstrumentField *, CThostFtdcRspInfoField *, int, bool);
 static inline int MdSpi_OnRtnDepthMarketData(PyObject *, CThostFtdcDepthMarketDataField *);
+static inline int MdSpi_OnRspSubForQuoteRsp(PyObject *, CThostFtdcSpecificInstrumentField *, CThostFtdcRspInfoField *, int, bool);
+static inline int MdSpi_OnRspUnSubForQuoteRsp(PyObject *, CThostFtdcSpecificInstrumentField *, CThostFtdcRspInfoField *, int, bool);
+static inline int MdSpi_OnRtnForQuoteRsp(PyObject *, CThostFtdcForQuoteRspField *);
 
 #define X_CALL(op) \
 	do { \
@@ -64,6 +67,18 @@ public:
 
 	virtual void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData) {
 		X_CALL(MdSpi_OnRtnDepthMarketData(self, pDepthMarketData));
+	}
+
+	virtual void OnRspSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+		X_CALL(MdSpi_OnRspSubForQuoteRsp(self, pSpecificInstrument, pRspInfo, nRequestID, bIsLast));
+	}
+
+	virtual void OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+		X_CALL(MdSpi_OnRspUnSubForQuoteRsp(self, pSpecificInstrument, pRspInfo, nRequestID, bIsLast));
+	}
+
+	virtual void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp) {
+		X_CALL(MdSpi_OnRtnForQuoteRsp(self, pForQuoteRsp));
 	}
 
 private:
@@ -135,5 +150,6 @@ static PyMethodDef _init_method = {"_init", _init, METH_O, NULL};
 #define S_RspUserLogin "RspUserLogin"
 #define S_SpecificInstrument "SpecificInstrument"
 #define S_UserLogout "UserLogout"
+#define S_ForQuoteRspField "ForQuoteRspField"
 
 #endif /* CMDAPI_H */

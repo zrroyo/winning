@@ -654,6 +654,7 @@ static PyObject *__pyx_v_3ctp_6_MdApi_ApiStruct_DepthMarketData = 0;
 static PyObject *__pyx_v_3ctp_6_MdApi_ApiStruct_RspInfo = 0;
 static PyObject *__pyx_v_3ctp_6_MdApi_ApiStruct_RspUserLogin = 0;
 static PyObject *__pyx_v_3ctp_6_MdApi_ApiStruct_SpecificInstrument = 0;
+static PyObject *__pyx_v_3ctp_6_MdApi_ApiStruct_ForQuoteRspField = 0;
 static PyObject *__pyx_v_3ctp_6_MdApi_ApiStruct_UserLogout = 0;
 static void __pyx_f_3ctp_6_MdApi_MdApi_Release(struct __pyx_obj_3ctp_6_MdApi_MdApi *); 
 #define __Pyx_MODULE_NAME "ctp._MdApi"
@@ -694,6 +695,9 @@ static char __pyx_k__OnFrontConnected[] = "OnFrontConnected";
 static char __pyx_k__OnHeartBeatWarning[] = "OnHeartBeatWarning";
 static char __pyx_k__OnRspSubMarketData[] = "OnRspSubMarketData";
 static char __pyx_k__OnFrontDisconnected[] = "OnFrontDisconnected";
+static char __pyx_k__OnRspSubForQuoteRsp[] = "OnRspSubForQuoteRsp";
+static char __pyx_k__OnRspUnSubForQuoteRsp[] = "OnRspUnSubForQuoteRsp";
+static char __pyx_k__OnRtnForQuoteRsp[] = "OnRtnForQuoteRsp";
 static char __pyx_k__self[] = "self";
 static char __pyx_k__pInstrumentIDs[] = "pInstrumentIDs";
 static PyObject *__pyx_n_s_2;
@@ -703,6 +707,9 @@ static PyObject *__pyx_n_s__OnFrontDisconnected;
 static PyObject *__pyx_n_s__OnHeartBeatWarning;
 static PyObject *__pyx_n_s__OnRspError;
 static PyObject *__pyx_n_s__OnRspSubMarketData;
+static PyObject *__pyx_n_s__OnRspSubForQuoteRsp;
+static PyObject *__pyx_n_s__OnRspUnSubForQuoteRsp;
+static PyObject *__pyx_n_s__OnRtnForQuoteRsp;
 static PyObject *__pyx_n_s__OnRspUserLogin;
 static PyObject *__pyx_n_s__OnRspUserLogout;
 static PyObject *__pyx_n_s____main__;
@@ -789,6 +796,18 @@ PyObject *_init(CYTHON_UNUSED PyObject *__pyx_v_self, PyObject *__pyx_v_m) {
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_v_3ctp_6_MdApi_ApiStruct_UserLogout = __pyx_t_1;
   __pyx_t_1 = 0;
+
+  __pyx_t_2 = PyObject_GetAttrString(__pyx_v_m, S_ForQuoteRspField); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 16; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = PyObject_GetAttr(__pyx_t_2, __pyx_v_fa); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 16; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_XGOTREF(__pyx_v_3ctp_6_MdApi_ApiStruct_ForQuoteRspField);
+  __Pyx_DECREF(__pyx_v_3ctp_6_MdApi_ApiStruct_ForQuoteRspField);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_v_3ctp_6_MdApi_ApiStruct_ForQuoteRspField = __pyx_t_1;
+  __pyx_t_1 = 0;
+
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
@@ -2709,6 +2728,244 @@ int MdSpi_OnRtnDepthMarketData(PyObject *__pyx_v_self, struct CThostFtdcDepthMar
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
+
+int MdSpi_OnRspSubForQuoteRsp(PyObject *__pyx_v_self, struct CThostFtdcSpecificInstrumentField *__pyx_v_pSpecificInstrument, struct CThostFtdcRspInfoField *__pyx_v_pRspInfo, int __pyx_v_nRequestID, bool __pyx_v_bIsLast) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("MdSpi_OnRspSubForQuoteRsp", 0);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s__OnRspSubForQuoteRsp); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (((__pyx_v_pSpecificInstrument == NULL) != 0)) {
+    __Pyx_INCREF(Py_None);
+    __pyx_t_2 = Py_None;
+  } else {
+    __pyx_t_3 = __Pyx_PyInt_FromSize_t(((size_t)__pyx_v_pSpecificInstrument)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_3);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = PyObject_Call(__pyx_v_3ctp_6_MdApi_ApiStruct_SpecificInstrument, ((PyObject *)__pyx_t_4), NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
+    __pyx_t_2 = __pyx_t_3;
+    __pyx_t_3 = 0;
+  }
+  if (((__pyx_v_pRspInfo == NULL) != 0)) {
+    __Pyx_INCREF(Py_None);
+    __pyx_t_3 = Py_None;
+  } else {
+    __pyx_t_4 = __Pyx_PyInt_FromSize_t(((size_t)__pyx_v_pRspInfo)); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_5);
+    PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4);
+    __Pyx_GIVEREF(__pyx_t_4);
+    __pyx_t_4 = 0;
+    __pyx_t_4 = PyObject_Call(__pyx_v_3ctp_6_MdApi_ApiStruct_RspInfo, ((PyObject *)__pyx_t_5), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
+    __pyx_t_3 = __pyx_t_4;
+    __pyx_t_4 = 0;
+  }
+  __pyx_t_4 = PyInt_FromLong(__pyx_v_nRequestID); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = __Pyx_PyBool_FromLong(__pyx_v_bIsLast); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_6 = PyTuple_New(4); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_6);
+  PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_2);
+  PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_6, 2, __pyx_t_4);
+  __Pyx_GIVEREF(__pyx_t_4);
+  PyTuple_SET_ITEM(__pyx_t_6, 3, __pyx_t_5);
+  __Pyx_GIVEREF(__pyx_t_5);
+  __pyx_t_2 = 0;
+  __pyx_t_3 = 0;
+  __pyx_t_4 = 0;
+  __pyx_t_5 = 0;
+  __pyx_t_5 = PyObject_Call(__pyx_t_1, ((PyObject *)__pyx_t_6), NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(((PyObject *)__pyx_t_6)); __pyx_t_6 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_AddTraceback("ctp._MdApi.MdSpi_OnRspSubForQuoteRsp", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+int MdSpi_OnRspUnSubForQuoteRsp(PyObject *__pyx_v_self, struct CThostFtdcSpecificInstrumentField *__pyx_v_pSpecificInstrument, struct CThostFtdcRspInfoField *__pyx_v_pRspInfo, int __pyx_v_nRequestID, bool __pyx_v_bIsLast) {
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("MdSpi_OnRspUnSubForQuoteRsp", 0);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s__OnRspUnSubForQuoteRsp); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (((__pyx_v_pSpecificInstrument == NULL) != 0)) {
+    __Pyx_INCREF(Py_None);
+    __pyx_t_2 = Py_None;
+  } else {
+    __pyx_t_3 = __Pyx_PyInt_FromSize_t(((size_t)__pyx_v_pSpecificInstrument)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_3);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = PyObject_Call(__pyx_v_3ctp_6_MdApi_ApiStruct_SpecificInstrument, ((PyObject *)__pyx_t_4), NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
+    __pyx_t_2 = __pyx_t_3;
+    __pyx_t_3 = 0;
+  }
+  if (((__pyx_v_pRspInfo == NULL) != 0)) {
+    __Pyx_INCREF(Py_None);
+    __pyx_t_3 = Py_None;
+  } else {
+    __pyx_t_4 = __Pyx_PyInt_FromSize_t(((size_t)__pyx_v_pRspInfo)); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_5);
+    PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4);
+    __Pyx_GIVEREF(__pyx_t_4);
+    __pyx_t_4 = 0;
+    __pyx_t_4 = PyObject_Call(__pyx_v_3ctp_6_MdApi_ApiStruct_RspInfo, ((PyObject *)__pyx_t_5), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
+    __pyx_t_3 = __pyx_t_4;
+    __pyx_t_4 = 0;
+  }
+  __pyx_t_4 = PyInt_FromLong(__pyx_v_nRequestID); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = __Pyx_PyBool_FromLong(__pyx_v_bIsLast); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_6 = PyTuple_New(4); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_6);
+  PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_2);
+  PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_6, 2, __pyx_t_4);
+  __Pyx_GIVEREF(__pyx_t_4);
+  PyTuple_SET_ITEM(__pyx_t_6, 3, __pyx_t_5);
+  __Pyx_GIVEREF(__pyx_t_5);
+  __pyx_t_2 = 0;
+  __pyx_t_3 = 0;
+  __pyx_t_4 = 0;
+  __pyx_t_5 = 0;
+  __pyx_t_5 = PyObject_Call(__pyx_t_1, ((PyObject *)__pyx_t_6), NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 148; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(((PyObject *)__pyx_t_6)); __pyx_t_6 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_AddTraceback("ctp._MdApi.MdSpi_OnRspUnSubForQuoteRsp", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+int MdSpi_OnRtnForQuoteRsp(PyObject *__pyx_v_self, CThostFtdcForQuoteRspField *__pyx_v_pForQuoteRspField)
+{
+  int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("MdSpi_OnRtnForQuoteRsp", 0);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s__OnRtnForQuoteRsp); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 152; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (((__pyx_v_pForQuoteRspField == NULL) != 0)) {
+    __Pyx_INCREF(Py_None);
+    __pyx_t_2 = Py_None;
+  } else {
+    __pyx_t_3 = __Pyx_PyInt_FromSize_t(((size_t)__pyx_v_pForQuoteRspField)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 152; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 152; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_4);
+    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_3);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = PyObject_Call(__pyx_v_3ctp_6_MdApi_ApiStruct_ForQuoteRspField, ((PyObject *)__pyx_t_4), NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 152; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
+    __pyx_t_2 = __pyx_t_3;
+    __pyx_t_3 = 0;
+  }
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 152; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_2);
+  __pyx_t_2 = 0;
+  __pyx_t_2 = PyObject_Call(__pyx_t_1, ((PyObject *)__pyx_t_3), NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 152; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(((PyObject *)__pyx_t_3)); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_r = 0;
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("ctp._MdApi.MdSpi_OnRtnForQuoteRsp", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
 static PyObject *__pyx_tp_new_3ctp_6_MdApi_MdApi(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
   PyObject *o;
   o = (*t->tp_alloc)(t, 0);
@@ -2829,6 +3086,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s__OnHeartBeatWarning, __pyx_k__OnHeartBeatWarning, sizeof(__pyx_k__OnHeartBeatWarning), 0, 0, 1, 1},
   {&__pyx_n_s__OnRspError, __pyx_k__OnRspError, sizeof(__pyx_k__OnRspError), 0, 0, 1, 1},
   {&__pyx_n_s__OnRspSubMarketData, __pyx_k__OnRspSubMarketData, sizeof(__pyx_k__OnRspSubMarketData), 0, 0, 1, 1},
+  {&__pyx_n_s__OnRspSubForQuoteRsp, __pyx_k__OnRspSubForQuoteRsp, sizeof(__pyx_k__OnRspSubForQuoteRsp), 0, 0, 1, 1},
+  {&__pyx_n_s__OnRspUnSubForQuoteRsp, __pyx_k__OnRspUnSubForQuoteRsp, sizeof(__pyx_k__OnRspUnSubForQuoteRsp), 0, 0, 1, 1},
+  {&__pyx_n_s__OnRtnForQuoteRsp, __pyx_k__OnRtnForQuoteRsp, sizeof(__pyx_k__OnRtnForQuoteRsp), 0, 0, 1, 1},
   {&__pyx_n_s__OnRspUserLogin, __pyx_k__OnRspUserLogin, sizeof(__pyx_k__OnRspUserLogin), 0, 0, 1, 1},
   {&__pyx_n_s__OnRspUserLogout, __pyx_k__OnRspUserLogout, sizeof(__pyx_k__OnRspUserLogout), 0, 0, 1, 1},
   {&__pyx_n_s____main__, __pyx_k____main__, sizeof(__pyx_k____main__), 0, 0, 1, 1},
@@ -2936,6 +3196,7 @@ PyMODINIT_FUNC PyInit__MdApi(void)
   __pyx_v_3ctp_6_MdApi_ApiStruct_RspUserLogin = Py_None; Py_INCREF(Py_None);
   __pyx_v_3ctp_6_MdApi_ApiStruct_SpecificInstrument = Py_None; Py_INCREF(Py_None);
   __pyx_v_3ctp_6_MdApi_ApiStruct_UserLogout = Py_None; Py_INCREF(Py_None);
+  __pyx_v_3ctp_6_MdApi_ApiStruct_ForQuoteRspField = Py_None; Py_INCREF(Py_None);
   if (PyType_Ready(&__pyx_type_3ctp_6_MdApi_MdApi) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (__Pyx_SetAttrString(__pyx_m, "MdApi", (PyObject *)&__pyx_type_3ctp_6_MdApi_MdApi) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_3ctp_6_MdApi_MdApi = &__pyx_type_3ctp_6_MdApi_MdApi;
