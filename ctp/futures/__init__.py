@@ -40,6 +40,9 @@ class MdApi(object):
         """
         return ''
 
+    def GetApiVersion(self):
+        return ''
+
     def RegisterFront(self, pszFrontAddress):
         """注册前置机网络地址
         @param pszFrontAddress：前置机网络地址。
@@ -86,6 +89,17 @@ class MdApi(object):
         """登出请求"""
         return 0
 
+    def SubscribeForQuoteRsp(self, pInstrumentIDs):
+        """
+        """
+        return 0
+
+    def UnSubscribeForQuoteRsp(self, pInstrumentIDs):
+        """
+        """
+        return 0
+
+
     def OnFrontConnected(self):
         """当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。"""
 
@@ -121,6 +135,15 @@ class MdApi(object):
 
     def OnRtnDepthMarketData(self, pDepthMarketData):
         """深度行情通知"""
+
+    def OnRspSubForQuoteRsp(self, pSpecificInstrument, pRspInfo, nRequestID, bIsLast):
+        """"""
+
+    def OnRspUnSubForQuoteRsp(self, pSpecificInstrument, pRspInfo, nRequestID, bIsLast):
+        """"""
+
+    def OnRtnForQuoteRsp(self, pForQuoteRspField):
+        """"""
 
 
 class TraderApi(object):
