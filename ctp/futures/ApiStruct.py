@@ -1566,6 +1566,15 @@ class UserLogout(BaseStruct): #用户登出请求
         self.BrokerID = '' #经纪公司代码, char[11]
         self.UserID = '' #用户代码, char[16]
 
+class ForQuoteRspField(BaseStruct): #
+    def __init__(self, TradingDay='', InstrumentID='', ForQuoteSysID='', ForQuoteTime='', ActionDay='', ExchangeID=''):
+        self.TradingDay = 'Date' #交易日, char[9]
+        self.InstrumentID = '' #
+        self.ForQuoteSysID = 'OrderSysID' #
+        self.ForQuoteTime = 'Time' #
+        self.ActionDay = 'Date' #业务日期, char[9]
+        self.ExchangeID = '' #交易所代码, char[9]
+
 class ForceUserLogout(BaseStruct): #强制交易员退出
     def __init__(self, BrokerID='', UserID=''):
         self.BrokerID = '' #经纪公司代码, char[11]
