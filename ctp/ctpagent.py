@@ -51,14 +51,21 @@ class MarketDataAgent(object):
         self.dataMap = ElementMap()
         # 初始化行情访问接口
         self.mdlocal = MarketDataAccess(self.dataMap)
+        #
+        self.rtnDmdRsp = None
 
-    def init_init(self):
+    def init_init(self, logger=None, rtn_dmd_func=None):
         """
         在开始行情服务前必须被调用
         """
         # 初始化日志接口
-        initLoggingBasic()
-        self.logger = logging.getLogger('Md')
+        self.logger = logger
+        if not logger:
+            initLoggingBasic()
+            self.logger = logging.getLogger('Md')
+
+        if rtn_dmd_func:
+            self.rtnDmdRsp = rtn_dmd_func
 
         # 初始化CTP行情接口
         mdSpi = CtpMdApi(self.instruments, self.broker_id, self.investor_id, self.passwd, self)
@@ -75,6 +82,9 @@ class MarketDataAgent(object):
         """
         CtpMdApi对象OnRtnDepthMarketData成员方法的真实回调函数
         """
+        if self.rtnDmdRsp:
+            return self.rtnDmdRsp(depth_market_data)
+
         dp = depth_market_data
         try:
             if dp.LastPrice > 999999 or dp.LastPrice < 10:
