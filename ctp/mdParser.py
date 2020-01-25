@@ -23,6 +23,7 @@ from dateutil.relativedelta import relativedelta
 import misc.debug
 import ctpagent
 import ctp.futconfig as futconfig
+import core.corecfg as corecfg
 
 
 class MdProc:
@@ -42,16 +43,18 @@ class MarketDataLauncher(object):
     CTP_CFG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', 'real.ini')
 
     def __init__(self):
+        #
+        self.gCfg = corecfg.GlobalConfig('~/.winning/config')
+        #
         self.logger = None
-        self.workDir = None
+        self.workDir = os.path.join(self.gCfg.getLogDir(), 'market_data')
         #
         self.wkMdp = {}
         #
-        self.mainThrExit = False
-        #
         self.__insToFps = {}
         #
-        self.workerGoExit = True
+        self.mainThrExit = False
+        self.workerGoExit = False
         self.daemonGoExit = False
 
     @classmethod
@@ -70,10 +73,11 @@ class MarketDataLauncher(object):
         logger.addHandler(fh)
         return logger
 
-    def workerSigHandler(self, sig):
+    def workerSigHandler(self, sig, frame):
         """
 
         :param sig:
+        :param frame:
         """
         self.logger.warn('Received signal %s' % sig)
         self.workerGoExit = True
@@ -121,9 +125,9 @@ class MarketDataLauncher(object):
         ret = 0
         self.logger = MarketDataLauncher.makeLogger('worker', logging.DEBUG, 'worker-%s' % os.getpid(),
                         '%(asctime)s:%(name)s:%(funcName)s:%(lineno)d: <%(levelname)s> %(message)s')
-        #
-        signal.signal(signal.SIGKILL, self.workerSigHandler)
-        signal.signal(signal.SIGTERM, self.workerSigHandler)
+        # #
+        # signal.signal(signal.SIGKILL, self.workerSigHandler)
+        # signal.signal(signal.SIGTERM, self.workerSigHandler)
 
         # Create file to store each instrument's data.
         self.__insToFps = dict()
@@ -154,18 +158,19 @@ class MarketDataLauncher(object):
 
         self.workerExit(ret)
 
-    def mainSigHandler(self, sig):
+    def mainSigHandler(self, sig, frame):
         """
 
         :param sig:
-        :return:
+        :param frame:
         """
         self.mainThrExit = True
 
-    def daemonSigHandler(self, sig):
+    def daemonSigHandler(self, sig, frame):
         """
         Signal handler for daemon process.
         :param sig:
+        :param frame:
         """
         self.logger.warn('Received signal %s' % sig)
         self.daemonGoExit = True
@@ -203,6 +208,7 @@ class MarketDataLauncher(object):
         ppid = os.getpid()
         pid = os.fork()
         if pid:
+            print("ppid %s, child %s" % (ppid, pid))
             # In parent's context.
             ret = 0
             try:
@@ -212,7 +218,7 @@ class MarketDataLauncher(object):
                     time.sleep(1)
                     continue
             except KeyboardInterrupt, e:
-                os.kill(pid, signal.SIGKILL)
+                os.kill(pid, signal.SIGUSR1)
                 ret = 1
             return ret
 
@@ -221,12 +227,14 @@ class MarketDataLauncher(object):
         self.logger = MarketDataLauncher.makeLogger('daemon', logging.DEBUG, 'daemon-%s' % os.getpid(),
                         '%(asctime)s:%(name)s:%(funcName)s:%(lineno)d: <%(levelname)s> %(message)s')
 
-        signal.signal(signal.SIGKILL, self.daemonSigHandler)
+        signal.signal(signal.SIGUSR1, self.daemonSigHandler)
 
         #
         nr = len(instruments.keys()) / jobs + 1
         for i in range(jobs):
-            _instruments = [instruments[k] for k in instruments.keys()[i*nr:(i+1)*nr]]
+            _instruments = []
+            for k in instruments.keys()[i*nr:(i+1)*nr]:
+                _instruments += list(instruments[k])
             rd, wr = mp.Pipe()
             _proc = mp.Process(target=self.mdWorker, args=(_instruments, wr))
             _proc.start()
@@ -252,7 +260,7 @@ class MarketDataLauncher(object):
             # Have received the exit signal.
             if self.daemonGoExit:
                 break
-
+            time.sleep(1)
             rlist = self.wkMdp.keys()
             rs, ws, es = select.select(rlist, None, rlist, timeout=0.5)
             for r in rs:
@@ -298,7 +306,7 @@ class MarketDataLauncher(object):
 
         patterns = patterns.split(',')
         for p in patterns:
-            _instrment = re.search('[A-Z]{1,2}', p).group()
+            _instrument = re.search('[A-Z]{1,2}', p).group()
             if re.search('^[A-Z]{1,2}$', p):
                 # i.e. 'FG'
                 _ret = self.__buildInstruments(p)
@@ -307,16 +315,16 @@ class MarketDataLauncher(object):
                 _ret = [p]
             elif re.search('^[A-Z]{1,2}((\d{0,3}\*)|(\d{0,2}\*\d)|(\d{0,1}\*\d{2})|(\*\d{3}))$', p):
                 # such as 'FG*', 'FG19*', 'FG1*01', 'FG*01', etc
-                _ret = self.__buildInstruments(_instrment, p)
+                _ret = self.__buildInstruments(_instrument, p)
             else:
                 print("Failed to build instruments for pattern '%s'." % p)
                 ret = None
                 break
 
-            if _instrment not in ret.keys():
-                ret[_instrment] = set(_ret)
+            if _instrument not in ret.keys():
+                ret[_instrument] = set(_ret)
             else:
-                ret[_instrment].update(set(_ret))
+                ret[_instrument].update(set(_ret))
 
         return ret
 
