@@ -32,7 +32,7 @@ class MarketDataAgent(object):
     """
     行情数据服务器端代理
     """
-    def __init__(self, instruments, broker_id, investor_id, passwd, server_port):
+    def __init__(self, broker_id, investor_id, passwd, server_port):
         """
         :param instruments: 合约
         :param broker_id: 期货公司ID
@@ -40,7 +40,7 @@ class MarketDataAgent(object):
         :param passwd: 口令
         :param server_port: 交易服务器端口
         """
-        self.instruments = instruments
+        self.instruments = []
         self.broker_id = broker_id
         self.investor_id = investor_id
         self.passwd = passwd
@@ -53,6 +53,8 @@ class MarketDataAgent(object):
         self.mdlocal = MarketDataAccess(self.dataMap)
         #
         self.rtnDmdRsp = None
+        # The real API instance for market data.
+        self.mdspi = None
 
     def init_init(self, logger=None, rtn_dmd_func=None):
         """
@@ -74,9 +76,25 @@ class MarketDataAgent(object):
         mdSpi.Init()
         self.mdspi = mdSpi
 
+    def release(self):
+        self.logger.debug('Release interface.')
+        if self.mdspi:
+            self.mdspi.Release()
+
     def inc_request_id(self):
         self.request_id += 1
         return self.request_id
+
+    def subscribe(self, instruments):
+        """
+
+        :param instruments:
+        """
+        self.instruments = instruments
+        self.mdspi.SubscribeMarketData(instruments)
+
+    def getTradingDay(self):
+        return self.mdspi.GetTradingDay()
 
     def rtn_depth_market_data(self, depth_market_data):
         """
@@ -109,9 +127,9 @@ class MarketDataAgent(object):
                 # 合约行情数据还不存在于已知映射中
                 self.dataMap.addElement(dp.InstrumentID, dp)
 
-            # print(u'[%s]，[价：最新/%g，买/%g，卖/%g], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (
-            # 	dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1,
-            # 	dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime))
+            print(u'[%s]，[价：最新/%g，买/%g，卖/%g], [量：买/%d，卖/%d，总：%d], [最高/%d，最低/%d], 时间：%s' % (
+            	dp.InstrumentID, dp.LastPrice, dp.BidPrice1, dp.AskPrice1, dp.BidVolume1, dp.AskVolume1,
+            	dp.Volume, dp.HighestPrice, dp.LowestPrice, dp.UpdateTime))
         finally:
             self.logger.debug(u'接收行情数据异常!')
 

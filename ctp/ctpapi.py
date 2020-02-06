@@ -51,7 +51,6 @@ class CtpMdApi(MdApi):
 	def OnRspUserLogin(self, userlogin, info, rid, is_last):
 		if is_last and not self.checkErrorRspInfo(info):
 			print("get today's trading day:", repr(self.GetTradingDay()))
-			self.SubscribeMarketData(list(self.instruments))
 
 	def OnRtnDepthMarketData(self, depth_market_data):
 		self.agent.rtn_depth_market_data(depth_market_data)
