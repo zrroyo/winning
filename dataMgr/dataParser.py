@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 '''
 This is the core framework to quickly check data records for Futures.

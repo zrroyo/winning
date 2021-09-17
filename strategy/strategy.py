@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 #
 # Gneral strategy super class which defines the most common methods 
