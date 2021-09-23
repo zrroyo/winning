@@ -13,7 +13,7 @@ sys.path.append(".")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.finance as mpf
+import mpl_finance as mpf
 from matplotlib.pylab import date2num
 
 from misc.debug import Debug
