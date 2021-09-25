@@ -12,7 +12,7 @@ from mysqldb import MYSQL
 
 #数据库通用接口
 class SQL(MYSQL):
-	host 	= 'localhost'
+	host 	= '127.0.0.1'
 	user	= 'win'
 	passwd	= 'winfwinf'
 
@@ -30,7 +30,7 @@ def doTest ():
 	#db.search('p1409_dayk', )
 	db.execSql(strSql)
 	print db.fetch(5)
-	
+
 	db.connect('history2')
 	strSql = "insert templateMink values ('2010/04/07 13:49',6970,6972,6970,6972,0,562,241906,Null,Null)"
 	db.execSql(strSql)
