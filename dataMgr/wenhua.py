@@ -8,7 +8,7 @@ import fileinput
 import importer as IMPORT
 import date
 
-class WenhuaImport(IMPORT.Import):
+class WENHUAImport(IMPORT.Import):
 	# Support 2 types of time formats, "yyyy-mm-dd" and "mm/dd/yyyy", in data files, 
 	# but only "yyyy-mm-dd" is allowed to insert into database.
 	def _formatTime (self, time):

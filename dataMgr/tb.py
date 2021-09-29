@@ -8,7 +8,7 @@ TB版数据导入数据库
 '''
 
 from importer import *
-from date import *
+from core.date import *
 from misc.dateTime import *
 from misc.debug import *
 
@@ -26,7 +26,7 @@ class TBImporter(Import):
 	
 	#时间格式字符串
 	#OVERRIDE
-	def strTimeFormat (self):
+	def get_time_format (self):
 		return '%Y/%m/%d %H:%M'
 	
 	#格式化时间
@@ -42,8 +42,7 @@ class TBImporter(Import):
 	def newImport (self, 
 		file,				#待导入的数据文件
 		table,				#目标数据表
-		timeFilters = None,		#过滤间期
-		template = 'templateMink',	#数据表类型（模版）,修改默认不同于父类
+		timeFilters = None		#过滤间期
 		):
-		return Import.newImport(self, file, table, timeFilters, template)
+		return Import.newImport(self, file, table, timeFilters)
 	

@@ -13,7 +13,7 @@ from misc.dateTime import *
 from misc.debug import *
 
 #h文华hack版数据导入接口
-class WenhuaHackImporter(Import):
+class WHHACKERImporter(Import):
 	
 	#将文件数据记录转换成字段列表
 	#override

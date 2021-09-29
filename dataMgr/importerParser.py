@@ -51,19 +51,14 @@ def getImpoter (
 	database,	#待导入的数据库
 	dbgMode = False	#是否调试
 	):
-	#默认类型
-	import whHacker
-	imp = whHacker.WenhuaHackImporter(database, debug = dbgMode)
-	
-	if type == 'wh':
-		return imp
-	elif type == 'tb':
-		import tb
-		imp = tb.TBImporter(database, debug = dbgMode)
-	else:
-		debug.warn("Unsupported data format!")
-	
+	mod_name = '.'.join(['dataMgr', type])
+	mod = __import__(mod_name)
+	mod = getattr(mod, type)
+	class_name = type.upper() + 'Importer'
+	cls = getattr(mod, class_name)
+	imp = cls(database, debug=dbgMode)
 	return imp
+
 
 #返回数据的类型（文件或目录）
 def getSourceType (
@@ -119,7 +114,12 @@ def importerOptionsHandler (
 	if options.database is None:
 		debug.error("Please specify database using '-b'.")
 		return
-	
+
+	#列出可用数据库
+	if options.list:
+		doListTables (options.database)
+		return
+
 	#得到与数据类型对应的导入接口
 	imp = getImpoter(type = options.type, 
 			database = options.database,
@@ -131,11 +131,6 @@ def importerOptionsHandler (
 	if options.drop:
 		debug.dbg("Dropping '%s' from database '%s'..." % (options.drop, options.database))
 		doDropTables(imp, options.drop)
-		return
-	
-	#列出可用数据库
-	if options.list:
-		doListTables (options.database)
 		return
 	
 	'''
@@ -151,9 +146,11 @@ def importerOptionsHandler (
 		从数据文件导入新表
 		'''
 		#数据源和目的数据表必须指定
-		if (requireSource(source) or requireTable(table)):
+		if (requireSource(source)):
 			return
-		
+		if table is None:
+			table = imp.recordsFileToTable(os.path.basename(source))
+
 		#数据源必须为文件
 		if getSourceType(source) != 'file':
 			debug.error("A data records file is required.")

@@ -31,14 +31,15 @@ class Import:
 	def __del__ (self):
 		self.db.close()
 	
-	#准备导入，如果数据表不存在则使用模版导入
-	def __prepareImport(self, 
-		table,				#数据表名
-		template = 'templateDayk',	#数据表类型（模版）
-		):
+	def __prepareImport(self, table):
+		"""准备导入，如果数据表不存在则使用模版导入
+		:param table: 数据表名
+		"""
 		if self.db.ifTableExist(table):
 			return True
-		
+		template = 'templateDayk'
+		if table.endswith('_mink'):
+			template = 'templateMink'
 		self.db.createTableTemplate(table, template)
 	
 	#格式化时间
@@ -46,11 +47,15 @@ class Import:
 	def formatTime (self,
 		time,	#待格式化的时间
 		):
-		return datetimeToStr(strToDatetime(time, self.strTimeFormat()), self.strTimeFormat())
-	
+		return datetimeToStr(strToDatetime(time, self.get_time_format()), self.get_time_format())
+
+	def trans_time(self, time):
+		"""将数据文件时间转化为数据库时间"""
+		pass
+
 	#时间格式字符串
 	#MUST_OVERRIDE
-	def strTimeFormat (self):
+	def get_time_format (self):
 		#必须指定为数据文件中的时间格式，如不同于如下
 		#格式需要在子类中重载，重要！
 		return '%m/%d/%Y'
@@ -67,10 +72,9 @@ class Import:
 	def newImport (self, 
 		file,				#待导入的数据文件
 		table,				#目标数据表
-		timeFilters = None,		#过滤间期
-		template = 'templateDayk',	#数据表类型（模版）
+		timeFilters = None		#过滤间期
 		):
-		self.__prepareImport(table, template)
+		self.__prepareImport(table)
 		
 		#如过滤间期有效则只导入指定区间的数据
 		if timeFilters:
@@ -82,27 +86,30 @@ class Import:
 		
 		for line in fileinput.input(file):
 			time,open,high,low,close,avg,Volume,OpenInterest = self.fileRecordToColumns(line)
-			
+			try:
+				_time = self.trans_time(time)
+			except ValueError:
+				continue
+
 			if timeFilters:
-				timeRecord = strToDatetime(time, self.strTimeFormat())
 				#忽略所有早于开始日期的数据
-				if startTime and timeRecord < strToDatetime(startTime, self.strTimeFormat()):
+				if startTime and _time < strToDatetime(startTime, self.get_time_format()):
 					#self.debug.dbg('Ignore %s' % time)
 					continue
-				
 				#已到截止日期，操作完成
-				if endTime and timeRecord > strToDatetime(endTime, self.strTimeFormat()):
+				if endTime and _time > strToDatetime(endTime, self.get_time_format()):
 					#self.debug.dbg('Up to the end date %s' % endTime)
-					fileinput.close()
-					return
-			
+					break
+
 			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
 			time = self.formatTime(time)
 			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
 						time,open,high,low,close,avg,Volume,OpenInterest)
 			self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
-	
+
+		fileinput.close()
+
 	#从数据文件中追加数据
 	def appendRecordsFromFile (self, 
 		file,		#数据文件
@@ -116,13 +123,13 @@ class Import:
 			time,open,high,low,close,avg,Volume,OpenInterest = self.fileRecordToColumns(line)
 			
 			#忽略所有大于endTime的数据，并结束
-			if endTime and strToDatetime(time, self.strTimeFormat()) > strToDatetime(endTime, self.strTimeFormat()):
+			if endTime and strToDatetime(time, self.get_time_format()) > strToDatetime(endTime, self.get_time_format()):
 				self.debug.dbg('Appended all data until %s' % endTime)
 				fileinput.close()
 				return
 			
 			#略过所有已同步数据
-			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, self.strTimeFormat()):
+			if strToDatetime(lastDate, '%Y-%m-%d') >= strToDatetime(time, self.get_time_format()):
 				continue
 			
 			time = self.formatTime(time)
