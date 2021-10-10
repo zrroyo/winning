@@ -401,7 +401,7 @@ class Futures:
 		:return: None
 		"""
 		self.tickStatFrame = self.tickStatFrame.append(
-					pd.DataFrame(self.tickStatDict).T)
+					pd.DataFrame(self.tickStatDict).T, sort=False)
 		# self.debug.dbg("__appendTickStatToFrame: tickStatFrame \n%s" %
 		# 	       			self.tickStatFrame[self.tickStatCols])
 
