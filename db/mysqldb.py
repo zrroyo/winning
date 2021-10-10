@@ -36,6 +36,7 @@ class MYSQL(DB):
 
 		self.conn = sql.connect(self.host, self.user, self.passwd, self.db)
 		self.conn.autocommit(1)
+		self.conn.ping(True)
 		self.cursor = self.conn.cursor()
 		return True
 	
