@@ -103,7 +103,7 @@ class Import:
 
 			#self.debug.dbg('New record: %s' % line.rstrip('\n'))
 			time = self.formatTime(time)
-			values = "'%s',%s,%s,%s,%s,%s,%s,%s,Null,Null" % (
+			values = "'%s',%s,%s,%s,%s,%s,%s,%s" % (
 						time,open,high,low,close,avg,Volume,OpenInterest)
 			self.debug.dbg('Insert values %s' % values)
 			self.db.insert(table, values)
