@@ -27,31 +27,26 @@ class DrawChartsError(Exception):
     pass
 
 
-class DrawCharts:
-    """画图，蜡烛图等"""
-    def __init__(self, path, dbg=False):
+class Draw:
+    """画蜡烛图"""
+    def __init__(self, sql_conn, dbg=False):
         self.debug = Debug('Draw', dbg)
-        self.sql = SQL()
-        self.sql.connect("history2")
-        if not path:
-            raise DrawChartsError("Please specify the path in which test data are stored!")
-        self.work_path = os.path.join(os.getcwd(), "TESTDATA", path)
-        self.transactions = pd.read_excel(os.path.join(self.work_path, "TRANSACTIONS.xlsx"))
+        self.sql_conn = sql_conn
 
     def to_trade_date(self, contract, timestamp):
         """将交易时间戳转换为对应的交易日"""
         _date = (timestamp + pd.to_timedelta("3h")).date()
         strSql = "SELECT Time FROM %s_dayk WHERE Time >= '%s' LIMIT 1" % (contract, _date)
-        values = pd.read_sql(strSql, self.sql.conn)
+        values = pd.read_sql(strSql, self.sql_conn)
         return values.iloc[0]['Time']
 
-    def _drawPositionLine(self, tradeId, pos, xticks, xlables, values, open_date, close_date):
+    def _drawPositionLine(self, transactions, tradeId, pos, xticks, xlables, values, open_date, close_date):
         """绘制持仓趋势线
         :param tradeId: 交易id
         :param pos: 仓位，'OP1', 'OP2', 'OP3', 'OP4', 'OP5'
         :return: None
         """
-        trans = self.transactions
+        trans = transactions
         posInfo = trans[(trans['TRD_ID'] == tradeId) & (trans["%s_FR_Max" % pos].notnull())]\
             [["%s_OP_TICK" % pos, "%s_OP_PRICE" % pos, "%s_CLS_TICK" % pos, "%s_CLS_PRICE" % pos]]
 
@@ -64,9 +59,9 @@ class DrawCharts:
             _yVal[-1] = val[3]
             plt.plot(_xticks, _yVal, "bo-")
 
-    def _drawCandlestick(self, contract, periods, title, pic_path, position, show, grid):
+    def drawCandlestick(self, dat_table, periods, title, pic_path, position, show, grid, transactions=None):
         """画蜡烛图
-        :param contract: 合约名
+        :param dat_table: 蜡烛图数据源
         :param periods: 时间区间
         :param title: 图标题
         :param pic_path: 图片保存路径
@@ -75,13 +70,23 @@ class DrawCharts:
         :param grid: 显示网格线
         :return: None
         """
-        # 可直接获取Timestamp中的日期
-        _start_date = self.to_trade_date(contract, periods[0])
-        _close_date = self.to_trade_date(contract, periods[1])
+        contract = dat_table.split('_')
+        contract = contract[0]
+        clause = ''
+        if periods:
+            if periods[0]:
+                _start_date = self.to_trade_date(contract, periods[0])
+                clause += "Time >= '%s'" % _start_date
+            if periods[1]:
+                _close_date = self.to_trade_date(contract, periods[1])
+                if clause:
+                    clause += " AND "
+                clause += "Time <= '%s'" % _close_date
+            if clause:
+                clause = "WHERE " + clause
 
-        strSql = "SELECT Time, Open, Close, High, Low FROM %s_dayk " \
-            "WHERE Time >= '%s' and Time <= '%s'" % (contract, _start_date, _close_date)
-        values = pd.read_sql(strSql, self.sql.conn)
+        strSql = "SELECT Time, Open, Close, High, Low FROM %s %s" % (dat_table, clause)
+        values = pd.read_sql(strSql, self.sql_conn)
         xtkLables = map(lambda x: str(x), list(values['Time']))
         _xtkFirst = date2num(values.iloc[0]['Time'])
         # 消除周末、节假日时间间隔影响，保持紧邻显示
@@ -98,7 +103,8 @@ class DrawCharts:
         fig = plt.gcf()
         fig.add_subplot()
         ca = plt.gca()
-        ca.set_title("%s %s" % (title, position))
+        _title = "%s %s" % (title, position) if position else title
+        ca.set_title(_title)
         # 设置离底端距离，预留X轴标题设置空间
         fig.subplots_adjust(bottom = 0.2)
         ca.xaxis_date()
@@ -113,7 +119,7 @@ class DrawCharts:
         plt.plot(xticks, list(values['Close']), "m--")
         # 绘制持仓线
         if position:
-            self._drawPositionLine(title, position, xticks, xtkLables, list(values['Close']),
+            self._drawPositionLine(transactions, title, position, xticks, xtkLables, list(values['Close']),
                                 _start_date, _close_date)
 
         # 设置Max、Min标签
@@ -134,9 +140,22 @@ class DrawCharts:
             plt.grid(True)
         # 保存图片
         fig.set_size_inches(_width, 6)
-        fig.savefig(os.path.join(pic_path, "%s_%s.png" % (title, position)))
+        _filename = "%s_%s" % (title, position) if position else title
+        fig.savefig(os.path.join(pic_path, _filename))
         if show:
             plt.show()
+
+
+class DrawPosCharts:
+    """画图持仓蜡烛图"""
+    def __init__(self, path, dbg=False):
+        self.debug = Debug('DrawPosCharts', dbg)
+        self.sql = SQL()
+        self.sql.connect("history2")
+        if not path:
+            raise DrawChartsError("Please specify the path in which test data are stored!")
+        self.work_path = os.path.join(os.getcwd(), "TESTDATA", path)
+        self.transactions = pd.read_excel(os.path.join(self.work_path, "TRANSACTIONS.xlsx"))
 
     def _draw(self, todo, position, show, grid, subdir = None):
         """画图
@@ -145,7 +164,6 @@ class DrawCharts:
         :param show: 显示图片
         :param grid: 显示网格线
         :param subdir: 保存图片的子目录
-        :return: None
         """
         _trans = todo.split(',')
         # 支持用 T:win/lose 的形式动态选择交易列表
@@ -166,13 +184,12 @@ class DrawCharts:
         # 创建子目录保存图片
         if subdir:
             _path = os.path.join(_path, subdir)
-            try:
+            if not os.path.exists(_path):
                 os.mkdir(_path)
-            except OSError, e:
-                pass
 
         prev = None
         values = None
+        draw = Draw(self.sql.conn)
         for t in _trans:
             _t = t.split('_')
             _contract = "_".join(_t[0:2])
@@ -181,8 +198,10 @@ class DrawCharts:
                 _xls = os.path.join(self.work_path, "%s_TRADE_STAT.xlsx" % _contract)
                 values = pd.read_excel(_xls)
 
+            dat_table = "%s_dayk" % _t[0]
             _ticks = values[values.TRD_ID == t][['Tick_Start', 'Tick_End']]
-            self._drawCandlestick(_t[0], list(_ticks.iloc[0]), t, _path, position, show, grid)
+            draw.drawCandlestick(dat_table, list(_ticks.iloc[0]), t, _path, position, show,
+                                 grid, self.transactions)
 
     def drawOptionsHandler(self, options, argv):
         """命令解析函数
@@ -191,12 +210,55 @@ class DrawCharts:
         :return: 成功返回True，否则返回False
         """
         validPos = ['OP1', 'OP2', 'OP3', 'OP4', 'OP5']
-        if options.pos and options.pos not in validPos:
+        if options.pos not in validPos:
             self.debug.error("validPos: %s" % validPos)
             return False
 
-        if options.draw:
-            self._draw(options.draw, options.pos, options.show, options.grid, options.name)
+        if options.select:
+            self._draw(options.select, options.pos, options.show, options.grid, options.name)
+
+
+class DrawCandleCharts:
+    """画图持仓蜡烛图"""
+    def __init__(self, dbg=False):
+        self.debug = Debug('DrawCandleCharts', dbg)
+        self.sql = SQL()
+        self.sql.connect("history2")
+
+    def _draw(self, wk_path, contracts, ineterval, show, grid):
+        """画图
+        :param wk_path: 工作目录
+        :param contracts: 合约列表，以逗号分隔
+        :param ineterval: 时间区间
+        :param show: 显示图片
+        :param grid: 显示网格线
+        """
+        if not os.path.exists(wk_path):
+            os.mkdir(wk_path)
+            if not os.path.exists(wk_path):
+                raise DrawChartsError("Can not make directory: %s" % wk_path)
+
+        draw = Draw(self.sql.conn)
+        peroids = []
+        if ineterval:
+            peroids = ineterval.split(',')
+            peroids = [pd.to_datetime(t) for t in peroids]
+        _contracts = contracts.split(',')
+        for c in _contracts:
+            if not c:
+                continue
+            draw.drawCandlestick(c, peroids, c, wk_path, None, show, grid)
+
+    def drawOptionsHandler(self, options, argv):
+        """命令解析函数
+        :param options: 选项集
+        :param argv: 命令参数列表
+        :return: 成功返回True，否则返回False
+        """
+        wk_path = os.getcwd()
+        if options.path:
+            wk_path = options.path
+        self._draw(wk_path, options.select, options.interval, options.show, options.grid)
 
 
 def drawOptionsParser(parser, argv):
@@ -206,19 +268,24 @@ def drawOptionsParser(parser, argv):
     """
     parser.add_option('-p', '--path', dest='path',
             help='Path in which the test data are stored.')
-    parser.add_option('-d', '--draw', dest='draw',
-            help='Draw the candlestick chart for a transaction.')
+    parser.add_option('-s', '--select', dest='select',
+            help='Select a transaction to draw.')
     parser.add_option('-P', '--pos', dest='pos',
             help='Position to draw.')
     parser.add_option('-n', '--name', dest='name',
             help='Name of subdir to store pictures.')
     parser.add_option('-g', '--grid', action="store_true", dest='grid',
             help='Enable grid in pictures.')
-    parser.add_option('-s', '--show', action="store_true", dest='show',
+    parser.add_option('-S', '--show', action="store_true", dest='show',
             help='Show pictures.')
     parser.add_option('-D', '--debug', action="store_true", dest='debug',
             help='Enable debug mode.')
+    parser.add_option('-i', '--interval', dest='interval',
+                      help='Only draw the candlesticks within a time interval.')
 
     (options, args) = parser.parse_args()
-    draw = DrawCharts(options.path, options.debug)
+    if options.pos:
+        draw = DrawPosCharts(options.path, options.debug)
+    else:
+        draw = DrawCandleCharts(options.debug)
     draw.drawOptionsHandler(options, argv)
