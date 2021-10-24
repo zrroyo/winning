@@ -104,8 +104,7 @@ class Draw:
         fig = plt.gcf()
         fig.add_subplot()
         ca = plt.gca()
-        _title = "%s %s" % (title, position) if position else title
-        ca.set_title(_title)
+        ca.set_title(title)
         # 设置离底端距离，预留X轴标题设置空间
         fig.subplots_adjust(left = 0.2, bottom = 0.2)
         ca.xaxis_date()
@@ -121,7 +120,8 @@ class Draw:
         plt.plot(xticks, list(values['Close']), "m--")
         # 绘制持仓线
         if position:
-            self._drawPositionLine(transactions, title, position, xticks, xtkLables, list(values['Close']),
+            trd_id, _ = title.split(' ')
+            self._drawPositionLine(transactions, trd_id, position, xticks, xtkLables, list(values['Close']),
                                 _start_date, _close_date)
 
         # 设置Max、Min标签
@@ -142,7 +142,7 @@ class Draw:
             plt.grid(True)
         # 保存图片
         fig.set_size_inches(max(fig_width, 2.5), fig_height)
-        _filename = "%s_%s" % (title, position) if position else title
+        _filename = title.replace(' ', '_')
         fig.savefig(os.path.join(pic_path, _filename), bbox_inches='tight', dpi=200)
         if show:
             plt.show()
@@ -202,7 +202,8 @@ class DrawPosCharts:
 
             dat_table = "%s_dayk" % _t[0]
             _ticks = values[values.TRD_ID == t][['Tick_Start', 'Tick_End']]
-            draw.drawCandlestick(dat_table, list(_ticks.iloc[0]), t, _path, position, show,
+            title = "%s %s" % (t, position)
+            draw.drawCandlestick(dat_table, list(_ticks.iloc[0]), title, _path, position, show,
                                  grid, self.transactions)
 
     def drawOptionsHandler(self, options, argv):
@@ -227,13 +228,14 @@ class DrawCandleCharts:
         self.sql = SQL()
         self.sql.connect("history2")
 
-    def _draw(self, wk_path, contracts, ineterval, show, grid):
+    def _draw(self, wk_path, contracts, ineterval, show, grid, name):
         """画图
         :param wk_path: 工作目录
         :param contracts: 合约列表，以逗号分隔
         :param ineterval: 时间区间
         :param show: 显示图片
         :param grid: 显示网格线
+        :param name: 图片名称
         """
         if not os.path.exists(wk_path):
             os.mkdir(wk_path)
@@ -249,7 +251,8 @@ class DrawCandleCharts:
         for c in _contracts:
             if not c:
                 continue
-            draw.drawCandlestick(c, peroids, c, wk_path, None, show, grid)
+            title = name if name else c
+            draw.drawCandlestick(c, peroids, title, wk_path, None, show, grid)
 
     def drawOptionsHandler(self, options, argv):
         """命令解析函数
@@ -260,7 +263,7 @@ class DrawCandleCharts:
         wk_path = os.getcwd()
         if options.path:
             wk_path = options.path
-        self._draw(wk_path, options.select, options.interval, options.show, options.grid)
+        self._draw(wk_path, options.select, options.interval, options.show, options.grid, options.name)
 
 
 def drawOptionsParser(parser, argv):
