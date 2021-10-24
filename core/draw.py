@@ -97,22 +97,24 @@ class Draw:
         # 中文显示
         plt.rcParams['font.sans-serif'] = 'simhei'
         plt.rcParams['font.family'] = 'sans-serif'
-        # 窗口大小，每格0.4寸
-        _width = 0.3 * (len(values) + 1)
-        plt.figure(figsize = (_width, 6))
+        # 窗口大小
+        fig_width = 0.2 * len(values)  # 每格0.2寸
+        fig_height = 6 if position else 12
+        plt.figure(figsize = (fig_width, fig_height))
         fig = plt.gcf()
         fig.add_subplot()
         ca = plt.gca()
         _title = "%s %s" % (title, position) if position else title
         ca.set_title(_title)
         # 设置离底端距离，预留X轴标题设置空间
-        fig.subplots_adjust(bottom = 0.2)
+        fig.subplots_adjust(left = 0.2, bottom = 0.2)
         ca.xaxis_date()
-        # 设置X轴刻度标签为显示时间，并倾斜60度
-        plt.xticks(xticks, rotation = 60)
+        # 设置X轴刻度标签为显示时间
+        rotation = 60 if position else 90
+        plt.xticks(xticks, rotation = rotation)
         ca.set_xticklabels(xtkLables)
         plt.ylabel(u"价格（元）")
-        plt.xlabel(u"时间")
+        # plt.xlabel(u"时间")
         # 绘图
         mpf.candlestick_ochl(ca, _values, width = 1, colorup = 'red', colordown = 'green')
         # 收盘价趋势线
@@ -127,21 +129,21 @@ class Draw:
         _min = values[values.Low == min(values.Low)].head(1)
         # 增大y轴以放置Max、Min标签
         _ylim = plt.ylim()
-        plt.ylim(_ylim[0]-40, _ylim[1]+20)
+        plt.ylim(_ylim[0]-40, _ylim[1]+40)
         plt.annotate("Max: %s" % int(_max.High), xy = (xticks[_max.index[0]], _max.High+1),
-            xytext = (xticks[_max.index[0]], _max.High+30),
+            xytext = (xticks[_max.index[0]], _max.High+20),
             arrowprops = dict(arrowstyle = '->', connectionstyle = "arc3,rad=.2"))
         plt.annotate("Min: %s" % int(_min.Low), xy = (xticks[_min.index[0]], _min.Low-1),
-            xytext = (xticks[_min.index[0]], _min.Low-30),
+            xytext = (xticks[_min.index[0]], _min.Low-20),
             arrowprops = dict(arrowstyle = '->', connectionstyle = "arc3,rad=.2"))
 
         # 添加网格线
         if grid:
             plt.grid(True)
         # 保存图片
-        fig.set_size_inches(_width, 6)
+        fig.set_size_inches(max(fig_width, 2.5), fig_height)
         _filename = "%s_%s" % (title, position) if position else title
-        fig.savefig(os.path.join(pic_path, _filename))
+        fig.savefig(os.path.join(pic_path, _filename), bbox_inches='tight', dpi=200)
         if show:
             plt.show()
 
