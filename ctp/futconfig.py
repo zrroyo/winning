@@ -66,7 +66,7 @@ class CtpConfig(GenConfig):
 		
 if __name__ == '__main__':
 	print u'测试TradingConfig接口：'
-	tradeConfig = TradingConfig('../config/test.ini')
+	tradeConfig = TradingConfig('~/.winning/test.ini')
 	print tradeConfig.getInstruments('m')
 	print tradeConfig.getStrategy('m')
 	print tradeConfig.getAllowedPos('m')
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 	print tradeConfig.getDatabase('m')
 
 	print u'\n测试CtpConfig接口：'
-	ctpConfig = CtpConfig('../config/ctp.ini')
+	ctpConfig = CtpConfig('~/.winning/ctp.ini')
 	print ctpConfig.getServer('MarketData')
 	print ctpConfig.getPasswd('MarketData')
 	print ctpConfig.getInvestor('MarketData')

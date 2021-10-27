@@ -550,7 +550,7 @@ def doTestData():
 	Data测试
 	"""
 	import core.corecfg
-	descCfg = core.corecfg.ContractDescConfig('../config/contracts_desc')
+	descCfg = core.corecfg.ContractDescConfig('~/.winning/contracts_desc')
 	data = Data('p1405', descCfg, False)
 
 	date = '2014-03-11'
@@ -652,7 +652,7 @@ def doTestDataMink():
 	DataMink测试
 	"""
 	import core.corecfg
-	descCfg = core.corecfg.ContractDescConfig('../config/contracts_desc')
+	descCfg = core.corecfg.ContractDescConfig('~/.winning/contracts_desc')
 	data = DataMink('p1405_mink', descCfg, False)
 
 	date = DataMink.dateConverter('2014-03-11 14:36:00')

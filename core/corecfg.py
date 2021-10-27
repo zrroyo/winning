@@ -94,7 +94,7 @@ class ContractDescConfig (GenConfig):
 
 # 测试
 def doTest ():
-	emulConfig = EmulationConfig('../config/emul_p')
+	emulConfig = EmulationConfig('~/.winning/emul_p')
 	print emulConfig.getContracts()
 	print emulConfig.getStartTime()
 	print emulConfig.getEndTime()
