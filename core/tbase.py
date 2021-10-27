@@ -8,26 +8,22 @@ Start: 2017年 05月 22日 星期一 23:06:56 CST
 """
 
 import os
-import sys
-sys.path.append("..")
 import importlib
 
 from datetime import datetime
 from misc.debug import Debug
 from corecfg import EmulationConfig, ContractDescConfig
+from globals import GlobalConfig
 
+_global_cfg = GlobalConfig()
 # 默认配置文件目录
-DEF_EMUL_CONFIG_DIR = "tests"
-# 默认合约描述文件
-DEF_CONTRACT_DESC_CFG = "config/contracts_desc"
-# 默认执行日志保存路径
-DEF_TEST_OUT_DIR = "TESTDATA"
+DEF_EMUL_CONFIG_DIR = os.path.join(_global_cfg.get_work_dir(), "tests")
 
 
 class TBase:
+	"""模拟、回归测试虚拟基类"""
 	def __init__(self, cfg, strategy, debug = False, storeLog = False):
 		"""
-		模拟、回归测试虚拟基类
 		:param cfg: 配置文件
 		:param strategy: 策略名
 		:param debug: 是否调试
@@ -54,7 +50,8 @@ class TBase:
 			self.endTicks = None
 
 		# 初始化合约描述接口
-		self.descCfg = ContractDescConfig(DEF_CONTRACT_DESC_CFG)
+		_contracts_desc_file = os.path.join(_global_cfg.get_config_dir(), 'contracts_desc')  # 默认合约描述文件
+		self.descCfg = ContractDescConfig(_contracts_desc_file)
 		# 日志保存目录
 		self.logDir = None
 
@@ -99,7 +96,7 @@ class TBase:
 		if not name:
 			name = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
-		self.logDir = os.path.join(DEF_TEST_OUT_DIR, name)
+		self.logDir = os.path.join(_global_cfg.get_test_data_dir(), name)
 		if os.path.exists(self.logDir):
 			self.debug.error("'%s' already exists!" % self.logDir)
 			return False

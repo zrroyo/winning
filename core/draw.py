@@ -8,8 +8,6 @@ Start: 2017年 12月 23日 星期六 13:30:32 CST
 """
 
 import os
-import sys
-sys.path.append(".")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,6 +16,7 @@ from matplotlib.pylab import date2num
 from pandas.plotting import register_matplotlib_converters
 from misc.debug import Debug
 from db.sql import SQL
+from globals import GlobalConfig
 
 register_matplotlib_converters()
 
@@ -156,7 +155,8 @@ class DrawPosCharts:
         self.sql.connect("history2")
         if not path:
             raise DrawChartsError("Please specify the path in which test data are stored!")
-        self.work_path = os.path.join(os.getcwd(), "TESTDATA", path)
+        global_cfg = GlobalConfig()
+        self.work_path = os.path.join(os.getcwd(), global_cfg.get_test_data_dir(), path)
         self.transactions = pd.read_excel(os.path.join(self.work_path, "TRANSACTIONS.xlsx"))
 
     def _draw(self, todo, position, show, grid, subdir = None):
