@@ -13,6 +13,7 @@ sys.path.append('..')
 
 from misc.genconfig import *
 
+
 class EmulationConfig (GenConfig):
 	def __init__ (self, cfgFile):
 		"""
@@ -37,16 +38,7 @@ class EmulationConfig (GenConfig):
 	
 	def getExpireDates (self):
 		return self.getSecOption(self.defaultSec, 'expire_dates')
-	
-	def getContractAddMaxAllowed (self):
-		return self.getSecOption(self.defaultSec, 'contract_add_max_allowed')
-	
-	def getContractVolumeAdd (self):
-		return self.getSecOption(self.defaultSec, 'contract_volume_add')
 
-	def getContractTriggerLevel (self):
-		return self.getSecOption(self.defaultSec, 'contract_trigger_level')
-	
 	def getParallelLevel (self):
 		return self.getSecOption(self.defaultSec, 'parallel_level')
 	
@@ -55,6 +47,30 @@ class EmulationConfig (GenConfig):
 
 	def getParallelCapital (self):
 		return self.getSecOption(self.defaultSec, 'parallel_capital')
+
+
+class AttributeConfig (GenConfig):
+	"""Futures交易属性配置"""
+	def __init__ (self, cfgFile):
+		"""
+		:param cfgFile: 配置文件
+		"""
+		GenConfig.__init__(self, cfgFile)
+		self.cfgFile = cfgFile
+		self.defaultSec = 'Attributes'  # 默认配置段
+
+	def getContractAddMaxAllowed(self):
+		return self.getSecOption(self.defaultSec, 'contract_add_max_allowed')
+
+	def getContractVolumeAdd(self):
+		return self.getSecOption(self.defaultSec, 'contract_volume_add')
+
+	def getContractTriggerLevel(self):
+		return self.getSecOption(self.defaultSec, 'contract_trigger_level')
+
+	def getPosThresholds(self):
+		return self.getSecOption(self.defaultSec, 'pos_thresholds')
+
 
 class ContractDescConfig (GenConfig):
 	def __init__ (self, cfgFile):
@@ -94,7 +110,7 @@ class ContractDescConfig (GenConfig):
 
 # 测试
 def doTest ():
-	emulConfig = EmulationConfig('~/.winning/emul_p')
+	emulConfig = EmulationConfig('../config/emul_p')
 	print emulConfig.getContracts()
 	print emulConfig.getStartTime()
 	print emulConfig.getEndTime()

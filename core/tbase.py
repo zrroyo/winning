@@ -12,7 +12,7 @@ import importlib
 
 from datetime import datetime
 from misc.debug import Debug
-from corecfg import EmulationConfig, ContractDescConfig
+from corecfg import EmulationConfig, ContractDescConfig, AttributeConfig
 from globals import GlobalConfig
 
 _global_cfg = GlobalConfig()
@@ -119,9 +119,12 @@ class TBase:
 			ret = mod.Main(contract = contract, config = self.descCfg,
 					logDir = self.logDir, debug = self.dbgMode)
 
-			ret.setAttrs(maxPosAllowed = int(self.emuCfg.getContractAddMaxAllowed()),
-					numPosToAdd = int(self.emuCfg.getContractVolumeAdd()),
-					priceVariation = int(self.emuCfg.getContractTriggerLevel()))
+			attr_cfg = AttributeConfig(self.testCfg)
+			pos_thresholds = attr_cfg.getPosThresholds()
+			ret.setAttrs(maxPosAllowed = int(attr_cfg.getContractAddMaxAllowed()),
+					numPosToAdd = int(attr_cfg.getContractVolumeAdd()),
+					priceVariation = int(attr_cfg.getContractTriggerLevel()),
+					pos_thresholds=pos_thresholds)
 		except ImportError, e:
 			self.debug.error("getInstance: %s" % e)
 			ret = None

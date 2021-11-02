@@ -147,7 +147,7 @@ class Futures:
 	# 属性方法
 	# ----------------
 	
-	def setAttrs(self, maxPosAllowed, numPosToAdd, priceVariation):
+	def setAttrs(self, maxPosAllowed, numPosToAdd, priceVariation, pos_thresholds):
 		"""
 		设置外部传入属性
 		:param maxPosAllowed: 最大允许持仓单位数
@@ -165,6 +165,12 @@ class Futures:
 		self.posMgr = PositionManager(maxPosAllowed,
 						prompt = self.contract,
 						debug = False)
+
+		self.setPosThresholds(pos_thresholds)
+
+	def setPosThresholds(self, pos_thresholds):
+		"""设置仓位控制参数"""
+		return None
 
 	# ----------------
 	# 持仓方法
