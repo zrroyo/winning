@@ -60,6 +60,14 @@ class Main(Futures):
         self.posStatFrame = pd.DataFrame()
         #
         self.dayLastTick = None
+        # 入场信号时间
+        self.startTrdDays = 15
+        # 退场信号时间
+        self.endTrdDays = 10
+        # 加仓参数
+        self.apThresholds = [None, 0.013, 0.0129, 0.013]
+        # 止损参数
+        self.clThresholds = [-0.016, -0.016, -0.025, -0.03]
         # 止赢参数。第一仓不支持止赢，其它不能为None
         self.spThresholds = (
             (None, None, None, None, None),
@@ -69,6 +77,15 @@ class Main(Futures):
             )
         #
         self.posStopProfit = dict()
+
+    def setPosThresholds(self, pos_thresholds):
+        """设置仓位控制参数"""
+        thresholds = eval(pos_thresholds)
+        self.spThresholds = thresholds['stop_profit']
+        self.clThresholds = thresholds['cut_loss']
+        self.apThresholds = thresholds['add_pos']
+        self.startTrdDays = thresholds['start_trade']
+        self.endTrdDays = thresholds['end_trade']
 
     def validSignal(self, tick):
         ret = True
@@ -248,18 +265,17 @@ class Main(Futures):
         if not self.validSignal(tick):
             return ret
 
-        days = 15
         price = self.data.getClose(tick)
-        if price < self.data.lowestWithinDays(tick, days):
+        if price < self.data.lowestWithinDays(tick, self.startTrdDays):
             # 20内新低，开空信号
             self.log("%s Hit Short Signal: Close %s, Lowest %s, priceVariation %d" % (
-                tick, price, self.data.lowestWithinDays(tick, days), self.attrs.priceVariation))
+                tick, price, self.data.lowestWithinDays(tick, self.startTrdDays), self.attrs.priceVariation))
             ret = SIG_TRADE_SHORT
 
-        elif price > self.data.highestWithinDays(tick, days):
+        elif price > self.data.highestWithinDays(tick, self.startTrdDays):
             # 20内新高，开多信号
             self.log("%s Hit Long Signal: Close %s, Highest %s, priceVariation %d" % (
-                tick, price, self.data.highestWithinDays(tick, days), self.attrs.priceVariation))
+                tick, price, self.data.highestWithinDays(tick, self.startTrdDays), self.attrs.priceVariation))
             ret = SIG_TRADE_LONG
 
         return ret
@@ -272,21 +288,20 @@ class Main(Futures):
         :return: 触发结束信号返回True，否则返回False
         """
         ret = False
-        days = 10
         price = self.data.getClose(tick)
 
         if direction == SIG_TRADE_SHORT and \
-            price > self.data.highestWithinDays(tick, days):
+            price > self.data.highestWithinDays(tick, self.endTrdDays):
             # 价格创出10日新高，结束做空
             self.log("	[Short] [%s] Hit Highest in %s days: Clear all!: close %s, highest %d" % (
-                        tick, days, price, self.data.highestWithinDays(tick, days)))
+                        tick, self.endTrdDays, price, self.data.highestWithinDays(tick, self.endTrdDays)))
             ret = True
 
         elif direction == SIG_TRADE_LONG and \
-            price < self.data.lowestWithinDays(tick, days):
+            price < self.data.lowestWithinDays(tick, self.endTrdDays):
             # 价格创出10日新低，结束做多
             self.log("	[Long] [%s] Hit Lowest in %s days: Clear all!: close %s, lowest %d" % (
-                        tick, days, price, self.data.lowestWithinDays(tick, days)))
+                        tick, self.endTrdDays, price, self.data.lowestWithinDays(tick, self.endTrdDays)))
             ret = True
 
         return ret
@@ -306,7 +321,6 @@ class Main(Futures):
         except KeyError:
             pass
 
-        thresholds = [None, 0.013, 0.0129, 0.013]
         price = self.data.getClose(tick)
         pos = self.getPosition()
 
@@ -331,7 +345,7 @@ class Main(Futures):
                 return ret
 
         try:
-            _thr = thresholds[self.curPositions()]
+            _thr = self.apThresholds[self.curPositions()]
             cfr = self.__curFloatRate(price, pos.price, direction)
             # 利润浮动需大于仓位对应阈值，并且需大于该仓位上一次开仓价（否则会导致止损失效）
             if cfr >= _thr:
@@ -354,8 +368,6 @@ class Main(Futures):
         :return: 未触发止损信号返回False，否则返回自定义参数
         """
         price = self.data.getClose(tick)
-        #
-        thresholds = [-0.016, -0.016, -0.025, -0.03]
         toCut = None
         cfr = list()
 
@@ -365,7 +377,7 @@ class Main(Futures):
         for posIdx in posList:
             pos = self.getPosition(posIdx)
             _cfr = self.__curFloatRate(price, pos.price, direction)
-            _thr = thresholds[posIdx - 1]
+            _thr = self.clThresholds[posIdx - 1]
             cfr.append(_cfr)
             if _cfr >= _thr:
                 # 如果不满足则之前仓位也不会满足
