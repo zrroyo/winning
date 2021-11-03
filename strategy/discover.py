@@ -61,20 +61,15 @@ class Main(Futures):
         #
         self.dayLastTick = None
         # 入场信号时间
-        self.startTrdDays = 15
+        self.startTrdDays = 1000
         # 退场信号时间
-        self.endTrdDays = 10
+        self.endTrdDays = 1000
         # 加仓参数
-        self.apThresholds = [None, 0.013, 0.0129, 0.013]
+        self.apThresholds = []
         # 止损参数
-        self.clThresholds = [-0.016, -0.016, -0.025, -0.03]
+        self.clThresholds = []
         # 止赢参数。第一仓不支持止赢，其它不能为None
-        self.spThresholds = (
-            (None, None, None, None, None),
-            (3, -0.003, -0.00803, 0.0180, 0.0361),
-            (2, -0.007, -1, 0.04, 0.06),
-            (2, 0, -1, 0.04, 0.08),
-            )
+        self.spThresholds = ()
         #
         self.posStopProfit = dict()
 
