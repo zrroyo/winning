@@ -68,7 +68,7 @@ class Main(Futures):
         self.apThresholds = []
         # 止损参数
         self.clThresholds = []
-        # 止赢参数。第一仓不支持止赢，其它不能为None
+        # 止赢参数
         self.spThresholds = ()
         #
         self.posStopProfit = dict()
@@ -372,11 +372,14 @@ class Main(Futures):
         for posIdx in posList:
             pos = self.getPosition(posIdx)
             _cfr = self.__curFloatRate(price, pos.price, direction)
-            _thr = self.clThresholds[posIdx - 1]
             cfr.append(_cfr)
-            if _cfr >= _thr:
-                # 如果不满足则之前仓位也不会满足
-                break
+            try:
+                _thr = self.clThresholds[posIdx - 1]
+                if _thr is None or _cfr >= _thr:  # 如对应仓位参数为None，则停止止损
+                    # 如果不满足则之前仓位也不会满足
+                    break
+            except IndexError:
+                continue  # 对应仓位未指定参数，不止损
 
             toCut = posIdx
             # 记录止损点，作为加仓条件以避免止损无效
@@ -446,11 +449,21 @@ class Main(Futures):
         # 从最后一仓开始逆序检查
         posList = list(range(1, self.curPositions() + 1))
         posList.reverse()
+        maxUndefPos = None
         for posIdx in posList:
             pos = self.getPosition(posIdx)
-            (thrDL, thrESP1, thrESP2, thrSP) = self.spThresholds[posIdx - 1][0:4]
+            try:
+                (thrDL, thrESP1, thrESP2, thrSP) = self.spThresholds[posIdx - 1][0:4]
+            except (IndexError, ValueError):
+                if not maxUndefPos:
+                    maxUndefPos = posIdx
+                continue  # 对应仓位未指定参数或参数为空，则不止赢
+
             try:
                 espType = self.posStopProfit[posIdx][2]
+                # 更高的仓位未设上赢，则低仓位也不能止赢
+                if maxUndefPos and maxUndefPos > posIdx:
+                    continue
                 if not _skipSP and self.__couldStopProfit(price, pos, espType, thrSP, direction):
                     toSP = posIdx
                     self.pLastCut = (pos.price, LAST_CUT_TYPE_SP)
