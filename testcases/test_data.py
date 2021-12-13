@@ -11,6 +11,23 @@ from globals import GlobalConfig
 _global_cfg = GlobalConfig()
 
 
+def print_data(data, date):
+    print "M: %s" % data.M(date, F_CLOSE, 1)
+    print "M5: %s" % data.M5(date, F_CLOSE)
+    print "M10: %s" % data.M10(date, F_CLOSE)
+    print "M20: %s" % data.M20(date, F_CLOSE)
+    print "M30: %s" % data.M30(date, F_CLOSE)
+    print "Open: %s" % data.getOpen(date)
+    print "Close: %s" % data.getClose(date)
+    print "Avg: %s" % data.getAvg(date)
+    print "High: %s" % data.getHighest(date)
+    print "Low: %s" % data.getLowest(date)
+    print "Highest Before: exclude %s, not exclude %s" % (
+        data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
+    print "Lowest Before: exclude %s, not exclude %s" % (
+        data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+
+
 def doTestData():
     """Data测试"""
     _contracts_desc_file = os.path.join(_global_cfg.get_config_dir(), 'contracts_desc')  # 默认合约描述文件
@@ -19,57 +36,18 @@ def doTestData():
 
     date = '2014-03-11'
     print "Test Middle: Date: %s" % date
-    print "M: %s" % data.M(date, F_CLOSE, 1)
-    print "M5: %s" % data.M5(date, F_CLOSE)
-    print "M10: %s" % data.M10(date, F_CLOSE)
-    print "M20: %s" % data.M20(date, F_CLOSE)
-    print "M30: %s" % data.M30(date, F_CLOSE)
-    print "Open: %s" % data.getOpen(date)
-    print "Close: %s" % data.getClose(date)
-    print "Avg: %s" % data.getAvg(date)
-    print "High: %s" % data.getHighest(date)
-    print "Low: %s" % data.getLowest(date)
-    print "Highest Before: exclude %s, not exclude %s" % (
-        data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
-    print "Lowest Before: exclude %s, not exclude %s" % (
-        data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+    print_data(data, date)
 
     date = '2013-05-16'
     print "Test Left Bound: Date: %s" % date
-    print "M: %s" % data.M(date, F_CLOSE, 1)
-    print "M5: %s" % data.M5(date, F_CLOSE)
-    print "M10: %s" % data.M10(date, F_CLOSE)
-    print "M20: %s" % data.M20(date, F_CLOSE)
-    print "M30: %s" % data.M30(date, F_CLOSE)
-    print "Open: %s" % data.getOpen(date)
-    print "Close: %s" % data.getClose(date)
-    print "Avg: %s" % data.getAvg(date)
-    print "High: %s" % data.getHighest(date)
-    print "Low: %s" % data.getLowest(date)
-    print "Highest Before: exclude %s, not exclude %s" % (
-        data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
-    print "Lowest Before: exclude %s, not exclude %s" % (
-        data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+    print_data(data, date)
 
     date = '2014-04-30'
     print "Test Right Bound: Date: %s" % date
-    print "M: %s" % data.M(date, F_CLOSE, 1)
-    print "M5: %s" % data.M5(date, F_CLOSE)
-    print "M10: %s" % data.M10(date, F_CLOSE)
-    print "M20: %s" % data.M20(date, F_CLOSE)
-    print "M30: %s" % data.M30(date, F_CLOSE)
-    print "Open: %s" % data.getOpen(date)
-    print "Close: %s" % data.getClose(date)
-    print "Avg: %s" % data.getAvg(date)
-    print "High: %s" % data.getHighest(date)
-    print "Low: %s" % data.getLowest(date)
-    print "Highest Before: exclude %s, not exclude %s" % (
-        data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
-    print "Lowest Before: exclude %s, not exclude %s" % (
-        data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+    print_data(data, date)
 
     """
-    Test Middle: Date: 2014-03-11
+    Test Middle: Date: 2014-03-11s
     M: 6404.0
     M5: 6308.0
     M10: 6222.4
@@ -119,54 +97,15 @@ def doTestDataMink():
 
     date = DataMink.dateConverter('2014-03-11 14:36:00')
     print "Test Middle: Date: %s" % date
-    print "M: %s" % data.M(date, F_CLOSE, 1)
-    print "M5: %s" % data.M5(date, F_CLOSE)
-    print "M10: %s" % data.M10(date, F_CLOSE)
-    print "M20: %s" % data.M20(date, F_CLOSE)
-    print "M30: %s" % data.M30(date, F_CLOSE)
-    print "Open: %s" % data.getOpen(date)
-    print "Close: %s" % data.getClose(date)
-    print "Avg: %s" % data.getAvg(date)
-    print "High: %s" % data.getHighest(date)
-    print "Low: %s" % data.getLowest(date)
-    print "Highest Before: exclude %s, not exclude %s" % (
-        data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
-    print "Lowest Before: exclude %s, not exclude %s" % (
-        data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+    print_data(data, date)
 
     date = DataMink.dateConverter('2013-05-16 9:01:00')
     print "Test Left Bound: Date: %s" % date
-    print "M: %s" % data.M(date, F_CLOSE, 1)
-    print "M5: %s" % data.M5(date, F_CLOSE)
-    print "M10: %s" % data.M10(date, F_CLOSE)
-    print "M20: %s" % data.M20(date, F_CLOSE)
-    print "M30: %s" % data.M30(date, F_CLOSE)
-    print "Open: %s" % data.getOpen(date)
-    print "Close: %s" % data.getClose(date)
-    print "Avg: %s" % data.getAvg(date)
-    print "High: %s" % data.getHighest(date)
-    print "Low: %s" % data.getLowest(date)
-    print "Highest Before: exclude %s, not exclude %s" % (
-        data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
-    print "Lowest Before: exclude %s, not exclude %s" % (
-        data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+    print_data(data, date)
 
     date = DataMink.dateConverter('2014-04-30 14:58:00')
     print "Test Right Bound: Date: %s" % date
-    print "M: %s" % data.M(date, F_CLOSE, 1)
-    print "M5: %s" % data.M5(date, F_CLOSE)
-    print "M10: %s" % data.M10(date, F_CLOSE)
-    print "M20: %s" % data.M20(date, F_CLOSE)
-    print "M30: %s" % data.M30(date, F_CLOSE)
-    print "Open: %s" % data.getOpen(date)
-    print "Close: %s" % data.getClose(date)
-    print "Avg: %s" % data.getAvg(date)
-    print "High: %s" % data.getHighest(date)
-    print "Low: %s" % data.getLowest(date)
-    print "Highest Before: exclude %s, not exclude %s" % (
-        data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
-    print "Lowest Before: exclude %s, not exclude %s" % (
-        data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+    print_data(data, date)
 
     """
     Test Middle: Date: 2014-03-11 14:36:00
@@ -211,6 +150,82 @@ def doTestDataMink():
     """
 
 
+def doTestDatamink_NightTrade():
+    """夜盘DataMink测试"""
+    _contracts_desc_file = os.path.join(_global_cfg.get_config_dir(), 'contracts_desc')  # 默认合约描述文件
+    descCfg = core.corecfg.ContractDescConfig(_contracts_desc_file)
+    data = DataMink('p2201_mink', descCfg, False)
+
+    date = DataMink.dateConverter('2021-09-10 14:36:00')  # 白天时段
+    print "Test Middle: Date: %s" % date
+    print_data(data, date)
+
+    date = DataMink.dateConverter('2021-09-10 21:36:00')  # 夜晚时段
+    print "Test Middle: Date: %s" % date
+    print_data(data, date)
+
+    data = Data('p2201', descCfg, False)
+    # date = DataMink.dateConverter('2021-10-21')
+    date = DataMink.dateConverter('2021-12-1')
+    print "Test Middle: Date: %s" % date
+    print "M: %s" % data.M(date, F_CLOSE, 1)
+    print "M5: %s" % data.M5(date, F_CLOSE)
+    print "M10: %s" % data.M10(date, F_CLOSE)
+    print "M20: %s" % data.M20(date, F_CLOSE)
+    print "M60: %s" % data.M60(date, F_CLOSE)
+    print "Open: %s" % data.getOpen(date)
+    print "Close: %s" % data.getClose(date)
+    print "Avg: %s" % data.getAvg(date)
+    print "High: %s" % data.getHighest(date)
+    print "Low: %s" % data.getLowest(date)
+    print "Highest Before: exclude %s, not exclude %s" % (
+        data.highestWithinDays(date, 10, F_CLOSE), data.highestWithinDays(date, 10, F_CLOSE, False))
+    print "Lowest Before: exclude %s, not exclude %s" % (
+        data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
+
+    """
+    Test Middle: Date: 2021-09-10 14:36:00
+    M: 8176.0
+    M5: 8369.6
+    M10: 8274.8
+    M20: 8274.8
+    M30: 8274.8
+    Open: 8170.0
+    Close: 8176.0
+    Avg: 0.0
+    High: 8180.0
+    Low: 8168.0
+    Highest Before: exclude 8488.0, not exclude 8488.0
+    Lowest Before: exclude 8016.0, not exclude 8016.0
+    Test Middle: Date: 2021-09-10 21:36:00
+    M: 8186.0
+    M5: 8332.4
+    M10: 8270.6
+    M20: 8264.727272727272
+    M30: 8264.727272727272
+    Open: 8192.0
+    Close: 8186.0
+    Avg: 0.0
+    High: 8192.0
+    Low: 8182.0
+    Highest Before: exclude 8488.0, not exclude 8488.0
+    Lowest Before: exclude 8016.0, not exclude 8016.0
+    Test Middle: Date: 2021-12-01 00:00:00
+    M: 9258.0
+    M5: 9398.8
+    M10: 9551.8
+    M20: 9467.5
+    M60: 9136.3
+    Open: 9046.0
+    Close: 9258.0
+    Avg: 0.0
+    High: 9294.0
+    Low: 9002.0
+    Highest Before: exclude 9978.0, not exclude 9978.0
+    Lowest Before: exclude 9146.0, not exclude 9146.0
+    """
+
 if __name__ == '__main__':
     doTestData()
     doTestDataMink()
+    doTestDatamink_NightTrade()
