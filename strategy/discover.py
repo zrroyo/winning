@@ -72,6 +72,8 @@ class Main(Futures):
         self.spThresholds = ()
         #
         self.posStopProfit = dict()
+        # 最开始的交易日没办法满足突破法的触发条件，跳过
+        self.skipOrdTradeDays = False
 
     def setPosThresholds(self, pos_thresholds):
         """设置仓位控制参数"""
@@ -83,10 +85,18 @@ class Main(Futures):
         self.endTrdDays = thresholds['end_trade']
 
     def validSignal(self, tick):
-        ret = True
-        if tick - self.firstTick < timedelta(days = 10):
-            ret = False
+        if self.skipOrdTradeDays:
+            return True
 
+        ret = False
+        tickDate = pd.to_datetime(tick.date())
+        if tickDate < self.data.datDayk.index[0]:
+            return ret
+
+        _curIdx = list(self.data.datDayk.index).index(tickDate)
+        if _curIdx >= self.startTrdDays:
+            ret = True
+            self.skipOrdTradeDays = True
         return ret
 
     def __curFloatRate(self, price, opPrice, direction):
