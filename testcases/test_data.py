@@ -154,13 +154,13 @@ def doTestDatamink_NightTrade():
     """夜盘DataMink测试"""
     _contracts_desc_file = os.path.join(_global_cfg.get_config_dir(), 'contracts_desc')  # 默认合约描述文件
     descCfg = core.corecfg.ContractDescConfig(_contracts_desc_file)
-    data = DataMink('p2201_mink', descCfg, False)
+    data = DataMink('p1701_mink', descCfg, False)
 
-    date = DataMink.dateConverter('2021-09-10 14:36:00')  # 白天时段
+    date = DataMink.dateConverter('2016-04-07 14:36:00')  # 白天时段
     print "Test Middle: Date: %s" % date
     print_data(data, date)
 
-    date = DataMink.dateConverter('2021-09-10 21:36:00')  # 夜晚时段
+    date = DataMink.dateConverter('2016-04-07 21:15:00')  # 夜晚时段
     print "Test Middle: Date: %s" % date
     print_data(data, date)
 
@@ -184,32 +184,33 @@ def doTestDatamink_NightTrade():
         data.lowestWithinDays(date, 10, F_CLOSE), data.lowestWithinDays(date, 10, F_CLOSE, False))
 
     """
-    Test Middle: Date: 2021-09-10 14:36:00
-    M: 8176.0
-    M5: 8369.6
-    M10: 8274.8
-    M20: 8274.8
-    M30: 8274.8
-    Open: 8170.0
-    Close: 8176.0
+    Test Middle: Date: 2016-04-07 14:36:00
+    M: 5428.0
+    M5: 5440.8
+    M10: 5417.8
+    M20: 5323.0
+    M30: 5191.8
+    Open: 5428.0
+    Close: 5428.0
     Avg: 0.0
-    High: 8180.0
-    Low: 8168.0
-    Highest Before: exclude 8488.0, not exclude 8488.0
-    Lowest Before: exclude 8016.0, not exclude 8016.0
-    Test Middle: Date: 2021-09-10 21:36:00
-    M: 8186.0
-    M5: 8332.4
-    M10: 8270.6
-    M20: 8264.727272727272
-    M30: 8264.727272727272
-    Open: 8192.0
-    Close: 8186.0
+    High: 5428.0
+    Low: 5428.0
+    Backend Qt5Agg is interactive backend. Turning interactive mode on.
+    Highest Before: exclude 5480.0, not exclude 5480.0
+    Lowest Before: exclude 5302.0, not exclude 5302.0
+    Test Middle: Date: 2016-04-07 21:15:00
+    M: 5384.0
+    M5: 5436.4
+    M10: 5426.8
+    M20: 5340.5
+    M30: 5209.8
+    Open: 5400.0
+    Close: 5384.0
     Avg: 0.0
-    High: 8192.0
-    Low: 8182.0
-    Highest Before: exclude 8488.0, not exclude 8488.0
-    Lowest Before: exclude 8016.0, not exclude 8016.0
+    High: 5402.0
+    Low: 5382.0
+    Highest Before: exclude 5480.0, not exclude 5480.0
+    Lowest Before: exclude 5386.0, not exclude 5384.0
     Test Middle: Date: 2021-12-01 00:00:00
     M: 9258.0
     M5: 9398.8
