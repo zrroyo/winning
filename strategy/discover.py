@@ -374,7 +374,7 @@ class Main(Futures):
         """
         price = self.data.getClose(tick)
         toCut = None
-        cfr = list()
+        cfr = dict()
 
         # 从最后一仓开始逆序检查
         posList = list(range(1, self.curPositions() + 1))
@@ -382,7 +382,6 @@ class Main(Futures):
         for posIdx in posList:
             pos = self.getPosition(posIdx)
             _cfr = self.__curFloatRate(price, pos.price, direction)
-            cfr.append(_cfr)
             try:
                 _thr = self.clThresholds[posIdx - 1]
                 if _thr is None or _cfr >= _thr:  # 如对应仓位参数为None，则停止止损
@@ -391,6 +390,7 @@ class Main(Futures):
             except IndexError:
                 continue  # 对应仓位未指定参数，不止损
 
+            cfr[posIdx] = _cfr
             toCut = posIdx
             # 记录止损点，作为加仓条件以避免止损无效
             self.pLastCut = (pos.price, LAST_CUT_TYPE_CL)
